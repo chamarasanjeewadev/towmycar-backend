@@ -8,14 +8,14 @@ export type UserRepositoryType = {
 
 const createUser = async (user: UserRequestInput): Promise<number> => {
   const result = await DB.insert(userProfile)
-  .values({
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    postcode: user.postcode,
-    vehicleRegistration: '', // Add a default value or get from user input
-    mobileNumber: '', // Add a default value or get from user input
-  })
+    .values({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      postcode: user.postcode,
+      vehicleRegistration: "", // Add a default value or get from user input
+      mobileNumber: "", // Add a default value or get from user input
+    })
     .returning();
   const id = result[0].id;
   return id;

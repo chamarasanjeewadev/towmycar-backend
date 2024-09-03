@@ -24,8 +24,25 @@ Authorization: Bearer <your-token-if-required>
   "requestType": "Flat Tire",
   "location": "Main Street, City Center",
   "description": "Left front tire is flat"
+
 }
 
+###
+
+POST http://localhost:9002/combined-breakdown-request
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "test@breakdown.com",
+  "postcode": "54321",
+  "vehicleRegistration": "XYZ789",
+  "mobileNumber": "9876543210",
+  "requestType": "Engine Failure",
+  "location": "Highway 101, Mile Marker 50",
+  "description": "Engine suddenly stopped working"
+}
 
 # {
 #   "breakdownRequestId": "req5678",
