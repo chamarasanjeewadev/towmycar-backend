@@ -1,0 +1,33 @@
+### Create User
+POST http://localhost:9002/user
+Content-Type: application/json
+
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "postcode": "12345",
+    "vehicleRegistration": "ABC123",
+    "mobileNumber": "1234567890"
+}
+
+###
+
+
+### Create Breakdown Request
+POST http://localhost:9002/breakdownrequest
+Content-Type: application/json
+Authorization: Bearer <your-token-if-required>
+
+{
+  "userId": "2",
+  "requestType": "Flat Tire",
+  "location": "Main Street, City Center",
+  "description": "Left front tire is flat"
+}
+
+
+# {
+#   "breakdownRequestId": "req5678",
+#   "status": "Breakdown reported successfully."
+# }
