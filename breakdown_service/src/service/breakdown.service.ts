@@ -30,6 +30,10 @@ export const CreateCombinedBreakdownRequest = async (
       userId,
       requestType: combinedInput.requestType,
       location: combinedInput.location,
+      userLocation: {
+        latitude: combinedInput.userLocation.latitude,
+        longitude: combinedInput.userLocation.longitude,
+      },
       description: combinedInput.description,
     };
 

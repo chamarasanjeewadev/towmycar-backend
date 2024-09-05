@@ -48,3 +48,27 @@ Content-Type: application/json
 #   "breakdownRequestId": "req5678",
 #   "status": "Breakdown reported successfully."
 # }
+
+### Get all breakdown requests with user details
+GET http://localhost:9002/list
+Content-Type: application/json
+
+### Register Driver
+POST http://localhost:9002/register
+Content-Type: application/json
+
+{
+  "fullName": "Alice Johnson",
+  "email": "alice.johnson@breakdown.com",
+  "phoneNumber": "9876543210",
+  "vehicleType": "Tow Truck",
+  "vehicleRegistration": "TOW789",
+  "licenseNumber": "DL123456",
+  "serviceRadius": 50,
+  "primaryLocation": "Downtown, City",
+  "workingHours": "9 AM - 5 PM",
+  "experienceYears": 5,
+  "insuranceDetails": "Policy Number: INS123456, Provider: SafeDrive Insurance"
+}
+
+###

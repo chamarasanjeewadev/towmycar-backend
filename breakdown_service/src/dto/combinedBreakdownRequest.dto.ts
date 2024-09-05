@@ -9,7 +9,13 @@ export const CombinedBreakdownRequestSchema = z.object({
   mobileNumber: z.string(),
   requestType: z.string(),
   location: z.string(),
+  userLocation: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }),
   description: z.string(),
 });
 
-export type CombinedBreakdownRequestInput = z.infer<typeof CombinedBreakdownRequestSchema>;
+export type CombinedBreakdownRequestInput = z.infer<
+  typeof CombinedBreakdownRequestSchema
+>;
