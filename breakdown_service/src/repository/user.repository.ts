@@ -1,6 +1,6 @@
 import { DB } from "../db/db.connection";
 import { UserRequestInput } from "../dto/userRequest.dto";
-import { userProfile } from "../db/schema/schema";
+import { userProfile } from "../db/schema/db-schema";
 // declare repository type
 export type UserRepositoryType = {
   createUser: (user: UserRequestInput) => Promise<number>;

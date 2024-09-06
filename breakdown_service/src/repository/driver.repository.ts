@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { DB } from "../db/db.connection"; // Assuming you have a db connection file
-import { driver, Driver } from "../db/schema/schema";
+import { driver, Driver } from "../db/schema/db-schema";
 import { DriverInput } from "../dto/driver.dto";
 
 const create = async (data: DriverInput): Promise<number> => {
