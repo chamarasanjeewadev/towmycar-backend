@@ -14,7 +14,11 @@ export const CreateBreakdownRequest = async (
 };
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<BreakdownRequestWithUserDetails[]> => {
-  return BreakdownRequestRepository.getAllBreakdownRequestsWithUserDetails();
+  const requests = await BreakdownRequestRepository.getAllBreakdownRequestsWithUserDetails();
+  return requests.map(request => ({
+    ...request,
+    userName: `${request.firstName || ''} ${request.lastName || ''}`.trim() || 'Unknown'
+  }));
 };
 
 export const BreakdownRequestService = {

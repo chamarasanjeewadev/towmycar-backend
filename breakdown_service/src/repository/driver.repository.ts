@@ -3,17 +3,36 @@ import { DB } from "../db/db.connection"; // Assuming you have a db connection f
 import { driver, Driver } from "../db/schema/schema";
 import { DriverInput } from "../dto/driver.dto";
 
+const create = async (data: DriverInput): Promise<number> => {
+  const driverResult = await DB.insert(driver)
+    .values({
+      fullName: data.fullName,
+      email: data.email,
+      phoneNumber: data.phoneNumber,
+      vehicleType: data.vehicleType,
+      vehicleRegistration: data.vehicleRegistration,
+      licenseNumber: data.licenseNumber, // Fixed typo: 'licenseNumbber' to 'licenseNumber'
+      serviceRadius: data.serviceRadius,
+      primaryLocation: {
+        x: data.primaryLocation.longitude,
+        y: data.primaryLocation.latitude,
+      }, // Assuming your schema accepts this object structure
+      workingHours: data.workingHours,
+      experienceYears: data.experienceYears,
+      insuranceDetails: data.insuranceDetails,
+    })
+    .returning({ id: driver.id });
+
+  return driverResult[0].id;
+};
+
 export interface IDriverRepository {
-  create(driverData: DriverInput): Promise<Driver>;
+  create(driverData: DriverInput): Promise<number>;
   findByEmail(email: string): Promise<Driver | null>;
 }
 
 export const DriverRepository: IDriverRepository = {
-  async create(driverData: DriverInput): Promise<Driver> {
-    const [newDriver] = await DB.insert(driver).values(driverData).returning();
-    return newDriver;
-  },
-
+  create,
   async findByEmail(email: string): Promise<Driver | null> {
     const [foundDriver] = await DB.select()
       .from(driver)

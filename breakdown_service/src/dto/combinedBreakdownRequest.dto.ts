@@ -8,7 +8,7 @@ export const CombinedBreakdownRequestSchema = z.object({
   vehicleRegistration: z.string(),
   mobileNumber: z.string(),
   requestType: z.string(),
-  location: z.string(),
+  locationAddress: z.string(),
   userLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),
