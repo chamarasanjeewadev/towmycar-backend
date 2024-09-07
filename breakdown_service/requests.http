@@ -1,5 +1,7 @@
+@port = 9001
+
 ### Create User
-POST http://localhost:9002/user
+POST http://localhost:{{port}}/user
 Content-Type: application/json
 
 {
@@ -15,7 +17,7 @@ Content-Type: application/json
 
 
 ### Create Breakdown Request
-POST http://localhost:9002/breakdownrequest
+POST http://localhost:{{port}}/breakdownrequest
 Content-Type: application/json
 Authorization: Bearer <your-token-if-required>
 
@@ -24,12 +26,11 @@ Authorization: Bearer <your-token-if-required>
   "requestType": "Flat Tire",
   "location": "Main Street, City Center",
   "description": "Left front tire is flat"
-
 }
 
 ###
 
-POST http://localhost:9002/combined-breakdown-request
+POST http://localhost:{{port}}/combined-breakdown-request
 Content-Type: application/json
 
 {
@@ -50,11 +51,11 @@ Content-Type: application/json
 # }
 
 ### Get all breakdown requests with user details
-GET http://localhost:9002/list
+GET http://localhost:{{port}}/list
 Content-Type: application/json
 
-### Register Driver
-POST http://localhost:9002/register
+### Register Driver (if not already present)
+POST http://localhost:{{port}}/register
 Content-Type: application/json
 
 {
@@ -65,10 +66,63 @@ Content-Type: application/json
   "vehicleRegistration": "TOW789",
   "licenseNumber": "DL123456",
   "serviceRadius": 50,
-  "primaryLocation": "Downtown, City",
+  "primaryLocation": {
+    "latitude": 51.5074,
+    "longitude": -0.1278
+  },
   "workingHours": "9 AM - 5 PM",
   "experienceYears": 5,
   "insuranceDetails": "Policy Number: INS123456, Provider: SafeDrive Insurance"
+}
+
+### Get Driver Requests With Info
+GET http://localhost:{{port}}/requests/1
+Authorization: Bearer <your-auth-token-here>
+
+### Create a Breakdown Request (to ensure there's data to fetch)
+POST http://localhost:{{port}}/breakdownrequest
+Content-Type: application/json
+Authorization: Bearer <your-auth-token-here>
+
+{
+  "userId": "1",
+  "requestType": "Flat Tire",
+  "location": "Main Street, City Center",
+  "description": "Left front tire is flat"
+}
+
+### Get Driver Requests With Info (after creating a request)
+GET http://localhost:{{port}}/requests/1
+Authorization: Bearer <your-auth-token-here>
+
+### Get Driver Breakdown Assignments
+GET http://localhost:{{port}}/driver-breakdown-assignments/1
+Authorization: Bearer <your-auth-token-here>
+
+### Get Driver Breakdown Assignments (after creating a request)
+GET http://localhost:{{port}}/driver-breakdown-assignments/1
+Authorization: Bearer <your-auth-token-here>
+
+### Get Driver Assigned Requests
+GET http://localhost:{{port}}/driver-assigned-requests/1
+Authorization: Bearer <your-auth-token-here>
+
+### Get Driver Assigned Requests (after creating a request)
+GET http://localhost:{{port}}/driver-assigned-requests/1
+# Authorization: Bearer <your-auth-token-here>
+
+### Get specific driver request
+GET http://localhost:{{port}}/driver-request/1/1
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Update Driver Request Status
+PATCH http://localhost:{{port}}/request/61/status
+Content-Type: application/json
+Authorization: Bearer <your-auth-token-here>
+
+{
+  "driverId": 1,
+  "status": "accepted"
 }
 
 ###

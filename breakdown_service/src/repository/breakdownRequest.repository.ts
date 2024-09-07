@@ -1,7 +1,12 @@
-import { DB } from "../db/db.connection";
-import { breakdownRequest, userProfile, driver } from "../db/schema/db-schema";
+import { DB } from "database";
+import {
+  userProfile,
+  breakdownRequest,
+  UserProfile,
+  BreakdownRequest,
+} from "database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -22,39 +27,6 @@ export type BreakdownRequestRepositoryType = {
   getAllBreakdownRequestsWithUserDetails: () => Promise<
     BreakdownRequestWithUserDetails[]
   >;
-  findNearbyDrivers: (latitude: number, longitude: number) => Promise<any[]>;
-};
-
-const findNearbyDrivers = async (
-  latitude: number,
-  longitude: number
-): Promise<any[]> => {
-  const nearbyDrivers = await DB.select({
-    id: driver.id,
-    fullName: driver.fullName,
-    email: driver.email,
-    phoneNumber: driver.phoneNumber,
-    vehicleType: driver.vehicleType,
-    distance: sql<number>`
-      ST_Distance(
-        ${driver.primaryLocation}::geography,
-        ST_GeomFromText('POINT(' || ${longitude} || ' ' || ${latitude} || ')', 4326)::geography
-      ) / 1000
-    `.as("distance_km"),
-  })
-    .from(driver)
-    .where(
-      sql`
-    ST_DWithin(
-      ${driver.primaryLocation}::geography,
-      ST_GeomFromText('POINT(' || ${longitude} || ' ' || ${latitude} || ')', 4326)::geography,
-      ${driver.serviceRadius} * 1000
-    )
-  `
-    )
-    .orderBy(sql`distance_km`);
-
-  return nearbyDrivers;
 };
 
 const saveBreakdownRequest = async (
@@ -62,24 +34,17 @@ const saveBreakdownRequest = async (
 ): Promise<number> => {
   const breakdownResult = await DB.insert(breakdownRequest)
     .values({
-      userId: data.userId, // Convert to number
+      userId: data.userId,
       requestType: data.requestType,
       locationAddress: data.locationAddress,
       userLocation: {
         x: data.userLocation.longitude,
         y: data.userLocation.latitude,
       },
-      description: data.description || null, // Handle optional field
+      description: data.description || null,
       status: "pending",
     })
     .returning({ id: breakdownRequest.id });
-
-  // Find and log nearby drivers
-  const nearbyDrivers = await findNearbyDrivers(
-    data.userLocation.latitude,
-    data.userLocation.longitude
-  );
-  console.log("Nearby drivers:", nearbyDrivers);
 
   return breakdownResult[0].id;
 };
@@ -105,5 +70,4 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
-  findNearbyDrivers,
 };

@@ -2,9 +2,10 @@ import { BreakdownRequestInput } from "./../dto/breakdownRequest.dto";
 import { CombinedBreakdownRequestInput } from "../dto/combinedBreakdownRequest.dto";
 import * as repository from "../repository/breakdownRequest.repository";
 import * as userRepository from "../repository/user.repository";
+import * as snsService from "../service/sns.service"; // Add this import
 
 export const CreateBreakdownRequest = async (data: BreakdownRequestInput) => {
-  // Call to repository function to save the data
+  // Call to repository function to save the data and send SNS notification
   return await repository.BreakdownRequestRepository.saveBreakdownRequest(data);
 };
 
@@ -41,6 +42,12 @@ export const CreateCombinedBreakdownRequest = async (
       await repository.BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData
       );
+
+    // Send SNS notification after saving the breakdown request
+    const snsResult = await snsService.sendBreakdownRequestNotification(
+      breakdownRequestId.toString(),
+      breakdownRequestData
+    );
 
     return {
       breakdownRequestId,

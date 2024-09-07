@@ -38,7 +38,7 @@ router.post(
       console.log("inside create breakdown request post", req.body);
 
       // Save to database
-      const response = await service.CreateBreakdownRequest(
+      const response = await service.createAndNotifyBreakdownRequest(
         req.body as BreakdownRequestInput,
         repository.BreakdownRequestRepository
       );

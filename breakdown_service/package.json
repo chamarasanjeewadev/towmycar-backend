@@ -1,5 +1,5 @@
 {
-  "name": "order_service",
+  "name": "breakdown_service",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,16 +7,13 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "jest",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
-    "db:migrate": "tsx ./migration.ts",
-    "db:studio": "drizzle-kit studio --port 6000"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-sns": "^3.645.0",
     "@sinclair/typebox": "^0.32.30",
     "ajv": "^8.13.0",
     "aws-sdk": "^2.1687.0",
@@ -30,7 +27,8 @@
     "pg": "^8.12.0",
     "pino": "^9.1.0",
     "pino-http": "^10.1.0",
-    "pino-pretty": "^11.1.0"
+    "pino-pretty": "^11.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

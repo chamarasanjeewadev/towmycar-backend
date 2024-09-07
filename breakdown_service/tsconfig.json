@@ -100,7 +100,7 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*.ts"], // Include all TypeScript files in the src directory
+  "include": ["src/**/*.ts", "../quotation_service/src/utils/pollMessages.ts"], // Include all TypeScript files in the src directory
   "exclude": [
     "src/**/*.spec.ts", // Exclude test files with .spec.ts suffix
     "src/**/*.test.ts", // Exclude test files with .test.ts suffix
