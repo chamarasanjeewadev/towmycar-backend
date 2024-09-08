@@ -107,8 +107,33 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
   }));
 };
 
+const getPaginatedBreakdownRequestsWithUserDetails = async (
+  page: number,
+  pageSize: number
+): Promise<{
+  breakdownRequests: BreakdownRequestWithUserDetails[];
+  totalCount: number;
+}> => {
+  const { requests, totalCount } =
+    await BreakdownRequestRepository.getPaginatedBreakdownRequestsWithUserDetails(
+      page,
+      pageSize
+    );
+  
+  return {
+    breakdownRequests: requests.map(request => ({
+      ...request,
+      userName:
+        `${request.firstName || ""} ${request.lastName || ""}`.trim() ||
+        "Unknown",
+    })),
+    totalCount,
+  };
+};
+
 export const BreakdownRequestService = {
   createAndNotifyBreakdownRequest,
   createUserAndBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
+  getPaginatedBreakdownRequestsWithUserDetails,
 };

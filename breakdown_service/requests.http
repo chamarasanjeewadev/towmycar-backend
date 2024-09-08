@@ -51,7 +51,7 @@ Content-Type: application/json
 # }
 
 ### Get all breakdown requests with user details
-GET http://localhost:{{port}}/list
+GET http://localhost:{{port}}/list?page=1&limit=10
 Content-Type: application/json
 
 ### Register Driver (if not already present)
@@ -96,12 +96,6 @@ GET http://localhost:{{port}}/requests/1
 Authorization: Bearer <your-auth-token-here>
 
 ### Get Driver Breakdown Assignments
-GET http://localhost:{{port}}/driver-breakdown-assignments/1
-Authorization: Bearer <your-auth-token-here>
-
-### Get Driver Breakdown Assignments (after creating a request)
-GET http://localhost:{{port}}/driver-breakdown-assignments/1
-Authorization: Bearer <your-auth-token-here>
 
 ### Get Driver Assigned Requests
 GET http://localhost:{{port}}/driver-assigned-requests/1

@@ -7,6 +7,7 @@ import {
   BreakdownRequestSchema,
 } from "./../dto/breakdownRequest.dto";
 import { CombinedBreakdownRequestSchema } from "../dto/combinedBreakdownRequest.dto";
+import { z } from "zod";
 
 const router = express.Router();
 
@@ -77,12 +78,31 @@ router.post(
   }
 );
 
-// New route for getting all breakdown requests with user details
+// New route for getting all breakdown requests with user details (paginated)
 router.get("/list", async (req: Request, res: Response) => {
   try {
-    const breakdownRequests =
-      await service.BreakdownRequestService.getAllBreakdownRequestsWithUserDetails();
-    res.status(200).json(breakdownRequests);
+    const querySchema = z.object({
+      page: z.string().regex(/^\d+$/).transform(Number).default("1"),
+      pageSize: z.string().regex(/^\d+$/).transform(Number).default("10"),
+    });
+
+    const { page, pageSize } = querySchema.parse(req.query);
+
+    const { breakdownRequests, totalCount } =
+      await service.BreakdownRequestService.getPaginatedBreakdownRequestsWithUserDetails(
+        page,
+        pageSize
+      );
+
+    res.status(200).json({
+      data: breakdownRequests,
+      pagination: {
+        currentPage: page,
+        pageSize: pageSize,
+        totalCount: totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    });
   } catch (error) {
     console.error("Error fetching breakdown requests:", error);
     res.status(500).json({ error: "Internal Server Error" });
