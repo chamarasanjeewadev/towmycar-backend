@@ -26,28 +26,32 @@ router.post(
   authMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log("inside create user post", req.body);
 
-      console.log("inside create user post",req.body);
-      // const error = ValidateRequest<UserRequestInput>(
-      //   req.body,
-      //   UserRequestSchema
-      // );
-      // console.log("request validated", error);
-
-      // if (error) {
-      //   return res.status(404).json({ error });
-      // }
-      // publish to db
       const response = await service.CreateUser(
         req.body as UserRequestInput,
         repo
       );
-      console.log("reponse from create user",response);
       return res.status(200).json(response);
     } catch (error) {
-      console.log("error from create user",error);
+      console.log("error from create user", error);
       return res.status(404).json({ error });
     }
   }
 );
+
+router.post("/register", async (req, res) => {
+  // ... existing code ...
+});
+
+router.post("/login", async (req, res) => {
+  // ... existing code ...
+});
+
+router.get("/profile", async (req, res) => {
+  // ... existing code ...
+});
+
+// ... other routes ...
+
 export default router;

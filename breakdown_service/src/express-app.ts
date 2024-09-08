@@ -1,7 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import cartRoutes from "./routes/cart.routes";
-import orderRoutes from "./routes/order.routes";
 import { httpLogger, HandleErrorWithLogger } from "./utils";
 import userRoutes from "./routes/user.routes";
 import breakdownRequestRoutes from "./routes/breakdownRequest.routes";
@@ -12,11 +10,9 @@ app.use(cors());
 app.use(express.json());
 app.use(httpLogger);
 
-// app.use(cartRoutes);
-app.use(userRoutes);
-app.use(breakdownRequestRoutes);
-app.use(driverRoutes);
-// app.use(orderRoutes);
+app.use("/user", userRoutes);
+app.use("/driver", driverRoutes);
+app.use("/user", breakdownRequestRoutes);
 
 app.use("/", (req: Request, res: Response, _: NextFunction) => {
   return res.status(200).json({ message: "I am healthy breakdown service!" });

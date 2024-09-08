@@ -1,0 +1,43 @@
+@port = 9001
+@baseUrl = http://localhost:{{port}}/driver
+
+### Register Driver (if not already present)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "fullName": "Alice Johnson",
+  "email": "alice.johnson@breakdown.com",
+  "phoneNumber": "9876543210",
+  "vehicleType": "Tow Truck",
+  "vehicleRegistration": "TOW789",
+  "licenseNumber": "DL123456",
+  "serviceRadius": 50,
+  "primaryLocation": {
+    "latitude": 51.5074,
+    "longitude": -0.1278
+  },
+  "workingHours": "9 AM - 5 PM",
+  "experienceYears": 5,
+  "insuranceDetails": "Policy Number: INS123456, Provider: SafeDrive Insurance"
+}
+
+### Get Driver Requests With Info
+GET {{baseUrl}}/1/assigned-requests
+Authorization: Bearer <your-auth-token-here>
+
+### Get specific driver request
+GET {{baseUrl}}/1/assigned-request/64
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Update Driver Request Status
+PATCH {{baseUrl}}/request/61/status
+Content-Type: application/json
+Authorization: Bearer <your-auth-token-here>
+
+{
+  "driverId": 1,
+  "status": "accepted"
+}
+
+###

@@ -8,6 +8,7 @@ import { authenticateJWT } from "../middleware/auth";
 const router = express.Router();
 const driverService = new DriverService();
 
+// Remove the "/driver" prefix from all routes
 router.post("/register", async (req: Request, res: Response) => {
   try {
     const result = DriverSchema.safeParse(req.body);
@@ -27,7 +28,7 @@ router.post("/register", async (req: Request, res: Response) => {
 });
 
 router.get(
-  "/driver-assigned-requests/:driverId",
+  "/:driverId/assigned-requests",
   authenticateJWT,
   async (req, res) => {
     try {
@@ -48,7 +49,7 @@ router.get(
 );
 
 router.get(
-  "/driver-assigned-request/:driverId/:requestId",
+  "/:driverId/assigned-request/:requestId",
   authenticateJWT,
   async (req, res) => {
     try {
@@ -75,7 +76,7 @@ router.get(
   }
 );
 
-router.patch("/request/:requestId/status", async (req, res) => {
+router.patch("/request/:requestId/status", authenticateJWT, async (req, res) => {
   const { requestId } = req.params;
   const { driverId, status } = req.body;
   console.log("backend fired", driverId, status);
