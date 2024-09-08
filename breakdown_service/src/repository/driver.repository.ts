@@ -47,7 +47,6 @@ export interface IDriverRepository {
   ): Promise<(DriverRequest & { driver: Driver; user: UserProfile }) | null>;
   updateDriverRequestStatus(driverId: number, requestId: number, status: string): Promise<boolean>;
 }
-
 export const DriverRepository: IDriverRepository = {
   create,
   async findByEmail(email: string): Promise<Driver | null> {
@@ -172,3 +171,4 @@ export const DriverRepository: IDriverRepository = {
 
   // Add more methods as needed
 };
+
