@@ -14,6 +14,12 @@ export interface UserRequestInput {
   mobileNumber: string;
 }
 
+export interface UserRegisterInput {
+  username?: string;
+  email: string;
+  password?: string;
+}
+
 export const UserEditRequestSchema = Type.Object({
   id: Type.Integer(),
   email: Type.String(),

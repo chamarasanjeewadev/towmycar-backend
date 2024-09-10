@@ -13,6 +13,18 @@ Content-Type: application/json
     "mobileNumber": "1234567890"
 }
 
+
+### Create User
+POST http://localhost:{{port}}/user/register
+Content-Type: application/json
+
+{
+  "email": "test5@breakdown.com",
+  "username": "test5user",
+  "password": "test1234",
+    "userType": "user"
+}
+
 ###
 
 

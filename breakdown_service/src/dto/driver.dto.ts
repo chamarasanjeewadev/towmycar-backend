@@ -8,7 +8,7 @@ const requiredDriverSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters long" }),
 });
 
-const driverProfileSchema = z.object({
+export const driverProfileSchema = z.object({
   fullName: z.string().min(1, { message: "Please enter your full name" }),
   phoneNumber: z.string().min(1, { message: "Please enter your phone number" }),
   vehicleType: z.string().min(1, { message: "Please enter your vehicle type" }),
@@ -43,3 +43,12 @@ export const DriverSchema = requiredDriverSchema.extend({
 export type DriverInput = z.infer<typeof DriverSchema>;
 
 export type DriverProfileDtoType = z.infer<typeof driverProfileSchema>;
+
+export const driverProfileResponseSchema = driverProfileSchema.extend({
+  id: z.number(),
+  email: z.string().email(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type DriverProfileResponse = z.infer<typeof driverProfileResponseSchema>;

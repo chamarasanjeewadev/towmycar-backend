@@ -1,10 +1,10 @@
-import { DriverInput } from "../dto/driver.dto";
+import { DriverProfileDtoType } from "../dto/driver.dto";
 import { IDriverRepository, DriverRepository } from "../repository/driver.repository";
 import { createUser, addUserToGroup, adminSetUserPassword } from "./cognito.service";
 
 interface UpdateAssignmentData {
   status: string;
-  estimation?: number;
+  estimation?: string;
   description?: string;
 }
 
@@ -51,6 +51,10 @@ export class DriverService {
       data
     );
   }
+
+  async getDriverProfileByEmail(email: string) {
+    return DriverRepository.getDriverProfileByEmail(email);
+  }
 }
 
 export const registerDriver = async (
@@ -73,7 +77,7 @@ export const registerDriver = async (
 
 export const updateDriverProfile = async (
   driverId: number,
-  profileData: Partial<DriverInput>,
+  profileData: Partial<DriverProfileDtoType>,
   repository: IDriverRepository
 ) => {
   // Update the driver's profile with additional information
@@ -100,6 +104,10 @@ export const getDriverRequestWithInfo = async (
     driverId,
     requestId
   );
+};
+
+export const getDriverProfileByEmail = async (email: string) => {
+  return await DriverRepository.getDriverProfileByEmail(email);
 };
 
 // Add more functions as needed

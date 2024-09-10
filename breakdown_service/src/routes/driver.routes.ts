@@ -5,6 +5,8 @@ import { DriverRepository } from "../repository/driver.repository";
 import { authenticateJWT } from "../middleware/auth";
 import { DriverService } from "../service/driver.service";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
+import { driverProfileSchema } from "../dto/driver.dto";
+import { getDriverProfileByEmail } from "../service/driver.service";
 const router = express.Router();
 const driverService = new DriverService();
 
@@ -13,8 +15,8 @@ router.post(
   "/register",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { username, email, password } = req.body;
-      
+      const { username, email, password, userType } = req.body;
+      console.log("req.body......", req.body);
       if (!username || !email || !password) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -22,12 +24,26 @@ router.post(
           "Username, email, and password are required"
         );
       }
-
-      const newDriver = await registerDriver(username, email, password, DriverRepository);
-
-      res
-        .status(201)
-        .json({ message: "Driver registered successfully", driver: newDriver });
+      if (userType !== "driver") {
+        const newDriver = await registerDriver(
+          username,
+          email,
+          password,
+          DriverRepository
+        );
+        res
+          .status(201)
+          .json({
+            message: "Driver registered successfully",
+            driver: newDriver,
+          });
+      } else {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          401,
+          "Invalid user type for driver registration"
+        );
+      }
     } catch (error) {
       next(error);
     }
@@ -97,8 +113,8 @@ router.patch(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { driverId, requestId } = req.params;
-      const { status, estimation, description } = req.body;
-      console.log("backend fired", driverId, status, estimation, description);
+      const { status, estimation, explanation } = req.body;
+      console.log("backend fired", driverId, status, estimation, explanation);
       if (!driverId || !status) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -126,7 +142,7 @@ router.patch(
       const updateData = {
         status,
         ...(estimation !== undefined && { estimation }),
-        ...(description !== undefined && { description }),
+        ...(explanation !== undefined && { explanation }),
       };
 
       const updated = await driverService.updateBreakdownAssignment(
@@ -163,18 +179,55 @@ router.patch(
         );
       }
 
-      const result = DriverSchema.partial().safeParse(req.body);
+      const result = driverProfileSchema.partial().safeParse(req.body);
       if (!result.success) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid profile data"
+          "Invalid profile data: " + result.error.message
         );
       }
 
-      const updatedDriver = await updateDriverProfile(driverId, result.data, DriverRepository);
+      const updatedDriver = await updateDriverProfile(
+        driverId,
+        result.data,
+        DriverRepository
+      );
 
-      res.json({ message: "Driver profile updated successfully", driver: updatedDriver });
+      res.json({
+        message: "Driver profile updated successfully",
+        driver: updatedDriver,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  "/profile",
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const email = req.query.email as string;
+      if (!email) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Email is required"
+        );
+      }
+
+      const driverProfile = await getDriverProfileByEmail(email);
+      if (!driverProfile) {
+        throw new CustomError(
+          ERROR_CODES.RESOURCE_NOT_FOUND,
+          404,
+          "Driver profile not found"
+        );
+      }
+
+      res.json(driverProfile);
     } catch (error) {
       next(error);
     }

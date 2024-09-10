@@ -2,20 +2,17 @@ import { userProfile } from "db-schema";
 import { DB } from "database";
 import { UserRequestInput } from "../dto/userRequest.dto";
 // declare repository type
+import { UserRegisterInput } from "../dto/userRequest.dto";
 
 export type UserRepositoryType = {
-  createUser: (user: UserRequestInput) => Promise<number>;
+  createUser: (user: UserRegisterInput) => Promise<number>;
 };
 
-const createUser = async (user: UserRequestInput): Promise<number> => {
+const createUser = async (user: UserRegisterInput): Promise<number> => {
+  console.log("user......", user);
   const result = await DB.insert(userProfile)
     .values({
-      firstName: user.firstName,
-      lastName: user.lastName,
       email: user.email,
-      postcode: user.postcode,
-      vehicleRegistration: "", // Add a default value or get from user input
-      mobileNumber: "", // Add a default value or get from user input
     })
     .returning();
   const id = result[0].id;
