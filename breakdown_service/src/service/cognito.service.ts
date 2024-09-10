@@ -1,12 +1,12 @@
-import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminSetUserPasswordCommand } from "@aws-sdk/client-cognito-identity-provider";
 
 let client: CognitoIdentityProviderClient=new CognitoIdentityProviderClient({ region: "us-east-1" });;
 let userPoolId: string="us-east-1_LWZQeja8g";
 
-export const createUser = async (email: string, temporaryPassword: string) => {
+export const createUser = async (username: string, email: string, temporaryPassword: string) => {
   const command = new AdminCreateUserCommand({
     UserPoolId: userPoolId,
-    Username: email,
+    Username: username,
     UserAttributes: [
       { Name: "email", Value: email },
       { Name: "email_verified", Value: "true" },
@@ -34,6 +34,22 @@ export const addUserToGroup = async (email: string, groupName: string) => {
     await client.send(command);
   } catch (error) {
     console.error("Error adding user to group in Cognito:", error);
+    throw error;
+  }
+};
+
+export const adminSetUserPassword = async (username: string, password: string) => {
+  const command = new AdminSetUserPasswordCommand({
+    UserPoolId: userPoolId,
+    Username: username,
+    Password: password,
+    Permanent: true,
+  });
+
+  try {
+    await client.send(command);
+  } catch (error) {
+    console.error("Error setting permanent password for user in Cognito:", error);
     throw error;
   }
 };

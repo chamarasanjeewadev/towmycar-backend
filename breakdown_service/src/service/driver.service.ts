@@ -1,9 +1,13 @@
 import { DriverInput } from "../dto/driver.dto";
-import {
-  IDriverRepository,
-  DriverRepository,
-} from "../repository/driver.repository";
-import { createUser, addUserToGroup } from "./cognito.service";
+import { IDriverRepository, DriverRepository } from "../repository/driver.repository";
+import { createUser, addUserToGroup, adminSetUserPassword } from "./cognito.service";
+
+interface UpdateAssignmentData {
+  status: string;
+  estimation?: number;
+  description?: string;
+}
+
 export class DriverService {
   // async registerDriver(driverData: DriverInput, repository: IDriverRepository) {
   //   // You can add any business logic here before saving to the database
@@ -36,28 +40,45 @@ export class DriverService {
     );
   }
 
-  async updateDriverRequestStatus(
+  async updateBreakdownAssignment(
     driverId: number,
     requestId: number,
-    status: string
+    data: UpdateAssignmentData
   ) {
-    return DriverRepository.updateDriverRequestStatus(
+    return DriverRepository.updatebreakdownAssignment(
       driverId,
       requestId,
-      status
+      data
     );
   }
 }
 
 export const registerDriver = async (
-  driverData: DriverInput,
+  username: string,
+  email: string,
+  password: string,
   repository: IDriverRepository
 ) => {
-  // You can add any business logic here before saving to the database
-  const newDriver = await repository.create(driverData);
-  await createUser(driverData.email, "test1234");
-  await addUserToGroup(driverData.email, "driver");
+  // Create a basic driver record without the password
+  const basicDriverData = { username, email };
+
+  // Create user in Cognito and then update database
+  await createUser(username, email, password);
+  await adminSetUserPassword(email, password);
+  await addUserToGroup(email, "driver");
+  const newDriver = await repository.create(basicDriverData);
+
   return newDriver;
+};
+
+export const updateDriverProfile = async (
+  driverId: number,
+  profileData: Partial<DriverInput>,
+  repository: IDriverRepository
+) => {
+  // Update the driver's profile with additional information
+  const updatedDriver = await repository.update(driverId, profileData);
+  return updatedDriver;
 };
 
 export const getDriverByEmail = async (

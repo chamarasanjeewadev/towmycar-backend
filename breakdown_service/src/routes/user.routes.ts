@@ -22,7 +22,7 @@ const authMiddleware = async (
 };
 
 router.post(
-  "/user",
+  "/register",
   authMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -4,31 +4,26 @@ import {
   userProfile,
   breakdownRequest,
   driver,
-  driverRequest,
+  breakdownAssignment,
   UserProfile,
   BreakdownRequest,
   Driver,
-  DriverRequest,
+  BreakdownAssignment,
 } from "database";
 import { DriverInput } from "../dto/driver.dto";
 
-const create = async (data: DriverInput): Promise<number> => {
+interface UpdateAssignmentData {
+  status: string;
+  estimation?: number;
+  description?: string;
+}
+
+const create = async (data: Pick<DriverInput, 'username' | 'email'>): Promise<number> => {
   const driverResult = await DB.insert(driver)
     .values({
-      fullName: data.fullName,
+      // username: data.username,
       email: data.email,
-      phoneNumber: data.phoneNumber,
-      vehicleType: data.vehicleType,
-      vehicleRegistration: data.vehicleRegistration,
-      licenseNumber: data.licenseNumber, // Fixed typo: 'licenseNumbber' to 'licenseNumber'
-      serviceRadius: data.serviceRadius,
-      primaryLocation: {
-        x: data.primaryLocation.longitude,
-        y: data.primaryLocation.latitude,
-      }, // Assuming your schema accepts this object structure
-      workingHours: data.workingHours,
-      experienceYears: data.experienceYears,
-      insuranceDetails: data.insuranceDetails,
+      // Other fields will be set to their default values or null
     })
     .returning({ id: driver.id });
 
@@ -36,17 +31,25 @@ const create = async (data: DriverInput): Promise<number> => {
 };
 
 export interface IDriverRepository {
-  create(driverData: DriverInput): Promise<number>;
+  create(driverData: Pick<DriverInput, 'username' | 'email'>): Promise<number>;
   findByEmail(email: string): Promise<Driver | null>;
   getDriverRequestsWithInfo(
     driverId: number
-  ): Promise<(DriverRequest & { driver: Driver; user: UserProfile })[]>;
+  ): Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]>;
   getSpecificDriverRequestWithInfo(
     driverId: number,
     requestId: number
-  ): Promise<(DriverRequest & { driver: Driver; user: UserProfile }) | null>;
-  updateDriverRequestStatus(driverId: number, requestId: number, status: string): Promise<boolean>;
+  ): Promise<
+    (BreakdownAssignment & { driver: Driver; user: UserProfile }) | null
+  >;
+  updatebreakdownAssignment(
+    driverId: number,
+    requestId: number,
+    data: UpdateAssignmentData
+  ): Promise<boolean>;
+  update(id: number, data: Partial<DriverInput>): Promise<Driver>;
 }
+
 export const DriverRepository: IDriverRepository = {
   create,
   async findByEmail(email: string): Promise<Driver | null> {
@@ -55,16 +58,16 @@ export const DriverRepository: IDriverRepository = {
       .where(eq(driver.email, email));
     return foundDriver || null;
   },
-//@ts-ignore
+  //@ts-ignore
   async getDriverRequestsWithInfo(
     driverId: number
-  ): Promise<(DriverRequest & { driver: Driver; user: UserProfile })[]> {
+  ): Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]> {
     const result = await DB.select({
       driverRequest: {
-        id: driverRequest.id,
-        requestId: driverRequest.requestId,
-        status: driverRequest.status,
-        updatedAt: driverRequest.updatedAt,
+        id: breakdownAssignment.id,
+        requestId: breakdownAssignment.requestId,
+        status: breakdownAssignment.status,
+        updatedAt: breakdownAssignment.updatedAt,
       },
       driver: {
         id: driver.id,
@@ -76,17 +79,20 @@ export const DriverRepository: IDriverRepository = {
         email: userProfile.email,
       },
     })
-      .from(driverRequest)
-      .innerJoin(driver, eq(driverRequest.driverId, driver.id))
+      .from(breakdownAssignment)
+      .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .innerJoin(
         breakdownRequest, // assuming breakdownRequest might have geometry fields
-        eq(driverRequest.requestId, breakdownRequest.id)
+        eq(breakdownAssignment.requestId, breakdownRequest.id)
       )
       .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
-      .where(eq(driverRequest.driverId, driverId))
-      .orderBy(desc(driverRequest.updatedAt));
+      .where(eq(breakdownAssignment.driverId, driverId))
+      .orderBy(desc(breakdownAssignment.updatedAt));
     console.log(result);
-    return result as unknown as (DriverRequest & { driver: Driver; user: UserProfile })[];
+    return result as unknown as (BreakdownAssignment & {
+      driver: Driver;
+      user: UserProfile;
+    })[];
 
     //   return result.map(({ driverRequest, driver, user }) => ({
     //   ...driverRequest,
@@ -98,15 +104,17 @@ export const DriverRepository: IDriverRepository = {
   async getSpecificDriverRequestWithInfo(
     driverId: number,
     requestId: number
-  ): Promise<(DriverRequest & { driver: Driver; user: UserProfile }) | null> {
+  ): Promise<
+    (BreakdownAssignment & { driver: Driver; user: UserProfile }) | null
+  > {
     const [result] = await DB.select({
       driverRequest: {
-        id: driverRequest.id,
-        requestId: driverRequest.requestId,
-        status: driverRequest.status,
-        updatedAt: driverRequest.updatedAt,
-        driverId: driverRequest.driverId,
-        assignedAt: driverRequest.assignedAt,
+        id: breakdownAssignment.id,
+        requestId: breakdownAssignment.requestId,
+        status: breakdownAssignment.status,
+        updatedAt: breakdownAssignment.updatedAt,
+        driverId: breakdownAssignment.driverId,
+        assignedAt: breakdownAssignment.assignedAt,
       },
       driver: {
         id: driver.id,
@@ -136,14 +144,17 @@ export const DriverRepository: IDriverRepository = {
         // updatedAt: userProfile.createdAt,
       },
     })
-      .from(driverRequest)
-      .innerJoin(driver, eq(driverRequest.driverId, driver.id))
-      .innerJoin(breakdownRequest, eq(driverRequest.requestId, breakdownRequest.id))
+      .from(breakdownAssignment)
+      .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+      .innerJoin(
+        breakdownRequest,
+        eq(breakdownAssignment.requestId, breakdownRequest.id)
+      )
       .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
       .where(
         and(
-          eq(driverRequest.driverId, driverId),
-          eq(driverRequest.requestId, requestId)
+          eq(breakdownAssignment.driverId, driverId),
+          eq(breakdownAssignment.requestId, requestId)
         )
       );
 
@@ -153,22 +164,41 @@ export const DriverRepository: IDriverRepository = {
       ...result.driverRequest,
       driver: result.driver,
       user: result.user,
-    } as DriverRequest & { driver: Driver; user: UserProfile };
+    } as BreakdownAssignment & { driver: Driver; user: UserProfile };
   },
 
-  async updateDriverRequestStatus(driverId: number, requestId: number, status: string): Promise<boolean> {
-    const result = await DB.update(driverRequest)
-      .set({ status })
+  async updatebreakdownAssignment(
+    driverId: number,
+    requestId: number,
+    data: UpdateAssignmentData
+  ): Promise<boolean> {
+    const updateData: Partial<typeof breakdownAssignment.$inferInsert> = {
+      status: data.status,
+      ...(data.estimation !== undefined && {
+        estimatedArrivalTime: data.estimation,
+      }),
+      ...(data.description !== undefined && { description: data.description }),
+    };
+
+    const result = await DB.update(breakdownAssignment)
+      .set(updateData)
       .where(
         and(
-          eq(driverRequest.driverId, driverId),
-          eq(driverRequest.requestId, requestId)
+          eq(breakdownAssignment.driverId, driverId),
+          eq(breakdownAssignment.requestId, requestId)
         )
       );
-    
+
     return (result?.rowCount ?? 0) > 0;
+  },
+
+  async update(id: number, data: Partial<DriverInput>): Promise<Driver> {
+    const updatedDriver = await DB.update(driver)
+      .set(data)
+      .where(eq(driver.id, id))
+      .returning();
+    return updatedDriver[0];
   },
 
   // Add more methods as needed
 };
-

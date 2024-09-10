@@ -1,13 +1,23 @@
 @port = 9001
 @baseUrl = http://localhost:{{port}}/driver
 
-### Register Driver (if not already present)
+### Register Driver (basic information)
 POST {{baseUrl}}/register
 Content-Type: application/json
 
 {
+  "email": "test3@breakdown.com",
+  "username": "test2user",
+  "password": "test1234"
+}
+
+### Update Driver Profile
+PATCH {{baseUrl}}/1/profile
+Content-Type: application/json
+Authorization: Bearer <your-auth-token-here>
+
+{
   "fullName": "Alice Johnson",
-  "email": "alice.johnson@breakdown.com",
   "phoneNumber": "9876543210",
   "vehicleType": "Tow Truck",
   "vehicleRegistration": "TOW789",
@@ -37,7 +47,20 @@ Authorization: Bearer <your-auth-token-here>
 
 {
   "driverId": 1,
-  "status": "accepted"
+  "status": "accepted",
+  "estimation": 50.00,
+  "description": "On my way to the breakdown location"
+}
+
+### Update Driver's Breakdown Request Status
+PATCH {{baseUrl}}/1/assignment-update/61
+Content-Type: application/json
+Authorization: Bearer <your-auth-token-here>
+
+{
+  "status": "accepted",
+  "estimation": 50.00,
+  "description": "On my way to the breakdown location"
 }
 
 ###

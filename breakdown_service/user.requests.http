@@ -1,7 +1,7 @@
 @port = 9001
 
 ### Create User
-POST http://localhost:{{port}}/user
+POST http://localhost:{{port}}/user/user
 Content-Type: application/json
 
 {
