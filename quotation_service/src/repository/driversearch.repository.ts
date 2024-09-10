@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { DB } from "database";
-import { driver, driverRequest } from "database";
+import { driver, breakdownAssignment } from "database";
 import { sql, eq, and } from "drizzle-orm";
 
 // Define a type for the nearby driver data
@@ -53,11 +53,11 @@ const findNearbyDrivers = async (
         )`
       )
       .orderBy(sql`distance`);
-console.log("nearbyDrivers",nearbyDrivers);
+    console.log("nearbyDrivers", nearbyDrivers);
     // Use a type assertion here
     return nearbyDrivers as unknown as NearbyDriver[];
   } catch (error) {
-    console.error('Error in findNearbyDrivers:', error);
+    console.error("Error in findNearbyDrivers:", error);
     throw error; // Re-throw the error after logging
   }
 };
@@ -69,32 +69,30 @@ const updateDriverRequests = async (
   const now = new Date();
 
   try {
-    console.log("nearbyDrivers, before transaction",nearbyDrivers);
+    console.log("nearbyDrivers, before transaction", nearbyDrivers);
     await DB.transaction(async tx => {
-      await tx
-        .insert(driverRequest)
-        .values(
-          nearbyDrivers.map(driver => ({
-            requestId,
-            driverId: driver.id,
-            status: "assigned",
-            assignedAt: now,
-            createdAt: now,
-            updatedAt: now,
-          }))
-        )
-        // .onConflictDoUpdate({
-        //   target: [driverRequest.requestId, driverRequest.driverId],
-        //   set: {
-        //     status: "assigned",
-        //     assignedAt: now,
-        //     updatedAt: now,
-        //   },
-        // });
+      await tx.insert(breakdownAssignment).values(
+        nearbyDrivers.map(driver => ({
+          requestId,
+          driverId: driver.id,
+          status: "assigned",
+          assignedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        }))
+      );
+      // .onConflictDoUpdate({
+      //   target: [driverRequest.requestId, driverRequest.driverId],
+      //   set: {
+      //     status: "assigned",
+      //     assignedAt: now,
+      //     updatedAt: now,
+      //   },
+      // });
     });
-    console.log("nearbyDrivers, after transaction",nearbyDrivers);
+    console.log("nearbyDrivers, after transaction", nearbyDrivers);
   } catch (error) {
-    console.error('Error in updateDriverRequests:', error);
+    console.error("Error in updateDriverRequests:", error);
     throw error; // Re-throw the error after logging
   }
 };
