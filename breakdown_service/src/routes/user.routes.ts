@@ -3,6 +3,7 @@ import * as service from "../service/user.service";
 import * as repository from "../repository/user.repository";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { UserRequestInput, UserRequestSchema } from "../dto/userRequest.dto";
+import { authenticateJWT } from "../middleware/auth";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -46,5 +47,35 @@ router.post(
 );
 
 // ... other existing routes ...
+
+router.get(
+  "/profile",
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const email = req.query.email as string;
+      if (!email) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Email is required"
+        );
+      }
+
+      const userProfile = await service.getUserProfileByEmail(email, repo);
+      if (!userProfile) {
+        throw new CustomError(
+          ERROR_CODES.RESOURCE_NOT_FOUND,
+          404,
+          "User profile not found"
+        );
+      }
+
+      res.json(userProfile);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

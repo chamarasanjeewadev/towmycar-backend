@@ -29,7 +29,8 @@ export type BreakdownRequestRepositoryType = {
   >;
   getPaginatedBreakdownRequestsWithUserDetails: (
     page: number,
-    pageSize: number
+    pageSize: number,
+    userId?: number
   ) => Promise<{
     requests: BreakdownRequestWithUserDetails[];
     totalCount: number;
@@ -76,14 +77,15 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
-  pageSize: number
+  pageSize: number,
+  userId?: number
 ): Promise<{
   requests: BreakdownRequestWithUserDetails[];
   totalCount: number;
 }> => {
   const offset = (page - 1) * pageSize;
 
-  const requests = await DB.select({
+  const baseQuery = DB.select({
     id: breakdownRequest.id,
     requestType: breakdownRequest.requestType,
     location: breakdownRequest.locationAddress,
@@ -95,17 +97,26 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     userEmail: userProfile.email,
   })
     .from(breakdownRequest)
-    .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId))
-    .limit(pageSize)
-    .offset(offset);
+    .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId));
 
-  const [{ count }] = await DB.select({
-    count: sql<number>`count(*)`,
+  const requests = userId
+    ? await baseQuery
+        .where(eq(breakdownRequest.userId, userId))
+        .limit(pageSize)
+        .offset(offset)
+    : await baseQuery.limit(pageSize).offset(offset);
+
+  const countQuery = DB.select({
+    count: sql<number>`cast(count(*) as integer)`,
   }).from(breakdownRequest);
+
+  const [{ count }] = userId
+    ? await countQuery.where(eq(breakdownRequest.userId, userId))
+    : await countQuery;
 
   return {
     requests,
-    totalCount: Number(count),
+    totalCount: count,
   };
 };
 

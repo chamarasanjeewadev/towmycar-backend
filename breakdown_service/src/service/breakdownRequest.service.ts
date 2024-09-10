@@ -3,10 +3,10 @@ import {
   BreakdownRequestInput,
   BreakdownRequestWithUserDetails,
 } from "../dto/breakdownRequest.dto";
-import { CombinedBreakdownRequestInput } from "../dto/combinedBreakdownRequest.dto";
 import * as userRepository from "../repository/user.repository";
 import { snsService } from "../services/sns.service";
 import { BreakdownRequestRepositoryType } from "../repository/breakdownRequest.repository";
+import { AnyARecord } from "dns";
 
 export const createAndNotifyBreakdownRequest = async (
   input: BreakdownRequestInput,
@@ -36,7 +36,7 @@ export const createAndNotifyBreakdownRequest = async (
 };
 
 export const createUserAndBreakdownRequest = async (
-  combinedInput: CombinedBreakdownRequestInput,
+  combinedInput: any,
   repo: BreakdownRequestRepositoryType
 ) => {
   try {
@@ -109,7 +109,8 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
-  pageSize: number
+  pageSize: number,
+  userId?: number
 ): Promise<{
   breakdownRequests: BreakdownRequestWithUserDetails[];
   totalCount: number;
@@ -117,9 +118,10 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   const { requests, totalCount } =
     await BreakdownRequestRepository.getPaginatedBreakdownRequestsWithUserDetails(
       page,
-      pageSize
+      pageSize,
+      userId
     );
-  
+
   return {
     breakdownRequests: requests.map(request => ({
       ...request,

@@ -31,3 +31,21 @@ export const CreateUser = async (
     throw error;
   }
 };
+
+export const getUserProfileByEmail = async (
+  email: string,
+  repo: UserRepositoryType
+) => {
+  try {
+    const userProfile = await repo.getUserProfileByEmail(email);
+    if (!userProfile) {
+      return null;
+    }
+    // Exclude sensitive information if needed
+    const { password, ...safeUserProfile } = userProfile;
+    return safeUserProfile;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+};

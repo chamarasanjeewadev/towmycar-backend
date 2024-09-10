@@ -67,7 +67,8 @@ router.post(
 
       // Call service method to handle combined request
       const response = await service2.CreateCombinedBreakdownRequest(
-        result.data
+        result.data as any,
+        req.body.userId
       );
       console.log(response);
       return res.status(200).json(response);
@@ -78,20 +79,22 @@ router.post(
   }
 );
 
-// New route for getting all breakdown requests with user details (paginated)
-router.get("/list", async (req: Request, res: Response) => {
+// New route for getting breakdown requests by user ID (paginated)
+router.get("/:id/list", async (req: Request, res: Response) => {
   try {
     const querySchema = z.object({
       page: z.string().regex(/^\d+$/).transform(Number).default("1"),
       pageSize: z.string().regex(/^\d+$/).transform(Number).default("10"),
     });
 
+    const { id } = req.params;
     const { page, pageSize } = querySchema.parse(req.query);
 
     const { breakdownRequests, totalCount } =
       await service.BreakdownRequestService.getPaginatedBreakdownRequestsWithUserDetails(
         page,
-        pageSize
+        pageSize,
+        +id
       );
 
     res.status(200).json({
@@ -105,6 +108,9 @@ router.get("/list", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching breakdown requests:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
