@@ -1,6 +1,14 @@
-import { DriverProfileDtoType } from "../dto/driver.dto";
-import { IDriverRepository, DriverRepository } from "../repository/driver.repository";
-import { createUser, addUserToGroup, adminSetUserPassword } from "./cognito.service";
+import { DriverProfileDtoType } from "../../dto/driver.dto";
+import {
+  IDriverRepository,
+  DriverRepository,
+} from "../../repository/driver.repository";
+import {
+  createTempUserInCognito,
+  addUserToGroup,
+  adminSetUserPassword,
+} from "../utils/cognito.service";
+import { UserGroup } from "../../enums";
 
 interface UpdateAssignmentData {
   status: string;
@@ -67,9 +75,9 @@ export const registerDriver = async (
   const basicDriverData = { username, email };
 
   // Create user in Cognito and then update database
-  await createUser(username, email, password);
+  await createTempUserInCognito({ email});
   await adminSetUserPassword(email, password);
-  await addUserToGroup(email, "driver");
+  await addUserToGroup(email, UserGroup.DRIVER);
   const newDriver = await repository.create(basicDriverData);
 
   return newDriver;

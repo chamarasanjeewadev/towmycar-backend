@@ -1,9 +1,10 @@
-import { BreakdownRequestInput } from "./../dto/breakdownRequest.dto";
-import { CombinedBreakdownRequestInput } from "../dto/combinedBreakdownRequest.dto";
-import * as repository from "../repository/breakdownRequest.repository";
-import * as userRepository from "../repository/user.repository";
-import * as snsService from "./utils/sns.service";
-import * as cognitoService from "../service/cognito.service";
+import { BreakdownRequestInput } from "../../dto/breakdownRequest.dto";
+import { CombinedBreakdownRequestInput } from "../../dto/combinedBreakdownRequest.dto";
+import * as repository from "../../repository/breakdownRequest.repository";
+import * as userRepository from "../../repository/user.repository";
+import * as snsService from "../utils/sns.service";
+import * as cognitoService from "../utils/cognito.service";
+import { UserGroup } from "../../enums";
 
 export const CreateBreakdownRequest = async (data: BreakdownRequestInput) => {
   // Call to repository function to save the data and send SNS notification
@@ -36,7 +37,10 @@ export const CreateCombinedBreakdownRequest = async (
         userId = await userRepository.UserRepository.getOrCreateUser(userData);
       } else {
         // If user doesn't exist in Cognito, create user in Cognito and then in your DB
-        await cognitoService.createUserInCognito(userData);
+        await cognitoService.createTempUserInCognito({
+          email: userData.email
+        });
+        await cognitoService.addUserToGroup(userData.email, UserGroup.USER);
         userId = await userRepository.UserRepository.getOrCreateUser(userData);
       }
     }

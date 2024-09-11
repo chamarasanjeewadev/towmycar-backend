@@ -1,11 +1,11 @@
-import { BreakdownRequestRepository } from "../repository/breakdownRequest.repository";
+import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import {
   BreakdownRequestInput,
   BreakdownRequestWithUserDetails,
-} from "../dto/breakdownRequest.dto";
-import * as userRepository from "../repository/user.repository";
-import { snsService } from "../services/sns.service";
-import { BreakdownRequestRepositoryType } from "../repository/breakdownRequest.repository";
+} from "../../dto/breakdownRequest.dto";
+import * as userRepository from "../../repository/user.repository";
+import { snsService } from "../../services/sns.service";
+import { BreakdownRequestRepositoryType } from "../../repository/breakdownRequest.repository";
 import { AnyARecord } from "dns";
 
 export const createAndNotifyBreakdownRequest = async (
@@ -106,11 +106,23 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
       "Unknown",
   }));
 };
+const getBreakdownAssignmentsByUserIdAndRequestId = async (
+  userId: number,
+  requestId?: number
+) => {
+  const assignments =
+    await BreakdownRequestRepository.getBreakdownAssignmentsByUserIdAndRequestId(
+      userId,
+      requestId
+    );
+  return assignments;
+};
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
   pageSize: number,
-  userId?: number
+  userId?: number,
+  requestId?: number
 ): Promise<{
   breakdownRequests: BreakdownRequestWithUserDetails[];
   totalCount: number;
@@ -119,7 +131,8 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     await BreakdownRequestRepository.getPaginatedBreakdownRequestsWithUserDetails(
       page,
       pageSize,
-      userId
+      userId,
+      requestId
     );
 
   return {
@@ -138,4 +151,5 @@ export const BreakdownRequestService = {
   createUserAndBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
+  getBreakdownAssignmentsByUserIdAndRequestId,
 };

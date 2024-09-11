@@ -1,12 +1,15 @@
 import express, { Request, Response, NextFunction } from "express";
 import { DriverSchema } from "../dto/driver.dto";
-import { registerDriver, updateDriverProfile } from "../service/driver.service";
+import {
+  registerDriver,
+  updateDriverProfile,
+} from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
 import { authenticateJWT } from "../middleware/auth";
-import { DriverService } from "../service/driver.service";
+import { DriverService } from "../service/driver/driver.service";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { driverProfileSchema } from "../dto/driver.dto";
-import { getDriverProfileByEmail } from "../service/driver.service";
+import { getDriverProfileByEmail } from "../service/driver/driver.service";
 const router = express.Router();
 const driverService = new DriverService();
 
@@ -31,12 +34,10 @@ router.post(
           password,
           DriverRepository
         );
-        res
-          .status(201)
-          .json({
-            message: "Driver registered successfully",
-            driver: newDriver,
-          });
+        res.status(201).json({
+          message: "Driver registered successfully",
+          driver: newDriver,
+        });
       } else {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,

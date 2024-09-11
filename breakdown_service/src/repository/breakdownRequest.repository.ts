@@ -4,9 +4,13 @@ import {
   breakdownRequest,
   UserProfile,
   BreakdownRequest,
+  breakdownAssignment,
+  driver,
+  Driver,
+  BreakdownAssignment,
 } from "database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -30,11 +34,17 @@ export type BreakdownRequestRepositoryType = {
   getPaginatedBreakdownRequestsWithUserDetails: (
     page: number,
     pageSize: number,
-    userId?: number
+    userId?: number,
+    requestId?: number
   ) => Promise<{
     requests: BreakdownRequestWithUserDetails[];
     totalCount: number;
   }>;
+
+ getBreakdownAssignmentsByUserIdAndRequestId : (
+    userId: number,
+    requestId?: number
+  )=> Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]>;
 };
 
 const saveBreakdownRequest = async (
@@ -78,11 +88,13 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
   pageSize: number,
-  userId?: number
+  userId?: number,
+  requestId?: number
 ): Promise<{
   requests: BreakdownRequestWithUserDetails[];
   totalCount: number;
 }> => {
+  console.log("hit repo..", userId, requestId);
   const offset = (page - 1) * pageSize;
 
   const baseQuery = DB.select({
@@ -99,20 +111,43 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     .from(breakdownRequest)
     .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId));
 
-  const requests = userId
-    ? await baseQuery
-        .where(eq(breakdownRequest.userId, userId))
-        .limit(pageSize)
-        .offset(offset)
-    : await baseQuery.limit(pageSize).offset(offset);
+  let filteredQuery = baseQuery;
+
+  if (userId) {
+    // @ts-ignore
+    filteredQuery = filteredQuery.where(eq(breakdownRequest.userId, userId));
+  }
+
+  if (requestId) {
+    // @ts-ignore
+    filteredQuery = filteredQuery.where(eq(breakdownRequest.id, requestId));
+  }
+
+  const requests = await filteredQuery.limit(pageSize).offset(offset);
 
   const countQuery = DB.select({
     count: sql<number>`cast(count(*) as integer)`,
   }).from(breakdownRequest);
 
-  const [{ count }] = userId
-    ? await countQuery.where(eq(breakdownRequest.userId, userId))
-    : await countQuery;
+  let filteredCountQuery = countQuery;
+
+  if (userId) {
+    // @ts-ignore
+    filteredCountQuery = filteredCountQuery.where(
+      eq(breakdownRequest.userId, userId)
+    );
+    // @ts-ignore
+    const [{ count }] = await filteredCountQuery;
+  }
+
+  if (requestId) {
+    // @ts-ignore
+    filteredCountQuery = filteredCountQuery.where(
+      eq(breakdownRequest.id, requestId)
+    );
+  }
+
+  const [{ count }] = await filteredCountQuery;
 
   return {
     requests,
@@ -120,8 +155,58 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   };
 };
 
+const getBreakdownAssignmentsByUserIdAndRequestId = async (
+  userId: number,
+  requestId?: number
+): Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]> => {
+  let query = DB.select({
+    assignment: {
+      id: breakdownAssignment.id,
+      requestId: breakdownAssignment.requestId,
+      status: breakdownAssignment.status,
+      estimation: breakdownAssignment.estimation,
+      explanation: breakdownAssignment.explanation,
+      updatedAt: breakdownAssignment.updatedAt,
+    },
+    driver: {
+      id: driver.id,
+      email: driver.email,
+      fullName: driver.fullName,
+      phoneNumber: driver.phoneNumber,
+    },
+    user: {
+      id: userProfile.id,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      email: userProfile.email,
+    },
+  })
+    .from(breakdownAssignment)
+    .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+    .innerJoin(
+      breakdownRequest,
+      eq(breakdownAssignment.requestId, breakdownRequest.id)
+    )
+    .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
+    .where(eq(userProfile.id, userId));
+
+  if (requestId) {
+    // @ts-ignore
+    query = query.where(eq(breakdownRequest.id, requestId));
+  }
+
+  const result = await query.orderBy(desc(breakdownAssignment.updatedAt));
+
+  return result as unknown as (BreakdownAssignment & {
+    driver: Driver;
+    user: UserProfile;
+  })[];
+};
+
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
+  
+  getBreakdownAssignmentsByUserIdAndRequestId,
 };

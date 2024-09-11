@@ -1,8 +1,8 @@
 import express, { NextFunction, Request, Response } from "express";
-import * as service from "../service/user.service";
+import * as service from "../service/user/user.service";
 import * as repository from "../repository/user.repository";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
-import { UserRequestInput, UserRequestSchema } from "../dto/userRequest.dto";
+import { requiredUserSchema, UserInput } from "../dto/user.dto";
 import { authenticateJWT } from "../middleware/auth";
 
 const router = express.Router();
@@ -12,16 +12,18 @@ router.post(
   "/register",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { username, email, password, userType } = req.body;
-      console.log("req.body......", req.body);
-
-      if (!username || !email || !password) {
+      const result = requiredUserSchema.safeParse(req.body);
+      console.log("result...", result);
+      // TODO: do this in middlware
+      if (!result.success) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "First name, last name, email, and password are required"
+          result.error.issues.map(issue => issue.message).join(", ")
         );
       }
+
+      const { username, email, password, userType } = result.data;
 
       if (userType === "user") {
         const newUser = await service.CreateUser(

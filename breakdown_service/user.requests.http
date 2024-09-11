@@ -67,3 +67,11 @@ GET http://localhost:{{port}}/list?page=1&limit=10
 Content-Type: application/json
 
 ### Register Driver (if not already present)
+
+### Get user's breakdown assignments
+GET http://localhost:{{port}}/user/1/assignments
+Content-Type: application/json
+
+### Get user's specific breakdown assignment
+GET http://localhost:{{port}}/user/11/assignments/8
+Content-Type: application/json

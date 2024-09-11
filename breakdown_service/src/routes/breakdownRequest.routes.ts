@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
-import * as service from "../service/breakdownRequest.service";
-import * as service2 from "../service/breakdown.service";
+import * as service from "../service/user/userBreakdownRequest.service";
+import * as service2 from "../service/driver/breakdown.service";
 import * as repository from "./../repository/breakdownRequest.repository";
 import {
   BreakdownRequestInput,
@@ -63,14 +63,11 @@ router.post(
         return res.status(400).json({ error: result.error.format() });
       }
 
-      console.log("Processing combined breakdown request", req.body);
-
       // Call service method to handle combined request
       const response = await service2.CreateCombinedBreakdownRequest(
         result.data as any,
         req.body.userId
       );
-      console.log(response);
       return res.status(200).json(response);
     } catch (error) {
       console.error("Error processing combined breakdown request:", error);
@@ -114,5 +111,37 @@ router.get("/:id/list", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// New route for getting user's breakdown assignments
+router.get(
+  "/:userId/assignments/:requestId?",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      const requestId = req.params.requestId
+        ? parseInt(req.params.requestId, 10)
+        : undefined;
+
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      if (requestId !== undefined && isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+
+      console.log("req.params", req.params);
+      const assignments =
+        await service.BreakdownRequestService.getBreakdownAssignmentsByUserIdAndRequestId(
+          userId,
+          requestId
+        );
+      res.status(200).json(assignments);
+    } catch (error) {
+      console.error("Error fetching user's breakdown assignments:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
 export default router;
