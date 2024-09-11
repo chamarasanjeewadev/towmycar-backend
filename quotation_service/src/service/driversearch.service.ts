@@ -26,6 +26,8 @@ const findAndUpdateNearbyDrivers = async (
   // Pass the full nearbyDrivers array to updateDriverRequests
   await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
   console.log("nearbyDrivers", nearbyDrivers);
+  // TODO: should send emails
+  console.log("should be requestId", requestId);
   return nearbyDrivers;
 };
 
