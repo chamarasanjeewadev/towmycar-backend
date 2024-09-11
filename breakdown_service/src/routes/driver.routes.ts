@@ -27,7 +27,7 @@ router.post(
           "Username, email, and password are required"
         );
       }
-      if (userType !== "driver") {
+      if (userType === "driver") {
         const newDriver = await registerDriver(
           username,
           email,
