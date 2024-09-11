@@ -10,7 +10,7 @@ import {
   BreakdownAssignment,
 } from "database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, and } from "drizzle-orm";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -41,10 +41,19 @@ export type BreakdownRequestRepositoryType = {
     totalCount: number;
   }>;
 
- getBreakdownAssignmentsByUserIdAndRequestId : (
+  getBreakdownAssignmentsByUserIdAndRequestId: (
     userId: number,
     requestId?: number
-  )=> Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]>;
+  ) => Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]>;
+  updateUserStatusInBreakdownAssignment: (
+    userId: number,
+    assignmentId: number,
+    userStatus: "accepted" | "rejected"
+  ) => Promise<boolean>;
+  updateDriverStatusInBreakdownAssignment: (
+    assignmentId: number,
+    userStatus: "accepted" | "rejected"
+  ) => Promise<boolean>;
 };
 
 const saveBreakdownRequest = async (
@@ -164,6 +173,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
       id: breakdownAssignment.id,
       requestId: breakdownAssignment.requestId,
       status: breakdownAssignment.status,
+      userStatus: breakdownAssignment.userStatus,
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
       updatedAt: breakdownAssignment.updatedAt,
@@ -203,10 +213,48 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
   })[];
 };
 
+const updateUserStatusInBreakdownAssignment = async (
+  userId: number,
+  assignmentId: number,
+  userStatus: "accepted" | "rejected"
+): Promise<boolean> => {
+  const result = await DB.update(breakdownAssignment)
+    .set({ userStatus })
+    .where(
+      and(
+        eq(breakdownAssignment.id, assignmentId),
+        eq(
+          breakdownAssignment.requestId,
+          DB.select({ id: breakdownRequest.id })
+            .from(breakdownRequest)
+            .where(eq(breakdownRequest.userId, userId))
+            .limit(1)
+        )
+      )
+    )
+    .returning({ id: breakdownAssignment.id });
+
+  return result.length > 0;
+};
+
+const updateDriverStatusInBreakdownAssignment = async (
+  assignmentId: number,
+  userStatus: "accepted" | "rejected"
+): Promise<boolean> => {
+  const result = await DB.update(breakdownAssignment)
+    .set({ userStatus })
+    .where(eq(breakdownAssignment.id, assignmentId))
+    .returning({ id: breakdownAssignment.id });
+
+  return result.length > 0;
+};
+
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
-  
+
   getBreakdownAssignmentsByUserIdAndRequestId,
+  updateUserStatusInBreakdownAssignment,
+  updateDriverStatusInBreakdownAssignment,
 };

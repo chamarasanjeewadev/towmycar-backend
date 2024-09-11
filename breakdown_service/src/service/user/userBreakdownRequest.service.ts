@@ -146,10 +146,21 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   };
 };
 
+const updateDriverStatusInBreakdownAssignment = async (
+  assignmentId: number,
+  userStatus: "accepted" | "rejected"
+): Promise<boolean> => {
+  return BreakdownRequestRepository.updateDriverStatusInBreakdownAssignment(
+    assignmentId,
+    userStatus
+  );
+};
+
 export const BreakdownRequestService = {
   createAndNotifyBreakdownRequest,
   createUserAndBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,
+  updateDriverStatusInBreakdownAssignment,
 };

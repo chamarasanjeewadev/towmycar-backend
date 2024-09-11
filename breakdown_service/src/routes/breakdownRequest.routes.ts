@@ -144,4 +144,39 @@ router.get(
   }
 );
 
+// New route for updating user status in breakdown assignment
+router.patch(
+  "/assignment/:assignmentId/status",
+  async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        assignmentId: z.string().regex(/^\d+$/).transform(Number),
+        userStatus: z.enum(["accepted", "rejected"]),
+      });
+
+      const { assignmentId } = schema.parse({
+        ...req.params,
+        ...req.body,
+      });
+
+      const updated = await service.BreakdownRequestService.updateDriverStatusInBreakdownAssignment(
+        assignmentId,
+        req.body.userStatus
+      );
+
+      if (updated) {
+        res.status(200).json({ message: "Assignment status updated successfully" });
+      } else {
+        res.status(404).json({ error: "Assignment not found or update failed" });
+      }
+    } catch (error) {
+      console.error("Error updating user status in breakdown assignment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 export default router;

@@ -75,3 +75,19 @@ Content-Type: application/json
 ### Get user's specific breakdown assignment
 GET http://localhost:{{port}}/user/11/assignments/8
 Content-Type: application/json
+
+### Update user's breakdown assignment status
+PATCH http://localhost:{{port}}/user/11/assignment/8/status
+Content-Type: application/json
+
+{
+  "userStatus": "accepted"
+}
+
+### Update driver's breakdown assignment status
+PATCH http://localhost:{{port}}/user/assignment/7/status
+Content-Type: application/json
+
+{
+  "userStatus": "accepted"
+}
