@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, not, or } from "drizzle-orm";
 import { DB } from "database";
 import {
   userProfile,
@@ -70,6 +70,7 @@ export const DriverRepository: IDriverRepository = {
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
+        userLocation: breakdownRequest.userLocation,
       },
       driver: {
         id: driver.id,
@@ -113,6 +114,8 @@ export const DriverRepository: IDriverRepository = {
         updatedAt: breakdownAssignment.updatedAt,
         driverId: breakdownAssignment.driverId,
         assignedAt: breakdownAssignment.assignedAt,
+        userLocation: breakdownRequest.userLocation,
+        userStatus: breakdownAssignment.userStatus,
       },
       driver: {
         id: driver.id,
@@ -154,7 +157,7 @@ export const DriverRepository: IDriverRepository = {
       );
 
     if (!result) return null;
-
+    // @ts-ignore
     return {
       ...result.driverRequest,
       driver: result.driver,
@@ -167,26 +170,52 @@ export const DriverRepository: IDriverRepository = {
     requestId: number,
     data: UpdateAssignmentData
   ): Promise<boolean> {
-    console.log("updatebreakdownAssignment........", data);
     const updateData: Partial<typeof breakdownAssignment.$inferInsert> = {
       status: data.status,
-      ...(data.estimation !== undefined && {
-        estimation: data.estimation, // Remove ?? 0
-      }),
+      ...(data.estimation !== undefined && { estimation: data.estimation }),
       ...(data.explanation !== undefined && { explanation: data.explanation }),
     };
 
-    console.log("updateData....", updateData);
-    const result = await DB.update(breakdownAssignment)
-      .set(updateData)
-      .where(
-        and(
-          eq(breakdownAssignment.driverId, driverId),
-          eq(breakdownAssignment.requestId, requestId)
+    // Perform the operation atomically within a transaction
+    const result = await DB.transaction(async (tx) => {
+      // Check for existing deal and update in a single query
+      const updatedRows = await tx
+        .update(breakdownAssignment)
+        .set(updateData)
+        .where(
+          and(
+            eq(breakdownAssignment.driverId, driverId),
+            eq(breakdownAssignment.requestId, requestId),
+            eq(breakdownAssignment.status, 'pending'),
+            eq(breakdownAssignment.userStatus, 'pending')
+          )
         )
-      );
+        .returning({ id: breakdownAssignment.id });
 
-    return (result?.rowCount ?? 0) > 0;
+      // If no rows were updated, it means a deal already exists or the assignment doesn't exist
+      if (updatedRows.length === 0) {
+        const existingAssignment = await tx
+          .select({ id: breakdownAssignment.id })
+          .from(breakdownAssignment)
+          .where(
+            and(
+              eq(breakdownAssignment.driverId, driverId),
+              eq(breakdownAssignment.requestId, requestId)
+            )
+          )
+          .limit(1);
+
+        if (existingAssignment.length > 0) {
+          throw new Error("A deal is already done for this request.");
+        } else {
+          throw new Error("The specified assignment does not exist.");
+        }
+      }
+
+      return true;
+    });
+
+    return result;
   },
 
   async update(

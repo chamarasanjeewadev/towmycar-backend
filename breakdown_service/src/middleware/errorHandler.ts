@@ -16,7 +16,7 @@ export const errorHandler = (
 
   if (err instanceof CustomError) {
     return res.status(err.statusCode).json({
-      error: err.errorType,
+      error: err.code,
       message: err.message
     });
   }
@@ -25,17 +25,17 @@ export const errorHandler = (
     return res.status(400).json({
       error: "ValidationError",
       message: "Invalid input data",
-      details: err.array()
+      details: err.message
     });
   }
 
   // Handle specific error codes
-  if (err.code === '23505') {
-    return res.status(409).json({
-      error: "UniqueConstraintViolation",
-      message: "A record with this information already exists",
-    });
-  }
+  // if (err.code === '23505') {
+  //   return res.status(409).json({
+  //     error: "UniqueConstraintViolation",
+  //     message: "A record with this information already exists",
+  //   });
+  // }
 
   // Default error response
   res.status(500).json({

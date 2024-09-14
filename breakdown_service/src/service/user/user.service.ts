@@ -62,3 +62,41 @@ export const getUserProfileByEmail = async (
     throw error;
   }
 };
+
+// Add this new function
+export const getUserProfileById = async (
+  id: number,
+  repo: UserRepositoryType
+) => {
+  try {
+    const userProfile = await repo.getUserProfileById(id);
+    if (!userProfile) {
+      return null;
+    }
+    // Exclude sensitive information if needed
+    const { password, ...safeUserProfile } = userProfile;
+    return safeUserProfile;
+  } catch (error) {
+    console.error("Error fetching user profile by ID:", error);
+    throw error;
+  }
+};
+
+export const updateUserProfile = async (
+  id: number,
+  updateData: Partial<UserRegisterInput>,
+  repo: UserRepositoryType
+) => {
+  try {
+    const updatedProfile = await repo.updateUserProfile(id, updateData);
+    if (!updatedProfile) {
+      return null;
+    }
+    // Exclude sensitive information if needed
+    const { password, ...safeUserProfile } = updatedProfile;
+    return safeUserProfile;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+};

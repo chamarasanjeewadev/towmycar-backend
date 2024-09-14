@@ -7,6 +7,8 @@ export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
   getOrCreateUser: (user: UserRegisterInput) => Promise<number>;
   getUserProfileByEmail: (email: string) => Promise<any | null>;
+  getUserProfileById: (id: number) => Promise<any | null>; // New method
+  updateUserProfile: (id: number, updateData: Partial<UserRegisterInput>) => Promise<any | null>;
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
@@ -52,8 +54,28 @@ const getUserProfileByEmail = async (email: string): Promise<any | null> => {
   return result.length > 0 ? result[0] : null;
 };
 
+const getUserProfileById = async (id: number): Promise<any | null> => {
+  const result = await DB.select()
+    .from(userProfile)
+    .where(eq(userProfile.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+};
+
+const updateUserProfile = async (id: number, updateData: Partial<UserRegisterInput>): Promise<any | null> => {
+  const result = await DB.update(userProfile)
+    .set(updateData)
+    .where(eq(userProfile.id, id))
+    .returning();
+
+  return result.length > 0 ? result[0] : null;
+};
+
 export const UserRepository: UserRepositoryType = {
   createUser,
   getOrCreateUser,
   getUserProfileByEmail,
+  getUserProfileById, // Add the new method to the exported object
+  updateUserProfile,
 };

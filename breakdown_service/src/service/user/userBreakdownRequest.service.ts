@@ -7,6 +7,7 @@ import * as userRepository from "../../repository/user.repository";
 import { snsService } from "../../services/sns.service";
 import { BreakdownRequestRepositoryType } from "../../repository/breakdownRequest.repository";
 import { AnyARecord } from "dns";
+import { DriverStatus, UserStatus } from '../../types/common';
 
 export const createAndNotifyBreakdownRequest = async (
   input: BreakdownRequestInput,
@@ -148,7 +149,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 
 const updateDriverStatusInBreakdownAssignment = async (
   assignmentId: number,
-  userStatus: "accepted" | "rejected"
+  userStatus: UserStatus
 ): Promise<boolean> => {
   return BreakdownRequestRepository.updateDriverStatusInBreakdownAssignment(
     assignmentId,

@@ -8,6 +8,9 @@ import {
 } from "./../dto/breakdownRequest.dto";
 import { CombinedBreakdownRequestSchema } from "../dto/combinedBreakdownRequest.dto";
 import { z } from "zod";
+import { PaginationQuerySchema } from "../dto/query.dto";
+import { validateRequest } from "../middleware/requestValidator";
+import { errorHandler } from "../middleware/errorHandler";
 
 const router = express.Router();
 
@@ -24,30 +27,21 @@ const authMiddleware = async (
   next();
 };
 
+// Generic validation middleware
+
 router.post(
   "/breakdownrequest",
   authMiddleware,
+  validateRequest(BreakdownRequestSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validate request body
-      const result = BreakdownRequestSchema.safeParse(req.body);
-      console.log("breakdown request ", result);
-      if (!result.success) {
-        return res.status(400).json({ error: result.error.format() });
-      }
-
-      console.log("inside create breakdown request post", req.body);
-
-      // Save to database
       const response = await service.createAndNotifyBreakdownRequest(
         req.body as BreakdownRequestInput,
         repository.BreakdownRequestRepository
       );
-      console.log(response);
       res.status(200).json(response);
     } catch (error) {
-      console.error("Error creating breakdown request:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      next(error); // Pass the error to the error handling middleware
     }
   }
 );
@@ -55,17 +49,12 @@ router.post(
 // New route for combined breakdown request
 router.post(
   "/combined-breakdown-request",
+  validateRequest(CombinedBreakdownRequestSchema),
   async (req: Request, res: Response) => {
     try {
-      // Validate request body
-      const result = CombinedBreakdownRequestSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: result.error.format() });
-      }
-
       // Call service method to handle combined request
       const response = await service2.CreateCombinedBreakdownRequest(
-        result.data as any,
+        req.body,
         req.body.userId
       );
       return res.status(200).json(response);
@@ -79,13 +68,8 @@ router.post(
 // New route for getting breakdown requests by user ID (paginated)
 router.get("/:id/list", async (req: Request, res: Response) => {
   try {
-    const querySchema = z.object({
-      page: z.string().regex(/^\d+$/).transform(Number).default("1"),
-      pageSize: z.string().regex(/^\d+$/).transform(Number).default("10"),
-    });
-
     const { id } = req.params;
-    const { page, pageSize } = querySchema.parse(req.query);
+    const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
     const { breakdownRequests, totalCount } =
       await service.BreakdownRequestService.getPaginatedBreakdownRequestsWithUserDetails(
@@ -144,39 +128,44 @@ router.get(
   }
 );
 
-// New route for updating user status in breakdown assignment
+// Updated route for updating user status in breakdown assignment
 router.patch(
   "/assignment/:assignmentId/status",
   async (req: Request, res: Response) => {
     try {
-      const schema = z.object({
-        assignmentId: z.string().regex(/^\d+$/).transform(Number),
-        userStatus: z.enum(["accepted", "rejected"]),
-      });
+      const assignmentId = parseInt(req.params.assignmentId, 10);
+      const { userStatus } = req.body;
 
-      const { assignmentId } = schema.parse({
-        ...req.params,
-        ...req.body,
-      });
+      if (isNaN(assignmentId)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
 
-      const updated = await service.BreakdownRequestService.updateDriverStatusInBreakdownAssignment(
-        assignmentId,
-        req.body.userStatus
-      );
+      const updated =
+        await service.BreakdownRequestService.updateDriverStatusInBreakdownAssignment(
+          assignmentId,
+          userStatus
+        );
 
       if (updated) {
-        res.status(200).json({ message: "Assignment status updated successfully" });
+        res
+          .status(200)
+          .json({ message: "Assignment status updated successfully" });
       } else {
-        res.status(404).json({ error: "Assignment not found or update failed" });
+        res
+          .status(404)
+          .json({ error: "Assignment not found or update failed" });
       }
     } catch (error) {
-      console.error("Error updating user status in breakdown assignment:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
-      }
+      console.error(
+        "Error updating user status in breakdown assignment:",
+        error
+      );
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
+
+// Add error handling middleware at the end of your router
+router.use(errorHandler);
 
 export default router;

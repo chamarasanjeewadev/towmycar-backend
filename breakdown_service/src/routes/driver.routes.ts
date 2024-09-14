@@ -19,7 +19,6 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { username, email, password, userType } = req.body;
-      console.log("req.body......", req.body);
       if (!username || !email || !password) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -115,7 +114,7 @@ router.patch(
     try {
       const { driverId, requestId } = req.params;
       const { status, estimation, explanation } = req.body;
-      console.log("backend fired", driverId, status, estimation, explanation);
+      
       if (!driverId || !status) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,

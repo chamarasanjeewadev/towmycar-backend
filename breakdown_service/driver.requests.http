@@ -37,7 +37,7 @@ GET {{baseUrl}}/1/assigned-requests
 Authorization: Bearer <your-auth-token-here>
 
 ### Get specific driver request
-GET {{baseUrl}}/1/assigned-request/64
+GET {{baseUrl}}/1/assigned-request/21
 Authorization: Bearer YOUR_JWT_TOKEN_HERE
 
 ### Update Driver Request Status
