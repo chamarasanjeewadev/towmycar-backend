@@ -100,3 +100,18 @@ export const updateUserProfile = async (
     throw error;
   }
 };
+
+export const saveFcmToken = async (
+  userId: number,
+  token: string,
+  browserInfo: string | undefined,
+  repo: UserRepositoryType
+) => {
+  try {
+    const tokenId = await repo.saveFcmToken(userId, token, browserInfo);
+    return { id: tokenId };
+  } catch (error) {
+    console.error("Error saving FCM token:", error);
+    throw error;
+  }
+};

@@ -1,14 +1,22 @@
-import { userProfile } from "db-schema";
+import { userProfile, fcmTokens } from "db-schema";
 import { DB } from "database";
 import { UserRequestInput, UserRegisterInput } from "../dto/userRequest.dto";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
   getOrCreateUser: (user: UserRegisterInput) => Promise<number>;
   getUserProfileByEmail: (email: string) => Promise<any | null>;
   getUserProfileById: (id: number) => Promise<any | null>; // New method
-  updateUserProfile: (id: number, updateData: Partial<UserRegisterInput>) => Promise<any | null>;
+  updateUserProfile: (
+    id: number,
+    updateData: Partial<UserRegisterInput>
+  ) => Promise<any | null>;
+  saveFcmToken: (
+    userId: number,
+    token: string,
+    browserInfo?: string
+  ) => Promise<number>;
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
@@ -72,10 +80,34 @@ const updateUserProfile = async (id: number, updateData: Partial<UserRegisterInp
   return result.length > 0 ? result[0] : null;
 };
 
+const saveFcmToken = async (
+  userId: number,
+  token: string,
+  browserInfo?: string
+): Promise<number> => {
+  const result = await DB.insert(fcmTokens)
+    .values({
+      userId,
+      token,
+      browserInfo,
+      updatedAt: new Date(),
+    })
+    // .onConflictDoUpdate({
+    //   target: [fcmTokens.userId, fcmTokens.token],
+    //   set: {
+    //     browserInfo,
+    //     updatedAt: new Date(),
+    //   },
+    // })
+    .returning();
+  return result[0].id;
+};
+
 export const UserRepository: UserRepositoryType = {
   createUser,
   getOrCreateUser,
   getUserProfileByEmail,
   getUserProfileById, // Add the new method to the exported object
   updateUserProfile,
+  saveFcmToken,
 };

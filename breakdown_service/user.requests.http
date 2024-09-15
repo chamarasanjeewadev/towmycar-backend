@@ -91,3 +91,19 @@ Content-Type: application/json
 {
   "userStatus": "accepted"
 }
+
+### Save FCM Token
+POST http://localhost:{{port}}/user/fcm-token
+Content-Type: application/json
+Authorization: Bearer <your-jwt-token-here>
+
+{
+  "userId": 1,
+  "token": "your-fcm-token2-here3",
+  "browserInfo": "Optional browser information"
+}
+
+### Get user profile by email
+GET http://localhost:{{port}}/user/profile?email=user1@gmail.com
+Content-Type: application/json
+Authorization: Bearer <your-jwt-token-here>

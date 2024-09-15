@@ -11,6 +11,7 @@ import {
   BreakdownAssignment,
 } from "database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
+import { NotFoundError } from "../utils/error/errors";
 
 interface UpdateAssignmentData {
   status: string;
@@ -178,7 +179,25 @@ export const DriverRepository: IDriverRepository = {
 
     // Perform the operation atomically within a transaction
     const result = await DB.transaction(async (tx) => {
-      // Check for existing deal and update in a single query
+      // Check if there's already an accepted assignment
+      const existingAcceptedAssignment = await tx
+        .select({ id: breakdownAssignment.id })
+        .from(breakdownAssignment)
+        .where(
+          and(
+            eq(breakdownAssignment.driverId, driverId),
+            eq(breakdownAssignment.requestId, requestId),
+            eq(breakdownAssignment.status, 'accepted'),
+            eq(breakdownAssignment.userStatus, 'accepted')
+          )
+        )
+        .limit(1);
+
+      if (existingAcceptedAssignment.length > 0) {
+        throw new NotFoundError("This assignment is no longer available for update.");
+      }
+
+      // Proceed with the update if no accepted assignment exists
       const updatedRows = await tx
         .update(breakdownAssignment)
         .set(updateData)
@@ -186,13 +205,13 @@ export const DriverRepository: IDriverRepository = {
           and(
             eq(breakdownAssignment.driverId, driverId),
             eq(breakdownAssignment.requestId, requestId),
-            eq(breakdownAssignment.status, 'pending'),
-            eq(breakdownAssignment.userStatus, 'pending')
+            // eq(breakdownAssignment.status, data.status),
+            // eq(breakdownAssignment.userStatus, data.userStatus)
           )
         )
         .returning({ id: breakdownAssignment.id });
 
-      // If no rows were updated, it means a deal already exists or the assignment doesn't exist
+      // If no rows were updated, it means the assignment doesn't exist or is not in pending state
       if (updatedRows.length === 0) {
         const existingAssignment = await tx
           .select({ id: breakdownAssignment.id })
@@ -206,7 +225,7 @@ export const DriverRepository: IDriverRepository = {
           .limit(1);
 
         if (existingAssignment.length > 0) {
-          throw new Error("A deal is already done for this request.");
+          throw new NotFoundError("This assignment is no longer available for update.");
         } else {
           throw new Error("The specified assignment does not exist.");
         }

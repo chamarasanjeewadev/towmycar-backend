@@ -5,6 +5,11 @@ import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { requiredUserSchema, UserInput } from "../dto/user.dto";
 import { authenticateJWT } from "../middleware/auth";
 import { UserRegisterInput } from "../dto/userRequest.dto";
+import { z } from "zod";
+import { UserRepository } from "../repository/user.repository";
+import { saveFcmToken } from "../service/user/user.service";
+import { validateRequest } from "./../middleware/requestValidator";
+import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -129,10 +134,14 @@ router.patch(
       }
 
       const updateData: Partial<UserRegisterInput> = req.body;
-      
+
       // You might want to add validation for updateData here
-      
-      const updatedProfile = await service.updateUserProfile(id, updateData, repo);
+
+      const updatedProfile = await service.updateUserProfile(
+        id,
+        updateData,
+        repo
+      );
       if (!updatedProfile) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
@@ -150,5 +159,22 @@ router.patch(
     }
   }
 );
+
+router.post("/fcm-token", validateRequest( fcmTokenSchema ), async (req, res) => {
+  try {
+    const { token, browserInfo, userId } = req.body as FcmTokenInput;
+    console.log("req.body.........", req.body);
+    const result = await saveFcmToken(
+      userId,
+      token,
+      browserInfo,
+      UserRepository
+    );
+    res.status(201).json(result);
+  } catch (error) {
+    console.error("Error saving FCM token:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;
