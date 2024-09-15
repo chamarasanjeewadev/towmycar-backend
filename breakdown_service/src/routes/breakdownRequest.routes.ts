@@ -11,7 +11,7 @@ import { z } from "zod";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { validateRequest } from "../middleware/requestValidator";
 import { errorHandler } from "../middleware/errorHandler";
-
+import { sendNotification } from "../utils/notificationSender";
 const router = express.Router();
 
 const authMiddleware = async (
@@ -139,12 +139,20 @@ router.patch(
       if (isNaN(assignmentId)) {
         return res.status(400).json({ error: "Invalid assignment ID" });
       }
-
+      console.log("assignmentId", assignmentId);
+      console.log("userStatus", userStatus);
       const updated =
         await service.BreakdownRequestService.updateDriverStatusInBreakdownAssignment(
           assignmentId,
           userStatus
         );
+     await sendNotification(
+        "cjAfcHdk6YZc5lZAMZrJtk:APA91bFXKN5lFet7-YyqKVSaIjHhxsRCVESyXKWNQ58izuXHN3SWEZcGJUJsPBzyzkZn3Ky8CCzfj3lBRWJCnq9rr8KGs64n3VkH_5t3-aFZ5TtpafYeVoz9HNX8c4grE7eDQkkQXPYQ",
+        {
+          title: "Assignment status updated",
+          body: "The status of the assignment has been updated",
+        }
+      );
 
       if (updated) {
         res
