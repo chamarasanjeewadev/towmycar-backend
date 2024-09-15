@@ -1,11 +1,14 @@
-import { SNS } from 'aws-sdk';
+import { SNS } from "aws-sdk";
 
 // Configure AWS SDK
 const sns = new SNS({
-  region: process.env.AWS_REGION || 'us-east-1' // Replace 'us-east-1' with your default region if needed
+  region: process.env.AWS_REGION || "us-east-1", // Replace 'us-east-1' with your default region if needed
 });
 
-export const sendBreakdownRequestNotification = async (breakdownRequestId: string, breakdownRequestData: any) => {
+export const sendBreakdownRequestNotification = async (
+  breakdownRequestId: string,
+  breakdownRequestData: any
+) => {
   const params = {
     Message: JSON.stringify({
       breakdownRequestId,
@@ -16,13 +19,46 @@ export const sendBreakdownRequestNotification = async (breakdownRequestId: strin
 
   try {
     const result = await sns.publish(params).promise();
-    console.log(`SNS notification sent for breakdown request ${breakdownRequestId}`);
+    console.log(
+      `SNS notification sent for breakdown request ${breakdownRequestId}`
+    );
     return {
       MessageId: result.MessageId,
       PublishTime: new Date().toISOString(),
     };
   } catch (error) {
-    console.error(`Failed to send SNS notification for breakdown request ${breakdownRequestId}:`, error);
+    console.error(
+      `Failed to send SNS notification for breakdown request ${breakdownRequestId}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+export const sendPushNotification = async (breakdownRequestData: any) => {
+  console.log(
+    "breakdownRequestData inside sendBreakdownPushNotification",
+    breakdownRequestData
+  );
+  const params = {
+    Message: JSON.stringify({
+      ...breakdownRequestData,
+    }),
+    TopicArn: process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
+  };
+
+  try {
+    const result = await sns.publish(params).promise();
+    console.log(`SNS for push notification sent for breakdown request `);
+    return {
+      MessageId: result.MessageId,
+      PublishTime: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error(
+      `Failed to send SNS notification for breakdown request`,
+      error
+    );
     throw error;
   }
 };

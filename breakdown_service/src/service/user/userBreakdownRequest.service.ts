@@ -7,7 +7,8 @@ import * as userRepository from "../../repository/user.repository";
 import { snsService } from "../../services/sns.service";
 import { BreakdownRequestRepositoryType } from "../../repository/breakdownRequest.repository";
 import { AnyARecord } from "dns";
-import { DriverStatus, UserStatus } from '../../types/common';
+import { DriverStatus, UserStatus } from "../../types/common";
+import { sendPushNotification } from "../utils/sns.service";
 
 export const createAndNotifyBreakdownRequest = async (
   input: BreakdownRequestInput,
@@ -151,6 +152,10 @@ const updateDriverStatusInBreakdownAssignment = async (
   assignmentId: number,
   userStatus: UserStatus
 ): Promise<boolean> => {
+  sendPushNotification({
+    assignmentId,
+    userStatus,
+  });
   return BreakdownRequestRepository.updateDriverStatusInBreakdownAssignment(
     assignmentId,
     userStatus
