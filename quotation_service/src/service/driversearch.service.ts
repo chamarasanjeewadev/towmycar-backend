@@ -1,22 +1,22 @@
 import {
   DriverSearchRepository,
   DriverSearchRepositoryType,
+  NearbyDriver,
 } from "../repository/driversearch.repository";
-import { EmailService } from "../service/email.service"; // Add this import
 
 export type DriverSearchServiceType = {
   findAndUpdateNearbyDrivers: (
     latitude: number,
     longitude: number,
     requestId: number
-  ) => Promise<any[]>;
+  ) => Promise<NearbyDriver[]>;
 };
 
 const findAndUpdateNearbyDrivers = async (
   latitude: number,
   longitude: number,
   requestId: number
-): Promise<any[]> => {
+): Promise<NearbyDriver[]> => {
   // Find nearby drivers
   const nearbyDrivers = await DriverSearchRepository.findNearbyDrivers(
     latitude,

@@ -1,0 +1,28 @@
+POST  http://localhost:9002/cart
+
+Content-Type: "application/json"
+
+{
+    "item": "smart phone",
+    "price": 1200
+
+}
+
+###
+
+POST  http://localhost:9000/user/breakdowns
+
+Content-Type: "application/json"
+
+{
+  "userId": "user123",
+  "location": {"latitude": "37.7749", "longitude": "-122.4194"},
+  "vehicleDetails": {"make": "Toyota", "model": "Camry", "year": "2020"},
+  "description": "Flat tire"
+}
+
+
+# {
+#   "breakdownRequestId": "req5678",
+#   "status": "Breakdown reported successfully."
+# }

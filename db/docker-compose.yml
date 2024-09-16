@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  breakdown_db_server:
+    image: "postgis/postgis:14-3.1"  # PostGIS-enabled image
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: breakdown_db
+      POSTGRES_PASSWORD: breakdown_db_password
+      POSTGRES_DB: breakdown-rescue-db 
+    volumes:
+      - ./db-data/breakdown_db_server/:/var/lib/postgresql/data

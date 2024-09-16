@@ -1,6 +1,8 @@
 import expressApp from "./express-app";
 import { logger } from "./utils";
 import { pollMessagesFromSQS } from "./utils/pollMessages";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const PORT = process.env.APP_PORT || 9000;
 

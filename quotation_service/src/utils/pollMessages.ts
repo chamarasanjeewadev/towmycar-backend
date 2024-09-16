@@ -9,7 +9,7 @@ AWS.config.update({ region: 'us-east-1' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
 // The URL of the SQS queue to poll from
-const queueURL = 'https://sqs.us-east-1.amazonaws.com/211125761584/breakdown-request-queue';
+const queueURL = process.env.SQS_QUEUE_URL;
 
 export const pollMessagesFromSQS = async () => {
   logger.info('Starting to poll messages inside quotation service');
@@ -21,21 +21,24 @@ export const pollMessagesFromSQS = async () => {
   logger.info("polling messages");
   try {
     // Poll messages from the queue
-    const data = await sqs.receiveMessage(params).promise();
+    const data = await sqs.receiveMessage(params as any).promise();
 
     if (data.Messages) {
-      logger.info(`Received ${data.Messages.length} messages`);
+      logger.info(`Quotation service Received messages from SQS....... ${JSON.stringify(data)} messages`);
 
       // Process each message
       for (const message of data.Messages) {
-        logger.info('Processing message:', message.Body);
+        // logger.info('Processing message:', message.Body);
         try {
-          const snsNotification = JSON.parse(message.Body || '{}');
-          const requestData = JSON.parse(snsNotification.Message);
+          const snsNotification = JSON.parse(message?.Body || '{}');
+          console.log("snsNotification in quotation service", snsNotification);
+          const requestData = JSON.parse(snsNotification?.Message || '{}');
+          console.log("requestData in quotation service", requestData);
           const { breakdownRequestId: requestId, userLocation } = requestData;
-          const { latitude, longitude } = userLocation;
+          console.log("requestId in quotation service", requestId);
+          const { latitude, longitude } = userLocation||{};
           
-          console.log("Parsed requestData:", { requestId, latitude, longitude });
+          console.log("Parsed requestData in quotation service:", { requestId, latitude, longitude });
 
           if (latitude && longitude && requestId) {
             console.log("requestId just before calling driver search service...............", requestId,latitude,longitude);
@@ -45,21 +48,34 @@ export const pollMessagesFromSQS = async () => {
               requestId
             );
             logger.info(`Found ${nearbyDrivers.length} nearby drivers for request ${requestId}`);
+            const deleteParams = {
+              QueueUrl: queueURL,
+              ReceiptHandle: message.ReceiptHandle ?? "",
+            };
+    
+            await sqs.deleteMessage(deleteParams as any).promise();
+            logger.info('Message deleted:', message.MessageId);
           } else {
             logger.warn('Invalid message format:', requestData);
+            const deleteParams = {
+              QueueUrl: queueURL,
+              ReceiptHandle: message.ReceiptHandle ?? "",
+            };
+    
+            await sqs.deleteMessage(deleteParams as any).promise();
           }
         } catch (error) {
-          logger.error('Error processing message:', error);
+          const deleteParams = {
+            QueueUrl: queueURL,
+            ReceiptHandle: message.ReceiptHandle ?? "",
+          };
+  
+          await sqs.deleteMessage(deleteParams as any).promise();
+          logger.error('Error processing message inside quotation service pollMessages:', error);
         }
 
         // Delete the message after processing
-        const deleteParams = {
-          QueueUrl: queueURL,
-          ReceiptHandle: message.ReceiptHandle ?? "",
-        };
-
-        await sqs.deleteMessage(deleteParams).promise();
-        logger.info('Message deleted:', message.MessageId);
+       
       }
     } else {
       logger.info('No messages to process');
