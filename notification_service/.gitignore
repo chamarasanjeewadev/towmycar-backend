@@ -103,4 +103,5 @@ Thumbs.db
 */serviceAccount.json
 
 # Google Cloud Service Account
-breakdown_service/src/utils/serviceAccount.json
+*/src/utils/serviceAccount.json
+*/src/utils/serviceAccount.json
