@@ -1,39 +1,33 @@
 import { SNS } from "aws-sdk";
 
-// Configure AWS SDK
+// Configure AWS SDK to use credentials from the local AWS config file
 const sns = new SNS({
-  region: process.env.AWS_REGION || "us-east-1", // Replace 'us-east-1' with your default region if needed
+  region: process.env.AWS_REGION || "us-east-1",
 });
 
-export const sendBreakdownRequestNotification = async (
-  breakdownRequestId: string,
-  breakdownRequestData: any
-) => {
-  const params = {
-    Message: JSON.stringify({
-      breakdownRequestId,
-      ...breakdownRequestData,
-    }),
-    TopicArn: process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
-  };
 
-  try {
-    const result = await sns.publish(params).promise();
-    console.log(
-      `SNS notification sent for breakdown request ${breakdownRequestId}`
-    );
-    return {
-      MessageId: result.MessageId,
-      PublishTime: new Date().toISOString(),
-    };
-  } catch (error) {
-    console.error(
-      `Failed to send SNS notification for breakdown request ${breakdownRequestId}:`,
-      error
-    );
-    throw error;
-  }
-};
+export const  sendNotification=async (topicArn: string, message: any) => {
+  const snsParams = {
+      Message: JSON.stringify(message),
+      TopicArn: topicArn,
+    }; 
+    try {
+      const result = await sns.publish(snsParams).promise();
+      console.log(
+        `SNS notification sent for breakdown request ${snsParams}`
+      );
+      return {
+        MessageId: result.MessageId,
+        PublishTime: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error(
+        `Failed to send SNS notification for breakdown request ${snsParams}:`,
+        error
+      );
+      throw error;
+    }
+}
 
 export const sendPushNotification = async (breakdownRequestData: any) => {
   console.log(

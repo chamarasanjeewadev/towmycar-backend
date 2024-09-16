@@ -4,12 +4,14 @@ import {
   BreakdownRequestWithUserDetails,
 } from "../../dto/breakdownRequest.dto";
 import * as userRepository from "../../repository/user.repository";
-import { snsService } from "../../services/sns.service";
+import { sendNotification } from "../utils/sns.service";
 import { BreakdownRequestRepositoryType } from "../../repository/breakdownRequest.repository";
-import { AnyARecord } from "dns";
-import { DriverStatus, UserStatus } from "../../types/common";
+import { UserStatus } from "../../types/common";
 import { sendPushNotification } from "../utils/sns.service";
-
+import { CombinedBreakdownRequestInput } from "../../dto/combinedBreakdownRequest.dto";
+import * as repository from "../../repository/breakdownRequest.repository";
+import * as cognitoService from "../utils/cognito.service";
+import { UserGroup, NotificationType } from "../../enums";
 export const createAndNotifyBreakdownRequest = async (
   input: BreakdownRequestInput,
   repo: BreakdownRequestRepositoryType
@@ -21,7 +23,7 @@ export const createAndNotifyBreakdownRequest = async (
     "Sending SNS notification",
     process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN
   );
-  const snsResult = await snsService.sendNotification(
+  const snsResult = await sendNotification(
     process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
     {
       breakdownRequestId,
@@ -36,27 +38,42 @@ export const createAndNotifyBreakdownRequest = async (
     snsNotification: snsResult,
   };
 };
-
-export const createUserAndBreakdownRequest = async (
-  combinedInput: any,
-  repo: BreakdownRequestRepositoryType
+export const CreateCombinedBreakdownRequest = async (
+  combinedInput: CombinedBreakdownRequestInput,
+  userId?: number
 ) => {
   try {
-    // Extract user data from the combined input
-    const userData = {
-      firstName: combinedInput.firstName,
-      lastName: combinedInput.lastName,
-      email: combinedInput.email,
-      postcode: combinedInput.postcode,
-      vehicleRegistration: combinedInput.vehicleRegistration,
-      mobileNumber: combinedInput.mobileNumber,
-    };
+    if (!userId) {
+      // Extract user data from the combined input
+      const userData = {
+        firstName: combinedInput.firstName,
+        lastName: combinedInput.lastName,
+        email: combinedInput.email,
+        postcode: combinedInput.postcode,
+        vehicleRegistration: combinedInput.vehicleRegistration,
+        mobileNumber: combinedInput.mobileNumber,
+      };
 
-    // Create user
-    const userId = await userRepository.UserRepository.createUser(userData);
+      // Check if user exists in Cognito
+      const userExistsInCognito = await cognitoService.checkUserExistsInCognito(
+        userData.email
+      );
+
+      if (userExistsInCognito) {
+        // If user exists in Cognito, get or create user in your DB
+        userId = await userRepository.UserRepository.getOrCreateUser(userData);
+      } else {
+        // If user doesn't exist in Cognito, create user in Cognito and then in your DB
+        await cognitoService.createTempUserInCognito({
+          email: userData.email,
+        });
+        await cognitoService.addUserToGroup(userData.email, UserGroup.USER);
+        userId = await userRepository.UserRepository.getOrCreateUser(userData);
+      }
+    }
 
     // Create breakdown request
-    const breakdownRequestData: BreakdownRequestInput = {
+    const breakdownRequestData = {
       userId,
       requestType: combinedInput.requestType,
       locationAddress: combinedInput.locationAddress,
@@ -66,35 +83,46 @@ export const createUserAndBreakdownRequest = async (
       },
       description: combinedInput.description,
     };
-    console.log("Creating breakdown request", breakdownRequestData);
-    const result = await createAndNotifyBreakdownRequest(
-      breakdownRequestData,
-      repo
+
+    const breakdownRequestId =
+      await repository.BreakdownRequestRepository.saveBreakdownRequest(
+        breakdownRequestData
+      );
+
+    // Send SNS notification to the notification service to send email and push notification to the user
+    const combinedSnsResult = await sendNotification(
+      process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
+      { breakdownRequestId, ...breakdownRequestData }
     );
 
-    // Send SNS notification after successful combined request save
-    const combinedSnsResult = await snsService.sendNotification(
-      process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
+    // send email to the user
+    const emailSnsResult = await sendNotification(
+      process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
       {
-        breakdownRequestId: result.breakdownRequestId,
-        userId,
-        firstName: combinedInput.firstName,
-        lastName: combinedInput.lastName,
-        email: combinedInput.email,
-        location: breakdownRequestData.userLocation,
+        type: NotificationType.UserRequestEmail,
+        payload: {
+          breakdownRequestId: breakdownRequestId,
+          userId,
+          firstName: combinedInput.firstName,
+          lastName: combinedInput.lastName,
+          email: combinedInput.email,
+          location: breakdownRequestData.userLocation,
+          viewRequestLink: `https://www.yourcompany.com/breakdown-requests/${breakdownRequestId}`,
+        },
       }
     );
 
     return {
-      ...result,
+      breakdownRequestId,
+      status: "Breakdown reported successfully.",
       userId,
-      combinedSnsNotification: combinedSnsResult,
     };
   } catch (error) {
-    console.error("Error in createUserAndBreakdownRequest:", error);
+    console.error("Error in CreateCombinedBreakdownRequest:", error);
     throw new Error("Failed to process combined breakdown request");
   }
 };
+
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<
   BreakdownRequestWithUserDetails[]
@@ -162,9 +190,13 @@ const updateDriverStatusInBreakdownAssignment = async (
   );
 };
 
+export const CreateBreakdownRequest = async (data: BreakdownRequestInput) => {
+  // Call to repository function to save the data and send SNS notification
+  return await repository.BreakdownRequestRepository.saveBreakdownRequest(data);
+};
+
 export const BreakdownRequestService = {
   createAndNotifyBreakdownRequest,
-  createUserAndBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,
