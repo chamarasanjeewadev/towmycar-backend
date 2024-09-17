@@ -1,6 +1,6 @@
 {
-  "id": "b3c8722c-a78f-4b72-a5d3-94907adf7d0d",
-  "prevId": "e27f508d-d0a5-41df-9a55-f2c4799aff7e",
+  "id": "e77b87a6-5690-4c97-9f3b-e8a6683ba697",
+  "prevId": "1e0385db-7071-461b-aafe-dbb403b45bb1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -37,7 +37,7 @@
           "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'waiting'"
+          "default": "'PENDING'"
         },
         "estimated_cost": {
           "name": "estimated_cost",
@@ -350,15 +350,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "fcm_tokens_token_unique": {
-          "name": "fcm_tokens_token_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
-        }
-      }
+      "uniqueConstraints": {}
     },
     "public.user_profile": {
       "name": "user_profile",

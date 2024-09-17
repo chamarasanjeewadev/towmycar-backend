@@ -10,7 +10,7 @@ import {
   uuid,
   boolean,
 } from "drizzle-orm/pg-core";
-
+import { UserStatus } from "../breakdown_service/src/enums";
 // Existing userProfile table
 export const userProfile = pgTable("user_profile", {
   id: serial("id").primaryKey().notNull(),
@@ -83,7 +83,7 @@ export const breakdownAssignment = pgTable("breakdown_assignment", {
     .references(() => driver.id)
     .notNull(),
   status: varchar("status", { length: 20 }).notNull(),
-  userStatus: varchar("user_status", { length: 20 }).notNull().default("waiting"),
+  userStatus: varchar("user_status", { length: 20 }).notNull().default(UserStatus.PENDING),
   estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
   explanation: text("estimate_explanation"),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),

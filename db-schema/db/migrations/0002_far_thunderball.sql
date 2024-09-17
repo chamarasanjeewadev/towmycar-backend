@@ -1,1 +1,0 @@
-ALTER TABLE "fcm_tokens" DROP CONSTRAINT "fcm_tokens_token_unique";

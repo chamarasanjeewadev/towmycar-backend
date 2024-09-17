@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1726314769521,
-      "tag": "0000_stale_edwin_jarvis",
+      "when": 1726554496358,
+      "tag": "0000_slippery_ken_ellis",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1726387532476,
-      "tag": "0001_safe_kabuki",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1726394248926,
-      "tag": "0002_far_thunderball",
+      "when": 1726569895238,
+      "tag": "0001_handy_solo",
       "breakpoints": true
     }
   ]
