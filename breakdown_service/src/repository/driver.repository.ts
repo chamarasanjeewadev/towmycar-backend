@@ -50,6 +50,8 @@ export interface IDriverRepository {
   ): Promise<boolean>;
   update(id: number, data: Partial<DriverProfileDtoType>): Promise<Driver>;
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
+  getDriverById(id: number): Promise<Driver | null>;
+  getUserByRequestId(requestId: number): Promise<UserProfile | null>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -260,4 +262,47 @@ export const DriverRepository: IDriverRepository = {
       .where(eq(driver.email, email));
     return foundDriver || null;
   },
+
+  async getDriverById(id: number): Promise<Driver | null> {
+    const [foundDriver] = await DB.select()
+      .from(driver)
+      .where(eq(driver.id, id));
+    return foundDriver || null;
+  },
+
+  async getUserByRequestId(requestId: number): Promise<UserProfile | null> {
+    const result = await DB.select({
+      id: userProfile.id,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      email: userProfile.email,
+      postcode: userProfile.postcode,
+      vehicleRegistration: userProfile.vehicleRegistration,
+      mobileNumber: userProfile.mobileNumber,
+    })
+      .from(breakdownRequest)
+      .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
+      .where(eq(breakdownRequest.id, requestId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  },
+
+  // async getUserByRequestId(requestId: number): Promise<UserProfile | null> {
+  //   const result = await DB.select({
+  //     id: userProfile.id,
+  //     firstName: userProfile.firstName,
+  //     lastName: userProfile.lastName,
+  //     email: userProfile.email,
+  //     postcode: userProfile.postcode,
+  //     vehicleRegistration: userProfile.vehicleRegistration,
+  //     mobileNumber: userProfile.mobileNumber,
+  //   })
+  //     .from(breakdownRequest)
+  //     .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
+  //     .where(eq(breakdownRequest.id, requestId))
+  //     .limit(1);
+
+  //   return result.length > 0 ? result[0] : null;
+  // },
 };

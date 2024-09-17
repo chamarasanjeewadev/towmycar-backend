@@ -1,8 +1,1 @@
 ./db/db-data/*
-# Database files
-db/db-data/breakdown_db_server/pg_stat_tmp/db_0.stat
-db/db-data/breakdown_db_server/pg_stat_tmp/db_16384.stat
-db/db-data/breakdown_db_server/pg_stat_tmp/global.stat
-
-# Ignore all files in pg_stat_tmp directory
-db/db-data/breakdown_db_server/pg_stat_tmp/*

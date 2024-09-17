@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm";
 
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
-  getOrCreateUser: (user: UserRegisterInput) => Promise<number>;
+  getOrCreateUser: (user: UserRegisterInput) => Promise<{ id: number; isCreated: boolean }>;
   getUserProfileByEmail: (email: string) => Promise<any | null>;
   getUserProfileById: (id: number) => Promise<any | null>; // New method
   updateUserProfile: (
@@ -17,6 +17,7 @@ export type UserRepositoryType = {
     token: string,
     browserInfo?: string
   ) => Promise<number>;
+  getUserById: (userId: number) => Promise<any | null>; // New method
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
@@ -35,7 +36,7 @@ const createUser = async (user: UserRegisterInput): Promise<number> => {
   return id;
 };
 
-const getOrCreateUser = async (user: UserRegisterInput): Promise<number> => {
+const getOrCreateUser = async (user: UserRegisterInput): Promise<{ id: number; isCreated: boolean }> => {
   // Try to find the user by email
   const existingUser = await DB.select()
     .from(userProfile)
@@ -43,13 +44,14 @@ const getOrCreateUser = async (user: UserRegisterInput): Promise<number> => {
     .limit(1);
 
   if (existingUser.length > 0) {
-    // User found, return the existing user's ID
+    // User found, return the existing user's ID and isCreated as false
     console.log("User found:", existingUser[0].id);
-    return existingUser[0].id;
+    return { id: existingUser[0].id, isCreated: false };
   } else {
     // User not found, create a new user
     console.log("User not found, creating new user");
-    return await createUser(user);
+    const newUserId = await createUser(user);
+    return { id: newUserId, isCreated: true };
   }
 };
 
@@ -103,6 +105,15 @@ const saveFcmToken = async (
   return result[0].id;
 };
 
+const getUserById = async (userId: number): Promise<any | null> => {
+  const result = await DB.select()
+    .from(userProfile)
+    .where(eq(userProfile.id, userId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+};
+
 export const UserRepository: UserRepositoryType = {
   createUser,
   getOrCreateUser,
@@ -110,4 +121,5 @@ export const UserRepository: UserRepositoryType = {
   getUserProfileById, // Add the new method to the exported object
   updateUserProfile,
   saveFcmToken,
+  getUserById, // Add this new function to the exports
 };

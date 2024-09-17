@@ -5,17 +5,17 @@ import {
 } from "database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { eq, and } from "drizzle-orm";
-
+import { UserStatus } from "../enums";
 export type BreakdownRequestCommandType = {
   saveBreakdownRequest: (data: BreakdownRequestInput) => Promise<number>;
   updateUserStatusInBreakdownAssignment: (
     userId: number,
     assignmentId: number,
-    userStatus: "accepted" | "rejected"
+    userStatus: UserStatus
   ) => Promise<boolean>;
   updateDriverStatusInBreakdownAssignment: (
     assignmentId: number,
-    userStatus: "accepted" | "rejected"
+    userStatus: UserStatus
   ) => Promise<boolean>;
 };
 
@@ -42,7 +42,7 @@ const saveBreakdownRequest = async (
 const updateUserStatusInBreakdownAssignment = async (
   userId: number,
   assignmentId: number,
-  userStatus: "accepted" | "rejected"
+  userStatus: UserStatus
 ): Promise<boolean> => {
   const result = await DB.update(breakdownAssignment)
     .set({ userStatus })
@@ -65,7 +65,7 @@ const updateUserStatusInBreakdownAssignment = async (
 
 const updateDriverStatusInBreakdownAssignment = async (
   assignmentId: number,
-  userStatus: "accepted" | "rejected"
+  userStatus: UserStatus
 ): Promise<boolean> => {
   const result = await DB.update(breakdownAssignment)
     .set({ userStatus })

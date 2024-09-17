@@ -1,9 +1,8 @@
 // @ts-nocheck
-import { DB } from "database";
-import { driver, breakdownAssignment } from "database";
+import {} from "database";
+import { DB, driver, breakdownAssignment, breakdownRequests } from "database";
 import { sql, eq, and } from "drizzle-orm";
-import { BreakdownRequestStatus } from '../types/breakdownRequest'; // Add this import
-
+import { DriverStatus } from "../enums";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
@@ -24,6 +23,20 @@ export type DriverSearchRepositoryType = {
     requestId: number,
     nearbyDrivers: NearbyDriver[]
   ) => Promise<void>;
+
+  getUserIdByRequestId: (requestId: number) => Promise<number | null>;
+  getUserById: (userId: number) => Promise<User | null>;
+};
+
+// Add this import
+
+// Add this type definition
+type User = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
 };
 
 // @ts-nocheck
@@ -77,7 +90,7 @@ const updateDriverRequests = async (
         nearbyDrivers.map(driver => ({
           requestId,
           driverId: driver.id,
-          status: "assigned",
+          status: DriverStatus.PENDING,
           assignedAt: now,
           createdAt: now,
           updatedAt: now,
@@ -100,8 +113,43 @@ const updateDriverRequests = async (
   }
 };
 
+// Add this function to your repository implementation
+const getUserIdByRequestId = async (
+  requestId: number
+): Promise<number | null> => {
+  const result = await DB.select({ userId: breakdownRequests.userId })
+    .from(breakdownRequests)
+    .where(eq(breakdownRequests.id, requestId))
+    .limit(1);
 
+  return result.length > 0 ? result[0].userId : null;
+};
+
+// Add this function to your repository implementation
+const getUserById = async (userId: number): Promise<User | null> => {
+  try {
+    const result = await DB.select({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+    })
+      .from(userProfile)
+      .where(eq(userProfile.id, userId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error in getUserById:", error);
+    throw error;
+  }
+};
+
+// Add this to your exported DriverSearchRepository object
 export const DriverSearchRepository: DriverSearchRepositoryType = {
   findNearbyDrivers,
   updateDriverRequests,
+  getUserIdByRequestId,
+  getUserById, // Add this line
 };

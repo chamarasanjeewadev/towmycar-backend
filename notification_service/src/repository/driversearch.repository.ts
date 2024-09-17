@@ -2,8 +2,7 @@
 import { DB } from "database";
 import { driver, breakdownAssignment } from "database";
 import { sql, eq, and } from "drizzle-orm";
-import { BreakdownRequestStatus } from '../types/breakdownRequest'; // Add this import
-
+import { DriverStatus } from "../enums";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
@@ -77,21 +76,13 @@ const updateDriverRequests = async (
         nearbyDrivers.map(driver => ({
           requestId,
           driverId: driver.id,
-          status: "assigned",
+          status: DriverStatus.PENDING,
           assignedAt: now,
           createdAt: now,
           updatedAt: now,
         }))
       );
 
-      // Update breakdownRequests table
-      // await tx
-      //   .update(breakdownRequest)
-      //   .set({
-      //     status: BreakdownRequestStatus.Quoting, // Updated to use enum
-      //     updatedAt: now,
-      //   })
-      //   .where(eq(breakdownRequest.id, requestId));
     });
     console.log("nearbyDrivers, after transaction", nearbyDrivers);
   } catch (error) {

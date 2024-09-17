@@ -8,8 +8,11 @@ import {
   addUserToGroup,
   adminSetUserPassword,
 } from "../utils/cognito.service";
-import { UserGroup } from "../../enums";
-
+import { EmailNotificationType, UserGroup } from "../../enums";
+import { sendNotification } from "../utils/sns.service";
+import { UserRepository } from "../../repository/user.repository"; // Update the import path
+import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
+import { DriverStatus } from "../../enums";
 interface UpdateAssignmentData {
   status: string;
   estimation?: string;
@@ -17,15 +20,6 @@ interface UpdateAssignmentData {
 }
 
 export class DriverService {
-  // async registerDriver(driverData: DriverInput, repository: IDriverRepository) {
-  //   // You can add any business logic here before saving to the database
-  //   const newDriver = await repository.create(driverData);
-  //   await createUser(driverData.email, "temporaryPassword");
-  //   await addUserToGroup(driverData.email, "driver");
-
-  //   return newDriver;
-  // }
-
   async getDriverByEmail(email: string, repository: IDriverRepository) {
     return repository.findByEmail(email);
   }
@@ -53,11 +47,70 @@ export class DriverService {
     requestId: number,
     data: UpdateAssignmentData
   ) {
-    return DriverRepository.updatebreakdownAssignment(
-      driverId,
-      requestId,
-      data
+    const breakdownRequestUpdated =
+      await DriverRepository.updatebreakdownAssignment(
+        driverId,
+        requestId,
+        data
+      );
+    console.log("acceptance data...", data);
+
+    // Fetch driver details using the new method
+    const driverDetails = await DriverRepository.getDriverById(driverId);
+
+    if (!driverDetails) {
+      throw new Error(`Driver with id ${driverId} not found`);
+    }
+
+    // Fetch user details using the new method
+    const userDetails = await DriverRepository.getUserByRequestId(requestId);
+
+    if (!userDetails) {
+      throw new Error(`User not found for request ${requestId}`);
+    }
+
+    // Determine the notification type and payload based on the status
+    let notificationType: EmailNotificationType;
+    let payload: any;
+
+    if (data.status === DriverStatus.QUOTED) {
+      notificationType = EmailNotificationType.DRIVER_QUOTATION_UPDATED_EMAIL;
+      payload = {
+        requestId,
+        driverId,
+        user: userDetails,
+        newPrice: data.estimation,
+        estimation: data.estimation,
+        description: data?.description ?? "",
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+      };
+    } else if (data.status === DriverStatus.ACCEPTED && parseFloat(data.estimation || '0') > 0 ) {
+      notificationType = EmailNotificationType.DRIVER_ACCEPT_EMAIL;
+      payload = {
+        requestId,
+        driverId,
+        user: userDetails,
+        status: data.status,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+        driverName: `${driverDetails.fullName}`,
+        driverPhone: driverDetails.phoneNumber,
+        driverEmail: driverDetails.email,
+        vehicleModel: driverDetails.vehicleType,
+        vehiclePlateNumber: driverDetails.vehicleRegistration,
+        estimation: data.estimation
+      };
+    } else {
+      throw new Error('Invalid status or estimation amount');
+    }
+
+    const emailSnsResult = await sendNotification(
+      process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
+      {
+        type: notificationType,
+        payload,
+      }
     );
+    return breakdownRequestUpdated;
   }
 
   async getDriverProfileByEmail(email: string) {
@@ -75,10 +128,21 @@ export const registerDriver = async (
   const basicDriverData = { username, email };
 
   // Create user in Cognito and then update database
-  await createTempUserInCognito({ email});
+  await createTempUserInCognito({ email });
   await adminSetUserPassword(email, password);
   await addUserToGroup(email, UserGroup.DRIVER);
   const newDriver = await repository.create(basicDriverData);
+  const emailSnsResult = await sendNotification(
+    process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
+    {
+      type: EmailNotificationType.DRIVER_REGISTERED_EMAIL,
+      payload: {
+        username,
+        email,
+        viewRequestLink: `http://localhost:5173/driver/profile`,
+      },
+    }
+  );
 
   return newDriver;
 };

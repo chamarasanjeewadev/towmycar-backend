@@ -6,12 +6,14 @@ import {
 import * as userRepository from "../../repository/user.repository";
 import { sendNotification } from "../utils/sns.service";
 import { BreakdownRequestRepositoryType } from "../../repository/breakdownRequest.repository";
-import { UserStatus } from "../../types/common";
-import { sendPushNotification } from "../utils/sns.service";
+import { sendPushNotificationAndEmail } from "../utils/sns.service";
 import { CombinedBreakdownRequestInput } from "../../dto/combinedBreakdownRequest.dto";
 import * as repository from "../../repository/breakdownRequest.repository";
 import * as cognitoService from "../utils/cognito.service";
-import { UserGroup, NotificationType } from "../../enums";
+import { UserGroup, EmailNotificationType, UserStatus } from "../../enums";
+import { BREAKDOWN_REQUEST_SNS_TOPIC_ARN, NOTIFICATION_REQUEST_SNS_TOPIC_ARN, VIEW_REQUEST_BASE_URL } from "../../config";
+import { BreakdownAssignment } from "database";
+
 export const createAndNotifyBreakdownRequest = async (
   input: BreakdownRequestInput,
   repo: BreakdownRequestRepositoryType
@@ -21,10 +23,10 @@ export const createAndNotifyBreakdownRequest = async (
 
   console.log(
     "Sending SNS notification",
-    process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN
+    BREAKDOWN_REQUEST_SNS_TOPIC_ARN
   );
   const snsResult = await sendNotification(
-    process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
+    BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
     {
       breakdownRequestId,
       userId: input.userId,
@@ -38,6 +40,7 @@ export const createAndNotifyBreakdownRequest = async (
     snsNotification: snsResult,
   };
 };
+
 export const CreateCombinedBreakdownRequest = async (
   combinedInput: CombinedBreakdownRequestInput,
   userId?: number
@@ -61,20 +64,24 @@ export const CreateCombinedBreakdownRequest = async (
 
       if (userExistsInCognito) {
         // If user exists in Cognito, get or create user in your DB
-        userId = await userRepository.UserRepository.getOrCreateUser(userData);
+        const { id, isCreated } =
+          await userRepository.UserRepository.getOrCreateUser(userData);
+        userId = id;
       } else {
         // If user doesn't exist in Cognito, create user in Cognito and then in your DB
         await cognitoService.createTempUserInCognito({
           email: userData.email,
         });
         await cognitoService.addUserToGroup(userData.email, UserGroup.USER);
-        userId = await userRepository.UserRepository.getOrCreateUser(userData);
+        const { id, isCreated } =
+          await userRepository.UserRepository.getOrCreateUser(userData);
+        userId = id;
       }
     }
 
     // Create breakdown request
     const breakdownRequestData = {
-      userId,
+      userId: userId,
       requestType: combinedInput.requestType,
       locationAddress: combinedInput.locationAddress,
       userLocation: {
@@ -89,25 +96,25 @@ export const CreateCombinedBreakdownRequest = async (
         breakdownRequestData
       );
 
-    // Send SNS notification to the notification service to send email and push notification to the user
+    // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendNotification(
-      process.env.BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
+      BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
       { breakdownRequestId, ...breakdownRequestData }
     );
 
-    // send email to the user
+    // send request to notification service to send email to the user
     const emailSnsResult = await sendNotification(
-      process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
+      NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
       {
-        type: NotificationType.UserRequestEmail,
+        type: EmailNotificationType.USER_REQUEST_EMAIL,
         payload: {
           breakdownRequestId: breakdownRequestId,
           userId,
           firstName: combinedInput.firstName,
           lastName: combinedInput.lastName,
           email: combinedInput.email,
-          location: breakdownRequestData.userLocation,
-          viewRequestLink: `https://www.yourcompany.com/breakdown-requests/${breakdownRequestId}`,
+          userLocation: breakdownRequestData.userLocation,
+          viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${breakdownRequestId}`,
         },
       }
     );
@@ -122,7 +129,6 @@ export const CreateCombinedBreakdownRequest = async (
     throw new Error("Failed to process combined breakdown request");
   }
 };
-
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<
   BreakdownRequestWithUserDetails[]
@@ -176,18 +182,38 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   };
 };
 
-const updateDriverStatusInBreakdownAssignment = async (
+const updateUserStatusInBreakdownAssignment = async (
   assignmentId: number,
   userStatus: UserStatus
 ): Promise<boolean> => {
-  sendPushNotification({
-    assignmentId,
-    userStatus,
-  });
-  return BreakdownRequestRepository.updateDriverStatusInBreakdownAssignment(
+  const updatedAssignment = await BreakdownRequestRepository.updateUserStatusInBreakdownAssignment(
     assignmentId,
     userStatus
   );
+
+  if (updatedAssignment) {
+    let emailType: EmailNotificationType;
+    if (userStatus === UserStatus.ACCEPTED) {
+      emailType = EmailNotificationType.USER_ACCEPT_EMAIL;
+    } else if (userStatus === UserStatus.REJECTED) {
+      emailType = EmailNotificationType.USER_REJECT_EMAIL;
+    } else {
+      // If status is PENDING or any other status, we don't send an email
+      return true;
+    }
+
+    await sendPushNotificationAndEmail({
+      type: emailType,
+      payload: {
+        requestId: updatedAssignment.requestId,
+        userStatus,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${assignmentId}`,
+      },
+    });
+    return true;
+  }
+
+  return false;
 };
 
 export const CreateBreakdownRequest = async (data: BreakdownRequestInput) => {
@@ -200,5 +226,6 @@ export const BreakdownRequestService = {
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,
-  updateDriverStatusInBreakdownAssignment,
+  updateDriverStatusInBreakdownAssignment:
+    updateUserStatusInBreakdownAssignment,
 };

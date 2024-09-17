@@ -10,6 +10,7 @@ import { DriverService } from "../service/driver/driver.service";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { getDriverProfileByEmail } from "../service/driver/driver.service";
+import { DriverStatus } from "../enums";
 const router = express.Router();
 const driverService = new DriverService();
 
@@ -123,7 +124,7 @@ router.patch(
         );
       }
 
-      if (status !== "accepted" && status !== "rejected") {
+      if (status !== DriverStatus.ACCEPTED && status !== DriverStatus.REJECTED && status !== DriverStatus.QUOTED) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,

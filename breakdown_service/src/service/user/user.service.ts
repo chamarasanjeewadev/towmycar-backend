@@ -7,7 +7,8 @@ import {
   checkUserExistsInCognito,
   updateUserInCognito,
 } from "../utils/cognito.service";
-import { UserGroup } from "../../enums";
+import { EmailNotificationType, UserGroup } from "../../enums";
+import { sendNotification } from "../utils/sns.service";
 
 export const CreateUser = async (
   input: UserRegisterInput,
@@ -31,13 +32,27 @@ export const CreateUser = async (
     }
 
     // Create or update user in the database
-    const userId = await repo.getOrCreateUser({
+    const {id, isCreated} = await repo.getOrCreateUser({
       email: input.email,
       username: input.username,
     });
+    // send email to the user to notify them that their account has been created
+    const emailSnsResult = await sendNotification(
+      process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
+      {
+        type: EmailNotificationType.USER_CREATED_EMAIL,
+        payload: {
+          firstName: input.username,
+          lastName: input.username,
+          email: input.email,
+          viewRequestLink: `http://localhost:5173/user/profile`,
+        },
+      }
+    );
 
     return {
-      id: userId,
+      id: id,
+      isCreated: isCreated,
     };
   } catch (error) {
     console.error("Error creating/updating user:", error);
