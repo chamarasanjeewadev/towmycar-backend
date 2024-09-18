@@ -24,28 +24,29 @@ export const pollMessagesFromSQS = async () => {
     const data = await sqs.receiveMessage(params as any).promise();
 
     if (data.Messages) {
-      logger.info(`Quotation service Received messages from SQS....... ${JSON.stringify(data)} messages`);
+      // logger.info(`Quotation service Received messages from SQS....... ${JSON.stringify(data)} messages`);
 
       // Process each message
       for (const message of data.Messages) {
-        // logger.info('Processing message:', message.Body);
+        console.log("message", message);
+       logger.info('Processing message:', message.Body);
         try {
           const snsNotification = JSON.parse(message?.Body || '{}');
           console.log("snsNotification in quotation service", snsNotification);
           const requestData = JSON.parse(snsNotification?.Message || '{}');
           console.log("requestData in quotation service", requestData);
-          const { breakdownRequestId: requestId, userLocation } = requestData;
+          const { breakdownRequestId: requestId,userId, userLocation } = requestData;
           console.log("requestId in quotation service", requestId);
           const { latitude, longitude } = userLocation||{};
           
-          console.log("Parsed requestData in quotation service:", { requestId, latitude, longitude });
+          console.log("Parsed requestData in quotation service:", { requestId, latitude, longitude, userId });
 
           if (latitude && longitude && requestId) {
-            console.log("requestId just before calling driver search service...............", requestId,latitude,longitude);
+            console.log("requestId just before calling driver search service...............", requestId,latitude,longitude,userId);
             const nearbyDrivers = await DriverSearchService.findAndUpdateNearbyDrivers(
               latitude,
               longitude,
-              requestId
+              requestId,userId
             );
             logger.info(`Found ${nearbyDrivers.length} nearby drivers for request ${requestId}`);
             const deleteParams = {

@@ -18,6 +18,7 @@
     "@sinclair/typebox": "^0.32.30",
     "@types/uuid": "^10.0.0",
     "ajv": "^8.13.0",
+    "aws-jwt-verify": "^4.0.1",
     "aws-sdk": "^2.1687.0",
     "axios": "^1.7.2",
     "class-validator": "^0.14.1",

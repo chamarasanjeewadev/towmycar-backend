@@ -10,8 +10,9 @@ import { z } from "zod";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { validateRequest } from "../middleware/requestValidator";
 import { errorHandler } from "../middleware/errorHandler";
+import { authenticateJWT } from "../middleware/auth";
 const router = express.Router();
-
+// router.use(authenticateJWT(["user"]));
 const authMiddleware = async (
   req: Request,
   res: Response,
@@ -64,7 +65,7 @@ router.post(
 );
 
 // New route for getting breakdown requests by user ID (paginated)
-router.get("/:id/list", async (req: Request, res: Response) => {
+router.get("/:id/list",authenticateJWT(["user"]), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { page, pageSize } = PaginationQuerySchema.parse(req.query);

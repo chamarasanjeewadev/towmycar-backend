@@ -4,62 +4,71 @@ import {
 } from "../repository/driversearch.repository";
 import { sendNotification } from "../utils/sns.service";
 import { EmailNotificationType } from "../enums";
+import { VIEW_REQUEST_BASE_URL, NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../config";
 
 export type DriverSearchServiceType = {
   findAndUpdateNearbyDrivers: (
     latitude: number,
     longitude: number,
-    requestId: number
+    requestId: number,
+    userId: number
   ) => Promise<NearbyDriver[]>;
 };
 
 const findAndUpdateNearbyDrivers = async (
   latitude: number,
   longitude: number,
-  requestId: number
+  requestId: number,
+  userId: number
 ): Promise<NearbyDriver[]> => {
-  // Find nearby drivers
-  const nearbyDrivers = await DriverSearchRepository.findNearbyDrivers(
-    latitude,
-    longitude
-  );
+  try {
+    // Find nearby drivers
+    const nearbyDrivers = await DriverSearchRepository.findNearbyDrivers(
+      latitude,
+      longitude
+    );
 
-  // Pass the full nearbyDrivers array to updateDriverRequests
-  await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
-  console.log("nearbyDrivers", nearbyDrivers);
+    // Pass the full nearbyDrivers array to updateDriverRequests
+    await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
 
-  // Get userId by requestId
-  const userId = await DriverSearchRepository.getUserIdByRequestId(requestId);
+    // Get user details
+    const user = await DriverSearchRepository.getUserById(userId);
 
-  // Get user details
-  const user = userId ? await DriverSearchRepository.getUserById(userId) : null;
+    // Send notifications to nearby drivers
+    for (const driver of nearbyDrivers) {
+      console.log(
+        " try to send notification to driver",
+        driver,
+        EmailNotificationType.DRIVER_NOTIFICATION_EMAIL
+      );
+      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+        type: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
+        payload: {
+          breakdownRequestId: requestId,
+          driver,
+          user,
+          location: `${latitude}, ${longitude}`,
+          viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${requestId}`,
+        },
+      });
+    }
 
-  // Send notifications to nearby drivers
-  for (const driver of nearbyDrivers) {
-    await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
+    // Send notification to the user
+    await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      type: EmailNotificationType.USER_NOTIFICATION_EMAIL,
       payload: {
         breakdownRequestId: requestId,
-        driver,
         user,
-        location: `${latitude}, ${longitude}`,
-        viewRequestLink: `${process.env.FRONTEND_URL}/driver/requests/${requestId}`,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       },
     });
+
+    console.log("should be requestId", requestId);
+    return nearbyDrivers;
+  } catch (error) {
+    console.error("Error in findAndUpdateNearbyDrivers:", error);
+    throw error; // Re-throw the error to be handled by the caller
   }
-
-  // Send notification to the user
-  await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-    type: EmailNotificationType.USER_NOTIFICATION_EMAIL,
-    payload: {
-      breakdownRequestId: requestId,
-      user,
-      viewRequestLink: `${process.env.FRONTEND_URL}/user/view-request/${requestId}`,
-    },
-  });
-
-  console.log("should be requestId", requestId);
-  return nearbyDrivers;
 };
 
 export const DriverSearchService: DriverSearchServiceType = {

@@ -12,6 +12,7 @@ import { driverProfileSchema } from "../dto/driver.dto";
 import { getDriverProfileByEmail } from "../service/driver/driver.service";
 import { DriverStatus } from "../enums";
 const router = express.Router();
+// router.use(authenticateJWT(["driver"]));
 const driverService = new DriverService();
 
 // Remove the "/driver" prefix from all routes
@@ -53,7 +54,6 @@ router.post(
 
 router.get(
   "/:driverId/assigned-requests",
-  authenticateJWT,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = parseInt(req.params.driverId);
@@ -77,7 +77,6 @@ router.get(
 
 router.get(
   "/:driverId/assigned-request/:requestId",
-  authenticateJWT,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = parseInt(req.params.driverId);
@@ -110,7 +109,6 @@ router.get(
 
 router.patch(
   "/:driverId/assignment-update/:requestId",
-  authenticateJWT,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { driverId, requestId } = req.params;
@@ -168,7 +166,6 @@ router.patch(
 
 router.patch(
   "/:driverId/profile",
-  authenticateJWT,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = parseInt(req.params.driverId);
@@ -207,7 +204,6 @@ router.patch(
 
 router.get(
   "/profile",
-  authenticateJWT,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const email = req.query.email as string;

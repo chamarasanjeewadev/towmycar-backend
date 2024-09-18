@@ -30,7 +30,7 @@ Best regards,
 Your Breakdown Assistance Team`,
   htmlBody: `
     <h1>New Breakdown Request: Your Assistance Needed!</h1>
-    <p>Hello ${payload.driver?.firstName},</p>
+    <p>Hello ${payload.driver?.fullName},</p>
     <p>We have an <strong>urgent breakdown request</strong> in your area that needs your expertise!</p>
     
     <h2>Request Details:</h2>

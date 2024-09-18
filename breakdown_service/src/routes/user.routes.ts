@@ -13,7 +13,7 @@ import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 
 const router = express.Router();
 const repo = repository.UserRepository;
-
+router.use(authenticateJWT(["user"]));
 router.post(
   "/register",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -58,7 +58,7 @@ router.post(
 
 router.get(
   "/profile",
-  authenticateJWT,
+  authenticateJWT(["user"]),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log("inside get profile......", req.query);
@@ -160,7 +160,7 @@ router.patch(
   }
 );
 
-router.post("/fcm-token", validateRequest( fcmTokenSchema ), async (req, res) => {
+router.post("/fcm-token", validateRequest(fcmTokenSchema), async (req, res) => {
   try {
     const { token, browserInfo, userId } = req.body as FcmTokenInput;
     console.log("req.body.........", req.body);

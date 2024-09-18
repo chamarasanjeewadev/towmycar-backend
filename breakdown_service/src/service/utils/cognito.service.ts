@@ -8,11 +8,12 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { v4 as uuidv4 } from "uuid";
 import { UserGroup } from "../../enums";
+import { COGNITO_USER_POOL_ID } from '../../config';
 
 let client: CognitoIdentityProviderClient = new CognitoIdentityProviderClient({
   region: "us-east-1",
 });
-let userPoolId: string = "us-east-1_LWZQeja8g";
+let userPoolId: string = COGNITO_USER_POOL_ID;
 
 export const createUserInCognito = async (
   username: string,
