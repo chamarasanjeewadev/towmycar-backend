@@ -1,1 +1,3 @@
-./db/db-data/*
+./db/*
+.env
+notification_service/src/utils/serviceAccount.json

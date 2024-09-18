@@ -1,10 +1,12 @@
- import admin from 'firebase-admin';
+import admin from 'firebase-admin';
+import dotenv from 'dotenv';
 
-// // Replace with the path to your service account key file
-// const serviceAccount = require('./serviceAccount.json');
+dotenv.config();
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount),
-// });
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+});
 
 export default admin;
