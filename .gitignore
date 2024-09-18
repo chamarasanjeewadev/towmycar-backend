@@ -1,4 +1,1 @@
 ./db/db-data/*
-db/db-data/*
-# Add this line
-notification_service/src/utils/serviceAccount.json
