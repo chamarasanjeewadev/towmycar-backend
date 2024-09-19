@@ -1,0 +1,32 @@
+{
+    "private": true,
+    "scripts": {
+        "breakdown-dev": "yarn workspace @breakdownrescue/breakdown_service dev",
+        "breakdown-build": "yarn workspace @breakdownrescue/breakdown_service build",
+        "breakdown-start": "yarn workspace @breakdownrescue/breakdown_service start",
+        "breakdown-test": "yarn workspace @breakdownrescue/breakdown_service test",
+
+        "notification-dev": "yarn workspace @breakdownrescue/notification_service dev",
+        "notification-test": "yarn workspace @breakdownrescue/notification_service test",
+        "notification-db:generate": "yarn workspace @breakdownrescue/notification_service db:generate",
+        "notification-db:push": "yarn workspace @breakdownrescue/notification_service db:push",
+        "notification-db:migrate": "yarn workspace @breakdownrescue/notification_service db:migrate",
+        "notification-db:studio": "yarn workspace @breakdownrescue/notification_service db:studio",
+
+        "quotation-dev": "yarn workspace @breakdownrescue/quotation_service dev",
+        "quotation-test": "yarn workspace @breakdownrescue/quotation_service test",
+        "quotation-db:generate": "yarn workspace @breakdownrescue/quotation_service db:generate",
+        "quotation-db:push": "yarn workspace @breakdownrescue/quotation_service db:push",
+        "quotation-db:migrate": "yarn workspace @breakdownrescue/quotation_service db:migrate",
+        "quotation-db:studio": "yarn workspace @breakdownrescue/quotation_service db:studio",
+
+        "db-schema-dev": "yarn workspace @breakdownrescue/db-schema dev",
+        "db:generate": "yarn workspace @breakdownrescue/database db:generate",
+        "db:push": "yarn workspace @breakdownrescue/database db:push",
+        "db:migrate": "yarn workspace @breakdownrescue/database db:migrate",
+        "db:studio": "yarn workspace @breakdownrescue/database db:studio"
+    },
+    "workspaces": [
+        "packages/*"
+    ]
+}

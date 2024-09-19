@@ -1,0 +1,23 @@
+{
+  "name": "@breakdownrescue/database",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "tsx ./migration.ts",
+    "db:studio": "drizzle-kit studio --port 6000"
+  },
+  "dependencies": {
+    "@types/node": "^22.5.4",
+    "@types/pg": "^8.11.8",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.33.0",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.24.2",
+    "tsx": "^4.19.0"
+  }
+}
