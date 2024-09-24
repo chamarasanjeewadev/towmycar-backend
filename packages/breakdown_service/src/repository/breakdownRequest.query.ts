@@ -1,13 +1,14 @@
-import { DB } from "database";
-import {
-  userProfile,
+import {DB,
+  customer,
+  user,
+  User,
   breakdownRequest,
-  UserProfile,
+  Customer,
   breakdownAssignment,
   driver,
   Driver,
   BreakdownAssignment,
-} from "database";
+} from "@breakdownrescue/database";
 import { eq, sql, desc } from "drizzle-orm";
 
 // Add this type definition
@@ -39,7 +40,7 @@ export type BreakdownRequestQueryType = {
   getBreakdownAssignmentsByUserIdAndRequestId: (
     userId: number,
     requestId?: number
-  ) => Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]>;
+  ) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
 };
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<
@@ -51,13 +52,13 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
     location: breakdownRequest.locationAddress,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
-    userId: breakdownRequest.userId,
-    firstName: userProfile.firstName,
-    lastName: userProfile.lastName,
-    userEmail: userProfile.email,
+    userId: breakdownRequest.customerId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    userEmail: user.email,
   })
     .from(breakdownRequest)
-    .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId));
+    .leftJoin(user, eq(user.id, breakdownRequest.customerId));
 };
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
@@ -78,13 +79,13 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     location: breakdownRequest.locationAddress,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
-    userId: breakdownRequest.userId,
-    firstName: userProfile.firstName,
-    lastName: userProfile.lastName,
-    userEmail: userProfile.email,
+    userId: breakdownRequest.customerId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    userEmail: user.email,
   })
     .from(breakdownRequest)
-    .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId));
+    .leftJoin(user, eq(user.id, breakdownRequest.customerId));
 
   let filteredQuery = baseQuery;
 
@@ -109,7 +110,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   if (userId) {
     // @ts-ignore
     filteredCountQuery = filteredCountQuery.where(
-      eq(breakdownRequest.userId, userId)
+      eq(breakdownRequest.customerId, userId)
     );
   }
 
@@ -131,7 +132,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 const getBreakdownAssignmentsByUserIdAndRequestId = async (
   userId: number,
   requestId?: number
-): Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]> => {
+): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]> => {
   let query = DB.select({
     assignment: {
       id: breakdownAssignment.id,
@@ -144,15 +145,15 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
     },
     driver: {
       id: driver.id,
-      email: driver.email,
-      fullName: driver.fullName,
+      email: user.email,
+      fullName: user.firstName,
       phoneNumber: driver.phoneNumber,
     },
     user: {
-      id: userProfile.id,
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
-      email: userProfile.email,
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
     },
   })
     .from(breakdownAssignment)
@@ -161,8 +162,8 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
       breakdownRequest,
       eq(breakdownAssignment.requestId, breakdownRequest.id)
     )
-    .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
-    .where(eq(userProfile.id, userId));
+    .innerJoin(user, eq(breakdownRequest.customerId, user.id))
+    .where(eq(user.id, userId));
 
   if (requestId) {
     // @ts-ignore
@@ -173,7 +174,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
 
   return result as unknown as (BreakdownAssignment & {
     driver: Driver;
-    user: UserProfile;
+    user: User;
   })[];
 };
 

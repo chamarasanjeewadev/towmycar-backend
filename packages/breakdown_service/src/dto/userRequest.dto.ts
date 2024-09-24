@@ -26,3 +26,19 @@ export const UserEditRequestSchema = Type.Object({
 });
 
 export type UserEditRequestInput = Static<typeof UserEditRequestSchema>;
+
+export interface UserEmail {
+  email_address: string;
+}
+
+export interface UnsafeMetadata {
+  role: string;
+}
+
+export interface UserData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email_addresses: UserEmail[];
+  unsafe_metadata: UnsafeMetadata;
+}

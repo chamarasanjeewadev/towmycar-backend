@@ -14,7 +14,16 @@ export const BreakdownRequestSchema = z.object({
 });
 
 // Define the TypeScript type for form data
-export type BreakdownRequestInput = z.infer<typeof BreakdownRequestSchema>;
+export type BreakdownRequestInput = {
+  userId: number;
+  requestType: string;
+  locationAddress: string;
+  userLocation: {
+    longitude: number;
+    latitude: number;
+  };
+  description?: string | null;
+};
 
 export interface BreakdownRequestWithUserDetails {
   id: number;

@@ -107,3 +107,27 @@ Authorization: Bearer <your-jwt-token-here>
 GET http://localhost:{{port}}/user/profile?email=user1@gmail.com
 Content-Type: application/json
 Authorization: Bearer <your-jwt-token-here>
+
+### Call Webhook
+POST https://989a-82-14-209-151.ngrok-free.app/user/webhook
+Content-Type: application/json
+svix-id: your-svix-id-here
+svix-timestamp: your-svix-timestamp-here
+svix-signature: your-svix-signature-here
+
+{
+  "data": {
+    "id": "example-webhook-id",
+    "object": "event",
+    "type": "user.created",
+    "data": {
+      "id": "user_2eD9Ns2Ix1evMTDCHyYFP8JBpmH",
+      "object": "user",
+      "username": "test_user",
+      "email": "test@example.com",
+      "created_at": 1679647500495,
+      "updated_at": 1679647500495
+    }
+  },
+  "object": "event"
+}

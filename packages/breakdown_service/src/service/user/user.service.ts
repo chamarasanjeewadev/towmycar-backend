@@ -32,7 +32,7 @@ export const CreateUser = async (
     }
 
     // Create or update user in the database
-    const {id, isCreated} = await repo.getOrCreateUser({
+    const { id, isCreated } = await repo.getOrCreateUser({
       email: input.email,
       username: input.username,
     });
@@ -56,7 +56,7 @@ export const CreateUser = async (
     };
   } catch (error) {
     console.error("Error creating/updating user:", error);
-    throw error;
+    throw new Error("Error creating/updating user");
   }
 };
 

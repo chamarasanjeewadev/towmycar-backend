@@ -1,8 +1,8 @@
-import { DB } from "database";
+import { DB } from "@breakdownrescue/database";
 import {
   breakdownRequest,
   breakdownAssignment,
-} from "database";
+} from "@breakdownrescue/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { eq, and } from "drizzle-orm";
 import { UserStatus } from "../enums";
@@ -24,7 +24,7 @@ const saveBreakdownRequest = async (
 ): Promise<number> => {
   const breakdownResult = await DB.insert(breakdownRequest)
     .values({
-      userId: data.userId,
+      customerId: data.userId,
       requestType: data.requestType,
       locationAddress: data.locationAddress,
       userLocation: {
@@ -32,7 +32,7 @@ const saveBreakdownRequest = async (
         y: data.userLocation.latitude,
       },
       description: data.description || null,
-      status: "pending",
+      status: UserStatus.PENDING,
     })
     .returning({ id: breakdownRequest.id });
 

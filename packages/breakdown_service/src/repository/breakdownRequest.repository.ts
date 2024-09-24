@@ -1,17 +1,22 @@
-import { DB } from "@breakdownrescue/database";
 import {
-  userProfile,
+  DB,
   breakdownRequest,
-  UserProfile,
   BreakdownRequest,
+} from "@breakdownrescue/database";
+import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
+import { sql } from "drizzle-orm";
+import { UserStatus } from "../enums";
+import {
+  customer,
+  user,
   breakdownAssignment,
   driver,
   Driver,
   BreakdownAssignment,
+  User,
 } from "@breakdownrescue/database";
-import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { eq, sql, desc, and } from "drizzle-orm";
-import { UserStatus, DriverStatus } from "../enums";
+import { eq, desc, and } from "drizzle-orm";
+import { DriverStatus } from "../enums";
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
   id: number;
@@ -44,7 +49,7 @@ export type BreakdownRequestRepositoryType = {
   getBreakdownAssignmentsByUserIdAndRequestId: (
     userId: number,
     requestId?: number
-  ) => Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]>;
+  ) => Promise<(BreakdownAssignment & { driver: Driver; user: any })[]>;
   updateUserStatusInBreakdownAssignment: (
     // userId: number,
     assignmentId: number,
@@ -55,18 +60,23 @@ export type BreakdownRequestRepositoryType = {
 const saveBreakdownRequest = async (
   data: BreakdownRequestInput
 ): Promise<number> => {
+  const x: BreakdownRequest = {
+    id: 0,
+    customerId: data.userId,
+    requestType: data.requestType,
+    locationAddress: data.locationAddress,
+    userLocation: {
+      x: data.userLocation.longitude,
+      y: data.userLocation.latitude,
+    },
+    // userLocation: sql`POINT(${data.userLocation.longitude}, ${data.userLocation.latitude})`,
+    status: UserStatus.PENDING,
+    description: data.description,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
   const breakdownResult = await DB.insert(breakdownRequest)
-    .values({
-      userId: data.userId,
-      requestType: data.requestType,
-      locationAddress: data.locationAddress,
-      userLocation: {
-        x: data.userLocation.longitude,
-        y: data.userLocation.latitude,
-      },
-      description: data.description || null,
-      status: UserStatus.PENDING,
-    })
+    .values(x)
     .returning({ id: breakdownRequest.id });
 
   return breakdownResult[0].id;
@@ -81,13 +91,14 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
     location: breakdownRequest.locationAddress,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
-    userId: breakdownRequest.userId,
-    firstName: userProfile.firstName,
-    lastName: userProfile.lastName,
-    userEmail: userProfile.email,
+    userId: breakdownRequest.customerId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    userEmail: user.email,
   })
     .from(breakdownRequest)
-    .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId));
+    .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
+    .leftJoin(user, eq(user.id, customer.userId));
 };
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
@@ -108,14 +119,14 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     location: breakdownRequest.locationAddress,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
-    userId: breakdownRequest.userId,
-    firstName: userProfile.firstName,
-    lastName: userProfile.lastName,
-    userEmail: userProfile.email,
+    userId: breakdownRequest.customerId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    userEmail: user.email,
   })
     .from(breakdownRequest)
-    .leftJoin(userProfile, eq(userProfile.id, breakdownRequest.userId));
-
+    .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
+    .leftJoin(user, eq(user.id, customer.userId));
   let filteredQuery = baseQuery.orderBy(desc(breakdownRequest.updatedAt));
 
   if (userId) {
@@ -139,7 +150,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   if (userId) {
     // @ts-ignore
     filteredCountQuery = filteredCountQuery.where(
-      eq(breakdownRequest.userId, userId)
+      eq(breakdownRequest.customerId, userId)
     );
     // @ts-ignore
     const [{ count }] = await filteredCountQuery;
@@ -163,7 +174,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 const getBreakdownAssignmentsByUserIdAndRequestId = async (
   userId: number,
   requestId?: number
-): Promise<(BreakdownAssignment & { driver: Driver; user: UserProfile })[]> => {
+): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
   let query = DB.select({
     assignment: {
       id: breakdownAssignment.id,
@@ -176,15 +187,15 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
     },
     driver: {
       id: driver.id,
-      email: driver.email,
-      fullName: driver.fullName,
+      email: user.email,
+      fullName: user.firstName,
       phoneNumber: driver.phoneNumber,
     },
     user: {
-      id: userProfile.id,
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
-      email: userProfile.email,
+      id: customer.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
     },
   })
     .from(breakdownAssignment)
@@ -193,8 +204,9 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
       breakdownRequest,
       eq(breakdownAssignment.requestId, breakdownRequest.id)
     )
-    .innerJoin(userProfile, eq(breakdownRequest.userId, userProfile.id))
-    .where(eq(userProfile.id, userId));
+    .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+    .innerJoin(user, eq(user.id, customer.userId))
+    .where(eq(customer.id, userId));
 
   if (requestId) {
     // @ts-ignore
@@ -205,7 +217,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
 
   return result as unknown as (BreakdownAssignment & {
     driver: Driver;
-    user: UserProfile;
+    user: any;
   })[];
 };
 
@@ -214,7 +226,7 @@ const updateUserStatusInBreakdownAssignment = async (
   userStatus: UserStatus
 ): Promise<BreakdownAssignment | null> => {
   const result = await DB.update(breakdownAssignment)
-    .set({ userStatus: userStatus })
+    .set({ status: userStatus })
     .where(eq(breakdownAssignment.id, assignmentId))
     .returning();
 

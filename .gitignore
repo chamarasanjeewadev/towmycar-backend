@@ -21,3 +21,5 @@ yarn-error.log*
 
 # Ignore IDE settings (VS Code, for example)
 .vscode/
+
+db/*

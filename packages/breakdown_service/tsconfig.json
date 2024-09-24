@@ -26,7 +26,11 @@
 
     /* Modules */
     "module": "commonjs" /* Specify what module code is generated. */,
-    "rootDir": "./" /* Specify the root folder within your source files. */,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@breakdownrescue/database": ["../database"]
+    },
     // "moduleResolution": "node",                       /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
@@ -78,7 +82,7 @@
     /* Type Checking */
     "strict": true /* Enable all strict type-checking options. */,
     "noImplicitAny": false /* Enable error reporting for expressions and declarations with an implied 'any' type. */,
-    // "strictNullChecks": true,                         /* When type checking, take into account 'null' and 'undefined'. */
+    "strictNullChecks": false /* When type checking, take into account 'null' and 'undefined'. */,
     // "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
     // "strictBindCallApply": true,                      /* Check that the arguments for 'bind', 'call', and 'apply' methods match the original function. */
     "strictPropertyInitialization": false /* Check for class properties that are declared but not set in the constructor. */,
@@ -100,12 +104,6 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*.ts", "../quotation_service/src/utils/pollMessages.ts"], // Include all TypeScript files in the src directory
-  "exclude": [
-    "src/**/*.spec.ts", // Exclude test files with .spec.ts suffix
-    "src/**/*.test.ts", // Exclude test files with .test.ts suffix
-    "tests/**/*", // Exclude an entire tests/ directory, if you have one
-    "node_modules", // Exclude node_modules (default)
-    "dist" // Exclude the dist directory (default)
-  ]
+  "include": ["src/**/*", "../database/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }

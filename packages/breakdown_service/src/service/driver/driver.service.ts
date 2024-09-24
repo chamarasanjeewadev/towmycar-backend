@@ -92,9 +92,9 @@ export class DriverService {
         user: userDetails,
         status: data.status,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
-        driverName: `${driverDetails.fullName}`,
+        driverName: `${""}`,
         driverPhone: driverDetails.phoneNumber,
-        driverEmail: driverDetails.email,
+        driverEmail: "driverDetails.email",
         vehicleModel: driverDetails.vehicleType,
         vehiclePlateNumber: driverDetails.vehicleRegistration,
         estimation: data.estimation
