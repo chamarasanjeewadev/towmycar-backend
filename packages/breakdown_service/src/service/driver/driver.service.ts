@@ -63,7 +63,7 @@ export class DriverService {
     }
 
     // Fetch user details using the new method
-    const userDetails = await DriverRepository.getUserByRequestId(requestId);
+    const userDetails = await DriverRepository.getDriverByRequestId(requestId);
 
     if (!userDetails) {
       throw new Error(`User not found for request ${requestId}`);
@@ -145,6 +145,13 @@ export const registerDriver = async (
   );
 
   return newDriver;
+};
+
+export const getDriverById = async (
+  userId: number,
+  repository: IDriverRepository
+) => {
+  return repository.getDriverProfileById(userId);
 };
 
 export const updateDriverProfile = async (

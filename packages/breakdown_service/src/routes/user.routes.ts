@@ -1,22 +1,23 @@
+import { getUserProfileById } from './../service/user/user.service';
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/user.service";
 import * as repository from "../repository/user.repository";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { requiredUserSchema, UserInput } from "../dto/user.dto";
-import { authenticateJWT } from "../middleware/auth";
 import { UserRegisterInput } from "../dto/userRequest.dto";
-import { z } from "zod";
 import { UserRepository } from "../repository/user.repository";
 import { saveFcmToken } from "../service/user/user.service";
 import { validateRequest } from "../middleware/requestValidator";
 import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
 import { Webhook } from "svix";
-import { clerkClient } from '@clerk/clerk-sdk-node'
+import { clerkClient } from "@clerk/clerk-sdk-node";
+import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+import * as driverService from "../service/driver/driver.service";
+import { DriverRepository } from "../repository/driver.repository";
 
 const router = express.Router();
 const repo = repository.UserRepository;
-// router.use(authenticateJWT(["user"]));
 //@ts-ignore
 router.post(
   "/webhook",
@@ -35,7 +36,9 @@ router.post(
     const svix_signature = headers["svix-signature"];
 
     if (!svix_id || !svix_timestamp || !svix_signature) {
-      return res.status(400).json({ message: "Error occurred -- no svix headers" });
+      return res
+        .status(400)
+        .json({ message: "Error occurred -- no svix headers" });
     }
 
     const wh = new Webhook(WEBHOOK_SECRET);
@@ -58,21 +61,27 @@ router.post(
     evt = payload;
     console.log("data....", evt);
 
-    if (evt.type === 'user.created') {
+    if (evt.type === "user.created") {
       const userData = evt.data;
       try {
-        const userInfo=await repo.createUserFromWebhook(userData);
-        const params = { userInfo: userInfo}
+        const userInfo = await repo.createUserFromWebhook(userData);
+        const params = { userInfo: userInfo };
 
-      const updatedUser = await clerkClient.users.updateUser(evt.data.id, params)
-      console.log("updatedUser.....", updatedUser)
-       if (userInfo.userId) {
-      await clerkClient.users.updateUserMetadata(evt.data.id, {
-        privateMetadata: {
-          userInfo: userInfo,
-        },
-      });
-    }
+        const updatedUser = await clerkClient.users.updateUser(
+          evt.data.id,
+          params
+        );
+        console.log("updatedUser.....", updatedUser);
+        if (userInfo.userId) {
+          await clerkClient.users.updateUserMetadata(evt.data.id, {
+            privateMetadata: {
+              userInfo: userInfo,
+            },
+            publicMetadata: {
+              userInfo: userInfo,
+            },
+          });
+        }
 
         return res.status(200).json({
           success: true,
@@ -137,20 +146,12 @@ router.post(
 
 router.get(
   "/profile",
-  // authenticateJWT(["user"]),
+  clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log("inside get profile......", req.query);
-      const authId = req.query.authId as string;
-      if (!authId) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "authId is required"
-        );
-      }
-
-      const userProfile = await service.getUserProfileByAuthId(authId, repo);
+      const userId = req.userInfo.userId;
+      const userProfile = await service.getUserProfileById(userId, repo);
       if (!userProfile) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
@@ -167,43 +168,43 @@ router.get(
 );
 
 // Add this new route
-router.get(
-  "/profile/:id",
-  // authenticateJWT,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Invalid user ID"
-        );
-      }
+// router.get(
+//   "/profile/:id",
+//   clerkAuthMiddleware("customer"),
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//       const id = parseInt(req.params.id, 10);
+//       if (isNaN(id)) {
+//         throw new CustomError(
+//           ERROR_CODES.INVALID_INPUT,
+//           400,
+//           "Invalid user ID"
+//         );
+//       }
 
-      const userProfile = await service.getUserProfileById(id, repo);
-      if (!userProfile) {
-        throw new CustomError(
-          ERROR_CODES.RESOURCE_NOT_FOUND,
-          404,
-          "User profile not found"
-        );
-      }
+//       const userProfile = await service.getUserProfileById(id, repo);
+//       if (!userProfile) {
+//         throw new CustomError(
+//           ERROR_CODES.RESOURCE_NOT_FOUND,
+//           404,
+//           "User profile not found"
+//         );
+//       }
 
-      res.json(userProfile);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+//       res.json(userProfile);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
 // Add this new route
 router.patch(
-  "/profile/:id",
-  // authenticateJWT,
+  "/profile",
+  clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = req.userInfo.userId;
       if (isNaN(id)) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -255,5 +256,8 @@ router.post("/fcm-token", validateRequest(fcmTokenSchema), async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Add this new route for getting driver profile
+
 
 export default router;

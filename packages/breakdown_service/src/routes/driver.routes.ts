@@ -1,22 +1,23 @@
 import express, { Request, Response, NextFunction } from "express";
-import { DriverSchema } from "../dto/driver.dto";
 import {
+  getDriverById,
   registerDriver,
   updateDriverProfile,
 } from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
-import { authenticateJWT } from "../middleware/auth";
 import { DriverService } from "../service/driver/driver.service";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { driverProfileSchema } from "../dto/driver.dto";
-import { getDriverProfileByEmail } from "../service/driver/driver.service";
 import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+import { getUserProfileById } from "src/service/user/user.service";
 const router = express.Router();
-// router.use(authenticateJWT(["driver"]));
 const driverService = new DriverService();
 
 // Remove the "/driver" prefix from all routes
+/**
+ * @deprecated This route is no longer in use. Driver registration is now handled through Clerk.
+ */
 router.post(
   "/register",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -77,10 +78,11 @@ router.get(
 );
 
 router.get(
-  "/:driverId/assigned-request/:requestId",
+  "/assigned-request/:requestId",
+  clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const driverId = parseInt(req.params.driverId);
+      const driverId = req.userInfo.driverId;
       const requestId = parseInt(req.params.requestId);
       if (isNaN(driverId) || isNaN(requestId)) {
         throw new CustomError(
@@ -109,10 +111,12 @@ router.get(
 );
 
 router.patch(
-  "/:driverId/assignment-update/:requestId",
+  "/assignment-update/:requestId",
+  clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { driverId, requestId } = req.params;
+      const driverId = req.userInfo.driverId;
+      const requestId = parseInt(req.params.requestId);
       const { status, estimation, explanation } = req.body;
       
       if (!driverId || !status) {
@@ -165,6 +169,29 @@ router.patch(
   }
 );
 
+router.get(
+  "/profile",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userInfo.userId;
+      
+      const driverProfile = await getDriverById(userId,DriverRepository);
+      if (!driverProfile) {
+        throw new CustomError(
+          ERROR_CODES.RESOURCE_NOT_FOUND,
+          404,
+          "Driver profile not found"
+        );
+      }
+
+      res.json(driverProfile);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.patch(
   "/profile",clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -202,34 +229,5 @@ router.patch(
     }
   }
 );
-
-// router.get(
-//   "/profile",
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const email = req.query.email as string;
-//       if (!email) {
-//         throw new CustomError(
-//           ERROR_CODES.INVALID_INPUT,
-//           400,
-//           "Email is required"
-//         );
-//       }
-
-//       const driverProfile = await getDriverProfileByEmail(email);
-//       if (!driverProfile) {
-//         throw new CustomError(
-//           ERROR_CODES.RESOURCE_NOT_FOUND,
-//           404,
-//           "Driver profile not found"
-//         );
-//       }
-
-//       res.json(driverProfile);
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
 
 export default router;

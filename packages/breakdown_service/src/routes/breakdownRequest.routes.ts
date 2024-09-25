@@ -53,18 +53,18 @@ router.post(
 
 // New route for getting breakdown requests by user ID (paginated)
 router.get(
-  "/:id/list",
-  authenticateJWT(["user"]),
+  "/list",
+  clerkAuthMiddleware("customer"),
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { userId, customerId } = req.userInfo;
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
       const { breakdownRequests, totalCount } =
         await service.BreakdownRequestService.getPaginatedBreakdownRequestsWithUserDetails(
           page,
           pageSize,
-          +id
+          customerId
         );
 
       res.status(200).json({
@@ -129,7 +129,7 @@ router.patch(
       console.log("assignmentId", assignmentId);
       console.log("userStatus", userStatus);
       const updated =
-        await service.BreakdownRequestService.updateDriverStatusInBreakdownAssignment(
+        await service.BreakdownRequestService.updateUserStatusInBreakdownAssignment(
           assignmentId,
           userStatus
         );

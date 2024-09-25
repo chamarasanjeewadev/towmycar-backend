@@ -1,4 +1,5 @@
-import {DB,
+import {
+  DB,
   customer,
   user,
   User,
@@ -137,7 +138,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
     assignment: {
       id: breakdownAssignment.id,
       requestId: breakdownAssignment.requestId,
-      status: breakdownAssignment.status,
+      status: breakdownAssignment.driverStatus,
       userStatus: breakdownAssignment.userStatus,
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,

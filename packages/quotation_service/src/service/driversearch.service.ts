@@ -27,41 +27,41 @@ const findAndUpdateNearbyDrivers = async (
       latitude,
       longitude
     );
-
+console.log("nearbyDrivers...........",nearbyDrivers)
     // Pass the full nearbyDrivers array to updateDriverRequests
     await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
 
     // Get user details
-    const user = await DriverSearchRepository.getUserById(userId);
+    // const user = await DriverSearchRepository.getUserById(userId);
 
     // Send notifications to nearby drivers
-    for (const driver of nearbyDrivers) {
-      console.log(
-        " try to send notification to driver",
-        driver,
-        EmailNotificationType.DRIVER_NOTIFICATION_EMAIL
-      );
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
-        payload: {
-          breakdownRequestId: requestId,
-          driver,
-          user,
-          location: `${latitude}, ${longitude}`,
-          viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${requestId}`,
-        },
-      });
-    }
+    // for (const driver of nearbyDrivers) {
+    //   console.log(
+    //     " try to send notification to driver",
+    //     driver,
+    //     EmailNotificationType.DRIVER_NOTIFICATION_EMAIL
+    //   );
+    //   await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+    //     type: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
+    //     payload: {
+    //       breakdownRequestId: requestId,
+    //       driver,
+    //       user,
+    //       location: `${latitude}, ${longitude}`,
+    //       viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${requestId}`,
+    //     },
+    //   });
+    // }
 
     // Send notification to the user
-    await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: EmailNotificationType.USER_NOTIFICATION_EMAIL,
-      payload: {
-        breakdownRequestId: requestId,
-        user,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
-      },
-    });
+    // await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+    //   type: EmailNotificationType.USER_NOTIFICATION_EMAIL,
+    //   payload: {
+    //     breakdownRequestId: requestId,
+    //     user,
+    //     viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+    //   },
+    // });
 
     console.log("should be requestId", requestId);
     return nearbyDrivers;

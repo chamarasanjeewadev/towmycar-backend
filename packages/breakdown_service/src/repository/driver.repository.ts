@@ -13,6 +13,7 @@ import { eq, and, desc, not, or } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
+import { DriverStatus, UserStatus } from "../enums";
 
 interface UpdateAssignmentData {
   status: string;
@@ -63,13 +64,27 @@ export interface IDriverRepository {
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
   getDriverById(id: number): Promise<Driver | null>;
   getUserByRequestId(requestId: number): Promise<Partial<Customer> | null>;
+  getDriverProfileById(userId: number): Promise<any | null>;
+  getDriverByRequestId(requestId: number): Promise<
+    | (Partial<Driver> & {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+        vehicleType: string;
+        vehicleRegistration: string;
+        licenseNumber: string;
+      })
+    | null
+  >;
 }
 
 export const DriverRepository: IDriverRepository = {
   create,
   async findByEmail(email: string): Promise<any | null> {
     const [foundDriver] = await DB.select()
-      .from(driver).innerJoin(user, eq(driver.userId, user.id))
+      .from(driver)
+      .innerJoin(user, eq(driver.userId, user.id))
       .where(eq(user.email, email));
     return foundDriver || null;
   },
@@ -80,7 +95,7 @@ export const DriverRepository: IDriverRepository = {
       driverRequest: {
         id: breakdownAssignment.id,
         requestId: breakdownAssignment.requestId,
-        status: breakdownAssignment.status,
+        status: breakdownAssignment.driverStatus,
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
@@ -123,7 +138,7 @@ export const DriverRepository: IDriverRepository = {
       driverRequest: {
         id: breakdownAssignment.id,
         requestId: breakdownAssignment.requestId,
-        status: breakdownAssignment.status,
+        status: breakdownAssignment.driverStatus,
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
@@ -164,6 +179,7 @@ export const DriverRepository: IDriverRepository = {
         eq(breakdownAssignment.requestId, breakdownRequest.id)
       )
       .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+      .innerJoin(user, eq(user.id, customer.userId))
       .where(
         and(
           eq(breakdownAssignment.driverId, driverId),
@@ -186,7 +202,7 @@ export const DriverRepository: IDriverRepository = {
     data: UpdateAssignmentData
   ): Promise<boolean> {
     const updateData: Partial<typeof breakdownAssignment.$inferInsert> = {
-      status: data.status,
+      driverStatus: data.status,
       ...(data.estimation !== undefined && { estimation: data.estimation }),
       ...(data.explanation !== undefined && { explanation: data.explanation }),
     };
@@ -201,8 +217,8 @@ export const DriverRepository: IDriverRepository = {
           and(
             eq(breakdownAssignment.driverId, driverId),
             eq(breakdownAssignment.requestId, requestId),
-            eq(breakdownAssignment.status, "accepted"),
-            eq(breakdownAssignment.userStatus, "accepted")
+            eq(breakdownAssignment.driverStatus, DriverStatus.ACCEPTED),
+            eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED)
           )
         )
         .limit(1);
@@ -260,14 +276,14 @@ export const DriverRepository: IDriverRepository = {
     data: Partial<DriverProfileDtoType>
   ): Promise<Driver> {
     const { primaryLocation, ...restData } = data;
-    const prim=  {
+    const prim = {
       x: data.primaryLocation.longitude,
       y: data.primaryLocation.latitude,
     };
     const updatedDriver = await DB.update(driver)
       .set({
         ...restData,
-        primaryLocation:prim,
+        primaryLocation: prim,
       } as any) // Use 'as any' to bypass TypeScript checks
       .where(eq(driver.id, id))
       .returning();
@@ -287,17 +303,19 @@ export const DriverRepository: IDriverRepository = {
       .from(driver)
       .where(eq(driver.id, id));
     return foundDriver || null;
- 
   },
 
-  async getUserByRequestId(requestId: number): Promise<Partial<Customer> & {
-    firstName: string;
-    lastName: string;
-    email: string;
-    postcode: string;
-    vehicleRegistration: string;
-    mobileNumber: string;
-  } | null> {
+  async getUserByRequestId(requestId: number): Promise<
+    | (Partial<Customer> & {
+        firstName: string;
+        lastName: string;
+        email: string;
+        postcode: string;
+        vehicleRegistration: string;
+        mobileNumber: string;
+      })
+    | null
+  > {
     const result = await DB.select({
       id: customer.id,
       firstName: user.firstName,
@@ -309,9 +327,59 @@ export const DriverRepository: IDriverRepository = {
     })
       .from(breakdownRequest)
       .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+      .innerJoin(user, eq(user.id, customer.userId))
       .where(eq(breakdownRequest.id, requestId))
       .limit(1);
 
     return result.length > 0 ? result[0] : null;
+  },
+
+  async getDriverByRequestId(requestId: number): Promise<
+    | (Partial<Driver> & {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+        vehicleType: string;
+        vehicleRegistration: string;
+        licenseNumber: string;
+      })
+    | null
+  > {
+    const result = await DB.select({
+      id: driver.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: driver.phoneNumber,
+      vehicleType: driver.vehicleType,
+      vehicleRegistration: driver.vehicleRegistration,
+      licenseNumber: driver.licenseNumber,
+    })
+      .from(breakdownAssignment)
+      .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+      .innerJoin(user, eq(user.id, driver.userId))
+      .where(eq(breakdownAssignment.requestId, requestId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  },
+  async getDriverProfileById(userId: number): Promise<any | null> {
+    const result = await DB.select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    const userProfile = result[0];
+    const driverProfile = await DB.select()
+      .from(driver)
+      .where(eq(driver.userId, userProfile.id))
+      .limit(1);
+    console.log("driverProfile", driverProfile);
+    return { ...userProfile, driverProfile: driverProfile[0] };
   },
 };

@@ -178,7 +178,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
   pageSize: number,
-  userId?: number,
+  customerId?: number,
   requestId?: number
 ): Promise<{
   breakdownRequests: BreakdownRequestWithUserDetails[];
@@ -188,7 +188,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     await BreakdownRequestRepository.getPaginatedBreakdownRequestsWithUserDetails(
       page,
       pageSize,
-      userId,
+      customerId,
       requestId
     );
 
@@ -243,6 +243,6 @@ export const BreakdownRequestService = {
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,
-  updateDriverStatusInBreakdownAssignment:
+  updateUserStatusInBreakdownAssignment:
     updateUserStatusInBreakdownAssignment,
 };

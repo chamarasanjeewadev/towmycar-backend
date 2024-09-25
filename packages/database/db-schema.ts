@@ -114,10 +114,9 @@ export const breakdownAssignment = pgTable("breakdown_assignment", {
   driverId: integer("driver_id")
     .references(() => driver.id, { onDelete: "cascade" })
     .notNull(),
-  status: varchar("status", { length: 20 }).notNull(),
+  driverStatus: varchar("driver_status", { length: 20 }).notNull(),
   userStatus: varchar("user_status", { length: 20 })
-    .notNull()
-    .default(UserStatus.PENDING),
+    .notNull(),
   estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
   explanation: text("estimate_explanation"),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),

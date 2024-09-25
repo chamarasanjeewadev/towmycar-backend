@@ -54,10 +54,10 @@ const findNearbyDrivers = async (
   try {
     const nearbyDrivers = await DB.select({
       id: driver.id,
-      fullName: driver.fullName,
-      email: driver.email,
-      phoneNumber: driver.phoneNumber,
-      vehicleType: driver.vehicleType,
+      // fullName: driver.fullName,
+      // email: driver.email,
+      // phoneNumber: driver.phoneNumber,
+      // vehicleType: driver.vehicleType,
       distance: sql`
         ST_Distance(
           ${driver.primaryLocation}::geography,

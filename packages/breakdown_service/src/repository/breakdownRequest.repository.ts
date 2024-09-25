@@ -39,7 +39,7 @@ export type BreakdownRequestRepositoryType = {
   getPaginatedBreakdownRequestsWithUserDetails: (
     page: number,
     pageSize: number,
-    userId?: number,
+    customerId?: number,
     requestId?: number
   ) => Promise<{
     requests: BreakdownRequestWithUserDetails[];
@@ -105,13 +105,13 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
   pageSize: number,
-  userId?: number,
+  customerId?: number,
   requestId?: number
 ): Promise<{
   requests: BreakdownRequestWithUserDetails[];
   totalCount: number;
 }> => {
-  console.log("hit repo..", userId, requestId);
+  console.log("hit repo..", customerId, requestId);
   const offset = (page - 1) * pageSize;
 
   const baseQuery = DB.select({
@@ -130,9 +130,11 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     .leftJoin(user, eq(user.id, customer.userId));
   let filteredQuery = baseQuery.orderBy(desc(breakdownRequest.updatedAt));
 
-  if (userId) {
+  if (customerId) {
     // @ts-ignore
-    filteredQuery = filteredQuery.where(eq(breakdownRequest.customerId, userId));
+    filteredQuery = filteredQuery.where(
+      eq(breakdownRequest.customerId, customerId)
+    );
   }
 
   if (requestId) {
@@ -148,10 +150,10 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 
   let filteredCountQuery = countQuery;
 
-  if (userId) {
+  if (customerId) {
     // @ts-ignore
     filteredCountQuery = filteredCountQuery.where(
-      eq(breakdownRequest.customerId, userId)
+      eq(breakdownRequest.customerId, customerId)
     );
     // @ts-ignore
     const [{ count }] = await filteredCountQuery;
@@ -180,7 +182,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
     assignment: {
       id: breakdownAssignment.id,
       requestId: breakdownAssignment.requestId,
-      status: breakdownAssignment.status,
+      status: breakdownAssignment.driverStatus,
       userStatus: breakdownAssignment.userStatus,
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
@@ -213,7 +215,6 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
     // @ts-ignore
     query = query.where(eq(breakdownRequest.id, requestId));
   }
-
   const result = await query.orderBy(desc(breakdownAssignment.updatedAt));
 
   return result as unknown as (BreakdownAssignment & {
@@ -226,8 +227,9 @@ const updateUserStatusInBreakdownAssignment = async (
   assignmentId: number,
   userStatus: UserStatus
 ): Promise<BreakdownAssignment | null> => {
+  // @ts-ignore
   const result = await DB.update(breakdownAssignment)
-    .set({ status: userStatus })
+    .set({ userStatus: userStatus })
     .where(eq(breakdownAssignment.id, assignmentId))
     .returning();
 
