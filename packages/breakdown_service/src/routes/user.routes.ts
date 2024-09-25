@@ -1,4 +1,4 @@
-import { getUserProfileById } from './../service/user/user.service';
+import { getUserProfileById } from "./../service/user/user.service";
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/user.service";
 import * as repository from "../repository/user.repository";
@@ -15,6 +15,7 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import * as driverService from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
+import axios from "axios";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -44,19 +45,6 @@ router.post(
     const wh = new Webhook(WEBHOOK_SECRET);
 
     let evt;
-
-    // try {
-    //   evt = wh.verify(payload, {
-    //     "svix-id": svix_id as string,
-    //     "svix-timestamp": svix_timestamp as string,
-    //     "svix-signature": svix_signature as string,
-    //   });
-    // } catch (err: any) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: err.message,
-    //   });
-    // }
 
     evt = payload;
     console.log("data....", evt);
@@ -259,5 +247,48 @@ router.post("/fcm-token", validateRequest(fcmTokenSchema), async (req, res) => {
 
 // Add this new route for getting driver profile
 
+router.post(
+  "/verify-vehicle-registration",
+  // clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { registrationNumber } = req.body;
+
+      if (!registrationNumber) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Registration number is required"
+        );
+      }
+
+      const response = await axios.post(
+        process.env.VEHICLE_REGISTRATION_API_URL!,
+        { registrationNumber },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.VEHICLE_REGISTRATION_API_KEY!,
+          },
+        }
+      );
+
+      res.json(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        next(
+          new CustomError(
+            ERROR_CODES.DATABASE_ERROR,
+            error.response?.status || 500,
+            error.response?.data?.message ||
+              "Error verifying vehicle registration"
+          )
+        );
+      } else {
+        next(error);
+      }
+    }
+  }
+);
 
 export default router;

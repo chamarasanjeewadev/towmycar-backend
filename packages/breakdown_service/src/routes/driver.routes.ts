@@ -11,6 +11,8 @@ import { driverProfileSchema } from "../dto/driver.dto";
 import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import { getUserProfileById } from "src/service/user/user.service";
+import axios from "axios";
+
 const router = express.Router();
 const driverService = new DriverService();
 
@@ -226,6 +228,47 @@ router.patch(
       });
     } catch (error) {
       next(error);
+    }
+  }
+);
+
+router.post(
+  "/verify-vehicle-registration",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { registrationNumber } = req.body;
+
+      if (!registrationNumber) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Registration number is required"
+        );
+      }
+
+      const response = await axios.post(
+        process.env.VEHICLE_REGISTRATION_API_URL!,
+        { registrationNumber },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.VEHICLE_REGISTRATION_API_KEY!,
+          },
+        }
+      );
+
+      res.json(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        next(new CustomError(
+          ERROR_CODES.DATABASE_ERROR,
+          error.response?.status || 500,
+          error.response?.data?.message || "Error verifying vehicle registration"
+        ));
+      } else {
+        next(error);
+      }
     }
   }
 );

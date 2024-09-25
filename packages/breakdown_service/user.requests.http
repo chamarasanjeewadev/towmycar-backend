@@ -131,3 +131,20 @@ svix-signature: your-svix-signature-here
   },
   "object": "event"
 }
+
+POST https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles
+Content-Type: application/json
+x-api-key: AntSFFGFiT7FeqsH2ISlS1ltsRrwTYWw9bY1dSX3
+
+{
+  "registrationNumber": "FE13FEP"
+}
+
+### Verify Vehicle Registration
+POST http://localhost:{{port}}/user/verify-vehicle-registration
+Content-Type: application/json
+Authorization: Bearer <your-clerk-jwt-token-here>
+{
+  "registrationNumber": "FE13FEP"
+}
+

@@ -67,3 +67,7 @@ Authorization: Bearer <your-auth-token-here>
 ### Get Driver Profile by Email
 GET {{baseUrl}}/profile?email=test5@breakdown.com
 Authorization: Bearer <your-auth-token-here>
+
+### Verify Vehicle Registration
+
+
