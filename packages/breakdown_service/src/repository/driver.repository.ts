@@ -260,12 +260,14 @@ export const DriverRepository: IDriverRepository = {
     data: Partial<DriverProfileDtoType>
   ): Promise<Driver> {
     const { primaryLocation, ...restData } = data;
+    const prim=  {
+      x: data.primaryLocation.longitude,
+      y: data.primaryLocation.latitude,
+    };
     const updatedDriver = await DB.update(driver)
       .set({
         ...restData,
-        primaryLocation: primaryLocation
-          ? `POINT(${primaryLocation.longitude} ${primaryLocation.latitude})`
-          : undefined,
+        primaryLocation:prim,
       } as any) // Use 'as any' to bypass TypeScript checks
       .where(eq(driver.id, id))
       .returning();

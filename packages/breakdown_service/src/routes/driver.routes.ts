@@ -11,6 +11,7 @@ import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { getDriverProfileByEmail } from "../service/driver/driver.service";
 import { DriverStatus } from "../enums";
+import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 const router = express.Router();
 // router.use(authenticateJWT(["driver"]));
 const driverService = new DriverService();
@@ -53,10 +54,10 @@ router.post(
 );
 
 router.get(
-  "/:driverId/assigned-requests",
+  "/assigned-requests",clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const driverId = parseInt(req.params.driverId);
+      const driverId = req.userInfo.driverId;
       if (isNaN(driverId)) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -165,10 +166,10 @@ router.patch(
 );
 
 router.patch(
-  "/:driverId/profile",
+  "/profile",clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const driverId = parseInt(req.params.driverId);
+      const driverId = req.userInfo.driverId;
       if (isNaN(driverId)) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,

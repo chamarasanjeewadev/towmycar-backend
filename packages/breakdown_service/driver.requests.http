@@ -33,7 +33,7 @@ Authorization: Bearer <your-auth-token-here>
 }
 
 ### Get Driver Requests With Info
-GET {{baseUrl}}/1/assigned-requests
+GET {{baseUrl}}/assigned-requests
 Authorization: Bearer <your-auth-token-here>
 
 ### Get specific driver request
