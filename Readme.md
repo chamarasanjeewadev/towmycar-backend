@@ -14,3 +14,31 @@
 -- When driver accepts a breakdown request
 -- When driver rejects a breakdown request
 -- When driver closes a breakdown request
+
+## Managing Docker Containers
+
+To manage your Docker containers and clear persisted data, you can use the provided `Makefile`.
+
+- To stop the Docker containers:
+
+    ```sh
+    make down
+    ```
+
+- To clear the persisted data:
+
+    ```sh
+    make clear-data
+    ```
+
+- To start the Docker containers:
+
+    ```sh
+    make up
+    ```
+
+- To restart the Docker containers with clean data:
+
+    ```sh
+    make restart
+    ```

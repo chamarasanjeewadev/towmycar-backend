@@ -15,7 +15,7 @@ export const BreakdownRequestSchema = z.object({
 
 // Define the TypeScript type for form data
 export type BreakdownRequestInput = {
-  userId: number;
+  customerId: number;
   requestType: string;
   locationAddress: string;
   userLocation: {

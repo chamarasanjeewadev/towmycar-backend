@@ -1,6 +1,6 @@
 {
-  "id": "e77b87a6-5690-4c97-9f3b-e8a6683ba697",
-  "prevId": "1e0385db-7071-461b-aafe-dbb403b45bb1",
+  "id": "eb80a1db-db27-4969-bc40-c2de48a87c4e",
+  "prevId": "9d574feb-396d-4209-8cf5-1cc1c5201263",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -108,8 +108,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
+        "customer_id": {
+          "name": "customer_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -134,7 +134,7 @@
         },
         "description": {
           "name": "description",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
@@ -143,7 +143,7 @@
           "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'pending'"
+          "default": "'PENDING'"
         },
         "created_at": {
           "name": "created_at",
@@ -162,12 +162,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "breakdown_request_user_id_user_profile_id_fk": {
-          "name": "breakdown_request_user_id_user_profile_id_fk",
+        "breakdown_request_customer_id_customer_id_fk": {
+          "name": "breakdown_request_customer_id_customer_id_fk",
           "tableFrom": "breakdown_request",
-          "tableTo": "user_profile",
+          "tableTo": "customer",
           "columnsFrom": [
-            "user_id"
+            "customer_id"
           ],
           "columnsTo": [
             "id"
@@ -179,6 +179,75 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "public.customer": {
+      "name": "customer",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "postcode": {
+          "name": "postcode",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mobileNumber": {
+          "name": "mobileNumber",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "customer_user_id_user_id_fk": {
+          "name": "customer_user_id_user_id_fk",
+          "tableFrom": "customer",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_user_id_unique": {
+          "name": "customer_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      }
+    },
     "public.driver": {
       "name": "driver",
       "schema": "",
@@ -189,15 +258,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "full_name": {
-          "name": "full_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "email": {
-          "name": "email",
-          "type": "varchar(255)",
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -257,28 +320,41 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "driver_user_id_user_id_fk": {
+          "name": "driver_user_id_user_id_fk",
+          "tableFrom": "driver",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "driver_email_unique": {
-          "name": "driver_email_unique",
+        "driver_user_id_unique": {
+          "name": "driver_user_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "email"
+            "user_id"
           ]
         }
       }
@@ -335,10 +411,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fcm_tokens_user_id_user_profile_id_fk": {
-          "name": "fcm_tokens_user_id_user_profile_id_fk",
+        "fcm_tokens_user_id_user_id_fk": {
+          "name": "fcm_tokens_user_id_user_id_fk",
           "tableFrom": "fcm_tokens",
-          "tableTo": "user_profile",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
@@ -352,8 +428,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "public.user_profile": {
-      "name": "user_profile",
+    "public.user": {
+      "name": "user",
       "schema": "",
       "columns": {
         "id": {
@@ -362,45 +438,171 @@
           "primaryKey": true,
           "notNull": true
         },
-        "firstName": {
-          "name": "firstName",
+        "auth_id": {
+          "name": "auth_id",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
-        },
-        "lastName": {
-          "name": "lastName",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "email": {
           "name": "email",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "postcode": {
-          "name": "postcode",
-          "type": "varchar(20)",
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
-        "vehicleRegistration": {
-          "name": "vehicleRegistration",
-          "type": "varchar(20)",
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
-        "mobileNumber": {
-          "name": "mobileNumber",
-          "type": "varchar(20)",
+        "role": {
+          "name": "role",
+          "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.vehicles": {
+      "name": "vehicles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registration_number": {
+          "name": "registration_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight": {
+          "name": "weight",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vehicles_customer_id_customer_id_fk": {
+          "name": "vehicles_customer_id_customer_id_fk",
+          "tableFrom": "vehicles",
+          "tableTo": "customer",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "vehicles_created_by_user_id_fk": {
+          "name": "vehicles_created_by_user_id_fk",
+          "tableFrom": "vehicles",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "vehicles_updated_by_user_id_fk": {
+          "name": "vehicles_updated_by_user_id_fk",
+          "tableFrom": "vehicles",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     }

@@ -103,6 +103,7 @@ export const DriverRepository: IDriverRepository = {
         eq(breakdownAssignment.requestId, breakdownRequest.id)
       )
       .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+      .innerJoin(user, eq(customer.userId, user.id))
       .where(eq(breakdownAssignment.driverId, driverId))
       .orderBy(desc(breakdownAssignment.updatedAt));
 

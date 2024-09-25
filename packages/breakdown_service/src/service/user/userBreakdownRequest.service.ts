@@ -52,10 +52,15 @@ import { sendKafkaMessage } from "../utils/kafka.service";
 
 export const CreateCombinedBreakdownRequest = async (
   combinedInput: CombinedBreakdownRequestInput,
-  userId?: number
+  userInfo: {
+    userId: number;
+    role: string;
+    customerId?: number;
+    driverId?: number;
+  }
 ) => {
   try {
-    if (!userId) {
+    if (!userInfo.userId) {
       // Extract user data from the combined input
       const userData = {
         firstName: combinedInput.firstName,
@@ -67,30 +72,31 @@ export const CreateCombinedBreakdownRequest = async (
       };
 
       // Check if user exists in Cognito
-      const userExistsInCognito = await cognitoService.checkUserExistsInCognito(
-        userData.email
-      );
+      // const userExistsInCognito = await cognitoService.checkUserExistsInCognito(
+      //   userData.email
+      // );
 
-      if (userExistsInCognito) {
-        // If user exists in Cognito, get or create user in your DB
-        const { id, isCreated } =
-          await userRepository.UserRepository.getOrCreateUser(userData);
-        userId = id;
-      } else {
-        // If user doesn't exist in Cognito, create user in Cognito and then in your DB
-        await cognitoService.createTempUserInCognito({
-          email: userData.email,
-        });
-        await cognitoService.addUserToGroup(userData.email, UserGroup.USER);
-        const { id, isCreated } =
-          await userRepository.UserRepository.getOrCreateUser(userData);
-        userId = id;
-      }
+      // if (userExistsInCognito) {
+      //   // If user exists in Cognito, get or create user in your DB
+      //   const { id, isCreated } =
+      //     await userRepository.UserRepository.getOrCreateUser(userData);
+      //   userId = id;
+      // } else {
+      //   // If user doesn't exist in Cognito, create user in Cognito and then in your DB
+      //   await cognitoService.createTempUserInCognito({
+      //     email: userData.email,
+      //   });
+      //   await cognitoService.addUserToGroup(userData.email, UserGroup.USER);
+      //   const { id, isCreated } =
+      //     await userRepository.UserRepository.getOrCreateUser(userData);
+      //   userId = id;
+      // }
     }
 
     // Create breakdown request
     const breakdownRequestData = {
-      userId: userId,
+      // userId: userInfo.userId,
+      customerId: userInfo.customerId,
       requestType: combinedInput.requestType,
       locationAddress: combinedInput.locationAddress,
       userLocation: {
@@ -118,7 +124,7 @@ export const CreateCombinedBreakdownRequest = async (
         type: EmailNotificationType.USER_REQUEST_EMAIL,
         payload: {
           breakdownRequestId: breakdownRequestId,
-          userId,
+          userId: userInfo.userId,
           firstName: combinedInput.firstName,
           lastName: combinedInput.lastName,
           email: combinedInput.email,
@@ -137,7 +143,7 @@ export const CreateCombinedBreakdownRequest = async (
     return {
       breakdownRequestId,
       status: "Breakdown reported successfully.",
-      userId,
+      userId: userInfo.userId,
     };
   } catch (error) {
     console.error("Error in CreateCombinedBreakdownRequest:", error);
@@ -233,13 +239,7 @@ const updateUserStatusInBreakdownAssignment = async (
   return false;
 };
 
-export const CreateBreakdownRequest = async (data: BreakdownRequestInput) => {
-  // Call to repository function to save the data and send SNS notification
-  return await repository.BreakdownRequestRepository.saveBreakdownRequest(data);
-};
-
 export const BreakdownRequestService = {
-  // createAndNotifyBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,

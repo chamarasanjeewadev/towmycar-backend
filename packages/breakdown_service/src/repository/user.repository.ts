@@ -12,15 +12,22 @@ import {
   Vehicle,
   driver,
   customer,
+  User,
 } from "@breakdownrescue/database";
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
-  createUserFromWebhook: (user: UserData) => Promise<number>;
+  createUserFromWebhook: (userData: UserData) => Promise<{
+    userId: number;
+    role: string;
+    customerId?: number;
+    driverId?: number;
+  }>;
   getOrCreateUser: (
     user: UserRegisterInput
   ) => Promise<{ id: number; isCreated: boolean }>;
   getUserProfileByEmail: (email: string) => Promise<any | null>;
-  getUserProfileById: (id: number) => Promise<any | null>; // New method
+  getUserProfileById: (id: number) => Promise<any | null>;
+  getUserProfileByAuthId: (authId: string) => Promise<any | null>; // New method
   updateUserProfile: (
     id: number,
     updateData: Partial<UserRegisterInput>
@@ -30,7 +37,7 @@ export type UserRepositoryType = {
     token: string,
     browserInfo?: string
   ) => Promise<number>;
-  getUserById: (userId: number) => Promise<any | null>; // New method
+  getUserById: (userId: number) => Promise<any | null>;
   addVehicle: (
     vehicleData: Omit<Vehicle, "id" | "createdAt" | "updatedAt">
   ) => Promise<number>;
@@ -97,6 +104,28 @@ const getUserProfileById = async (id: number): Promise<any | null> => {
   return result.length > 0 ? result[0] : null;
 };
 
+const getUserProfileByAuthId = async (authId: string): Promise<any | null> => {
+  const result = await DB.select().from(user).where(eq(user.authId, authId)).limit(1);
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  const userProfile = result[0];
+  if (userProfile.role === "driver") {
+    const driverProfile = await DB.select().from(driver).where(eq(driver.userId, userProfile.id)).limit(1);
+    console.log("driverProfile", driverProfile);
+    return { ...userProfile, driverProfile: driverProfile[0] };
+  } 
+  else if (userProfile.role === "customer") {
+    const customerProfile = await DB.select().from(customer).where(eq(customer.userId, userProfile.id)).limit(1);
+    console.log("customerProfile", customerProfile);
+    return { ...userProfile, customerProfile: customerProfile[0] };
+  }
+
+  return userProfile;
+};
+
 const updateUserProfile = async (
   id: number,
   updateData: Partial<UserRegisterInput>
@@ -161,55 +190,64 @@ const deleteVehicle = async (id: number): Promise<boolean> => {
   return result?.rowCount ? result.rowCount > 0 : false;
 };
 
-const createUserFromWebhook = async (userData: UserData): Promise<any> => {
-  const { id, first_name, last_name, email_addresses, unsafe_metadata } = userData;
-  const email = email_addresses[0].email_address;
-  const role = unsafe_metadata.role as string; // Ensure role is a string
+const createUserFromWebhook = async (userData: UserData): Promise<{ userId: number; role: string; customerId?: number; driverId?: number }> => {
+  try {
+    const { id, first_name, last_name, email_addresses, unsafe_metadata } = userData;
+    const email = email_addresses?.[0]?.email_address;
+    const role = unsafe_metadata?.role ?? "driver" as string;
 
-  return await DB.transaction(async trx => {
-    const userId = await trx
-      .insert(user)
-      .values({
+    const result = await DB.transaction(async (trx) => {
+      //@ts-ignore
+      const userResult = await trx.insert(user).values({
         authId: id,
-        firstName: first_name,
-        lastName: last_name,
-        email,
-        role,
-        createdAt: new Date(), // Assuming createdAt is required
-      })
-      .returning(user.id);
+        email: email,
+        role: role,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      const newUserId = userResult[0].id;
 
-    const newUserId = userId[0].id; // Extract the new user ID
+      let customerId, driverId;
 
-    if (role === "driver") {
-      await trx.insert(driver).values({
-        userId: newUserId,
-        createdAt: new Date(), // Assuming createdAt is required
-        // Add other driver-specific fields here
-      });
-    } else if (role === "user") {
-      await trx.insert(customer).values({
-        userId: newUserId,
-        createdAt: new Date(), // Assuming createdAt is required
-        // Add other customer-specific fields here
-      });
-    }
+      if (role === "driver") {
+        const driverResult = await trx.insert(driver).values({
+          userId: newUserId,
+          createdAt: new Date(),
+          // Add other driver-specific fields here
+        }).returning();
+        driverId = driverResult[0].id;
+      } else if (role === "customer") {
+        const customerResult = await trx.insert(customer).values({
+          userId: newUserId,
+          createdAt: new Date(),
+          // Add other customer-specific fields here
+        }).returning();
+        customerId = customerResult[0].id;
+      }
 
-    return newUserId;
-  });
+      return { userId: newUserId, role, customerId, driverId };
+    });
+
+    return result;
+  } catch (error) {
+    console.log("Error creating user from webhook:", error);
+    throw error;
+  }
 };
 
 export const UserRepository: UserRepositoryType = {
   createUser,
   getOrCreateUser,
   getUserProfileByEmail,
-  getUserProfileById, // Add the new method to the exported object
+  getUserProfileById,
+  getUserProfileByAuthId, // Add the new method to the exported object
   updateUserProfile,
   saveFcmToken,
-  getUserById, // Add this new function to the exports
+  getUserById,
   addVehicle,
   getVehiclesByCustomerId,
   updateVehicle,
   deleteVehicle,
-  createUserFromWebhook, // Add the new method to the exported object
+  createUserFromWebhook,
 };

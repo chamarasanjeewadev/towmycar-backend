@@ -12,6 +12,7 @@ import { validateRequest } from "../middleware/requestValidator";
 import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
 import { Webhook } from "svix";
+import { clerkClient } from '@clerk/clerk-sdk-node'
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -41,18 +42,18 @@ router.post(
 
     let evt;
 
-    try {
-      evt = wh.verify(payload, {
-        "svix-id": svix_id as string,
-        "svix-timestamp": svix_timestamp as string,
-        "svix-signature": svix_signature as string,
-      });
-    } catch (err: any) {
-      return res.status(400).json({
-        success: false,
-        message: err.message,
-      });
-    }
+    // try {
+    //   evt = wh.verify(payload, {
+    //     "svix-id": svix_id as string,
+    //     "svix-timestamp": svix_timestamp as string,
+    //     "svix-signature": svix_signature as string,
+    //   });
+    // } catch (err: any) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: err.message,
+    //   });
+    // }
 
     evt = payload;
     console.log("data....", evt);
@@ -60,7 +61,19 @@ router.post(
     if (evt.type === 'user.created') {
       const userData = evt.data;
       try {
-        await repo.createUserFromWebhook(userData);
+        const userInfo=await repo.createUserFromWebhook(userData);
+        const params = { userInfo: userInfo}
+
+      const updatedUser = await clerkClient.users.updateUser(evt.data.id, params)
+      console.log("updatedUser.....", updatedUser)
+       if (userInfo.userId) {
+      await clerkClient.users.updateUserMetadata(evt.data.id, {
+        privateMetadata: {
+          userInfo: userInfo,
+        },
+      });
+    }
+
         return res.status(200).json({
           success: true,
           message: "User created and processed successfully",
@@ -128,16 +141,16 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log("inside get profile......", req.query);
-      const email = req.query.email as string;
-      if (!email) {
+      const authId = req.query.authId as string;
+      if (!authId) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Email is required"
+          "authId is required"
         );
       }
 
-      const userProfile = await service.getUserProfileByEmail(email, repo);
+      const userProfile = await service.getUserProfileByAuthId(authId, repo);
       if (!userProfile) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,

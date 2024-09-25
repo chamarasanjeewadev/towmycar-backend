@@ -14,7 +14,9 @@ app.use("/user", userRoutes);
 app.use("/driver", driverRoutes);
 app.use("/user", breakdownRequestRoutes);
 
-app.use("/", (req: Request, res: Response, _: NextFunction) => {
+
+app.use("/",  (req: Request, res: Response, _: NextFunction) => {
+
   return res.status(200).json({ message: "I am healthy breakdown service!" });
 });
 

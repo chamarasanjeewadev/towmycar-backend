@@ -1,1 +1,0 @@
-ALTER TABLE "breakdown_assignment" ALTER COLUMN "user_status" SET DEFAULT 'PENDING';

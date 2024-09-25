@@ -97,6 +97,25 @@ export const getUserProfileById = async (
   }
 };
 
+// Add this new function
+export const getUserProfileByAuthId = async (
+  authId: string,
+  repo: UserRepositoryType
+) => {
+  try {
+    const userProfile = await repo.getUserProfileByAuthId(authId);
+    if (!userProfile) {
+      return null;
+    }
+    // Exclude sensitive information if needed
+    const { password, ...safeUserProfile } = userProfile;
+    return safeUserProfile;
+  } catch (error) {
+    console.error("Error fetching user profile by authId:", error);
+    throw error;
+  }
+};
+
 export const updateUserProfile = async (
   id: number,
   updateData: Partial<UserRegisterInput>,

@@ -17,6 +17,7 @@
     "@aws-sdk/client-cognito-identity-provider": "^3.645.0",
     "@aws-sdk/client-sns": "^3.645.0",
     "@breakdownrescue/database": "*",
+    "@clerk/clerk-sdk-node": "^5.0.43",
     "@sinclair/typebox": "^0.32.30",
     "@types/uuid": "^10.0.0",
     "add": "^2.0.6",

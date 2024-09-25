@@ -202,33 +202,33 @@ router.patch(
   }
 );
 
-router.get(
-  "/profile",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const email = req.query.email as string;
-      if (!email) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Email is required"
-        );
-      }
+// router.get(
+//   "/profile",
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//       const email = req.query.email as string;
+//       if (!email) {
+//         throw new CustomError(
+//           ERROR_CODES.INVALID_INPUT,
+//           400,
+//           "Email is required"
+//         );
+//       }
 
-      const driverProfile = await getDriverProfileByEmail(email);
-      if (!driverProfile) {
-        throw new CustomError(
-          ERROR_CODES.RESOURCE_NOT_FOUND,
-          404,
-          "Driver profile not found"
-        );
-      }
+//       const driverProfile = await getDriverProfileByEmail(email);
+//       if (!driverProfile) {
+//         throw new CustomError(
+//           ERROR_CODES.RESOURCE_NOT_FOUND,
+//           404,
+//           "Driver profile not found"
+//         );
+//       }
 
-      res.json(driverProfile);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+//       res.json(driverProfile);
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
 export default router;

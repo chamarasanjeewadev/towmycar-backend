@@ -60,9 +60,10 @@ export type BreakdownRequestRepositoryType = {
 const saveBreakdownRequest = async (
   data: BreakdownRequestInput
 ): Promise<number> => {
+  //@ts-ignore
   const x: BreakdownRequest = {
-    id: 0,
-    customerId: data.userId,
+    // id: 0,
+    customerId: data.customerId,
     requestType: data.requestType,
     locationAddress: data.locationAddress,
     userLocation: {
@@ -131,7 +132,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 
   if (userId) {
     // @ts-ignore
-    filteredQuery = filteredQuery.where(eq(breakdownRequest.userId, userId));
+    filteredQuery = filteredQuery.where(eq(breakdownRequest.customerId, userId));
   }
 
   if (requestId) {

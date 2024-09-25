@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/userBreakdownRequest.service";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import * as repository from "../repository/breakdownRequest.repository";
 import {
   BreakdownRequestInput,
@@ -11,6 +12,8 @@ import { PaginationQuerySchema } from "../dto/query.dto";
 import { validateRequest } from "../middleware/requestValidator";
 import { errorHandler } from "../middleware/errorHandler";
 import { authenticateJWT } from "../middleware/auth";
+import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+
 const router = express.Router();
 // router.use(authenticateJWT(["user"]));
 const authMiddleware = async (
@@ -26,36 +29,20 @@ const authMiddleware = async (
   next();
 };
 
-// Generic validation middleware
-
-// router.post(
-//   "/breakdownrequest",
-//   authMiddleware,
-//   validateRequest(BreakdownRequestSchema),
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const response = await service.createAndNotifyBreakdownRequest(
-//         req.body as BreakdownRequestInput,
-//         repository.BreakdownRequestRepository
-//       );
-//       res.status(200).json(response);
-//     } catch (error) {
-//       next(error); // Pass the error to the error handling middleware
-//     }
-//   }
-// );
-
 // New route for combined breakdown request
 router.post(
   "/combined-breakdown-request",
-  validateRequest(CombinedBreakdownRequestSchema),
+  clerkAuthMiddleware("customer"), // Check for "customer" role
   async (req: Request, res: Response) => {
     try {
-      // Call service method to handle combined request
+      // Now you can access userId and userRole directly from the request
+      const {userId,role,customerId,driverId} = req.userInfo;
+      console.log("userId in route handler:", userId, "userRole:", role);
       const response = await service.CreateCombinedBreakdownRequest(
-        req.body,
-        req.body.userId
+        req.body as BreakdownRequestInput,
+       req.userInfo
       );
+      
       return res.status(200).json(response);
     } catch (error) {
       console.error("Error processing combined breakdown request:", error);
@@ -100,36 +87,33 @@ router.get(
 );
 
 // New route for getting user's breakdown assignments
-router.get(
-  "/:userId/assignments/:requestId?",
-  async (req: Request, res: Response) => {
-    try {
-      const userId = parseInt(req.params.userId, 10);
-      const requestId = req.params.requestId
-        ? parseInt(req.params.requestId, 10)
-        : undefined;
+router.get("/assignments/:requestId?", async (req: Request, res: Response) => {
+  try {
+    const userId = null; //parseInt(req.params.userId, 10);
+    const requestId = req.params.requestId
+      ? parseInt(req.params.requestId, 10)
+      : undefined;
 
-      if (isNaN(userId)) {
-        return res.status(400).json({ error: "Invalid user ID" });
-      }
-
-      if (requestId !== undefined && isNaN(requestId)) {
-        return res.status(400).json({ error: "Invalid request ID" });
-      }
-
-      console.log("req.params", req.params);
-      const assignments =
-        await service.BreakdownRequestService.getBreakdownAssignmentsByUserIdAndRequestId(
-          userId,
-          requestId
-        );
-      res.status(200).json(assignments);
-    } catch (error) {
-      console.error("Error fetching user's breakdown assignments:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
     }
+
+    if (requestId !== undefined && isNaN(requestId)) {
+      return res.status(400).json({ error: "Invalid request ID" });
+    }
+
+    console.log("req.params", req.params);
+    const assignments =
+      await service.BreakdownRequestService.getBreakdownAssignmentsByUserIdAndRequestId(
+        userId,
+        requestId
+      );
+    res.status(200).json(assignments);
+  } catch (error) {
+    console.error("Error fetching user's breakdown assignments:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-);
+});
 
 // Updated route for updating user status in breakdown assignment
 router.patch(

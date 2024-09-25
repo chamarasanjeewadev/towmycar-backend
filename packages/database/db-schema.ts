@@ -14,7 +14,7 @@ import { UserStatus } from "./enums";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
-  authId: varchar("auth_id", { length: 255 }).notNull().unique(),
+  authId: varchar("auth_id", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
@@ -30,7 +30,7 @@ export const user = pgTable("user", {
 export const customer = pgTable("customer", {
   id: serial("id").primaryKey().notNull(),
   userId: integer("user_id")
-    .references(() => user.id)
+    .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
   postcode: varchar("postcode", { length: 20 }),
@@ -45,7 +45,7 @@ export const customer = pgTable("customer", {
 export const driver = pgTable("driver", {
   id: serial("id").primaryKey().notNull(),
   userId: integer("user_id")
-    .references(() => user.id)
+    .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
   phoneNumber: varchar("phone_number", { length: 20 }),
@@ -71,7 +71,7 @@ export const driver = pgTable("driver", {
 export const breakdownRequest = pgTable("breakdown_request", {
   id: serial("id").primaryKey().notNull(),
   customerId: integer("customer_id")
-    .references(() => customer.id)
+    .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
   requestType: varchar("request_type", { length: 50 }).notNull(),
   locationAddress: text("location_address").notNull(),
@@ -92,7 +92,7 @@ export const breakdownRequest = pgTable("breakdown_request", {
 export const fcmTokens = pgTable("fcm_tokens", {
   id: serial("id").primaryKey().notNull(),
   userId: integer("user_id")
-    .references(() => user.id)
+    .references(() => user.id, { onDelete: "cascade" })
     .notNull(),
   token: text("token").notNull(),
   browserInfo: text("browser_info"),
@@ -109,10 +109,10 @@ export const fcmTokens = pgTable("fcm_tokens", {
 export const breakdownAssignment = pgTable("breakdown_assignment", {
   id: serial("id").primaryKey().notNull(),
   requestId: integer("request_id")
-    .references(() => breakdownRequest.id)
+    .references(() => breakdownRequest.id, { onDelete: "cascade" })
     .notNull(),
   driverId: integer("driver_id")
-    .references(() => driver.id)
+    .references(() => driver.id, { onDelete: "cascade" })
     .notNull(),
   status: varchar("status", { length: 20 }).notNull(),
   userStatus: varchar("user_status", { length: 20 })
@@ -128,17 +128,17 @@ export const breakdownAssignment = pgTable("breakdown_assignment", {
 export const vehicles = pgTable("vehicles", {
   id: serial("id").primaryKey().notNull(),
   customerId: integer("customer_id")
-    .references(() => customer.id)
+    .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
   registrationNumber: varchar("registration_number", { length: 20 }).notNull(),
   weight: numeric("weight", { precision: 10, scale: 2 }),
   year: integer("year"),
   model: varchar("model", { length: 100 }),
   createdBy: integer("created_by")
-    .references(() => user.id)
+    .references(() => user.id, { onDelete: "set null" })
     .notNull(),
   updatedBy: integer("updated_by")
-    .references(() => user.id)
+    .references(() => user.id, { onDelete: "set null" })
     .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

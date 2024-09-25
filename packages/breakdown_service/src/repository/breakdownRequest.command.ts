@@ -24,7 +24,7 @@ const saveBreakdownRequest = async (
 ): Promise<number> => {
   const breakdownResult = await DB.insert(breakdownRequest)
     .values({
-      customerId: data.userId,
+      customerId: data.customerId,
       requestType: data.requestType,
       locationAddress: data.locationAddress,
       userLocation: {
