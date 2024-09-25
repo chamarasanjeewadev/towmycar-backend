@@ -3,14 +3,8 @@ import {
   IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
-import {
-  createTempUserInCognito,
-  addUserToGroup,
-  adminSetUserPassword,
-} from "../utils/cognito.service";
-import { EmailNotificationType, UserGroup } from "../../enums";
+import { EmailNotificationType } from "../../enums";
 import { sendNotification } from "../utils/sns.service";
-import { UserRepository } from "../../repository/user.repository"; // Update the import path
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { DriverStatus } from "../../enums";
 interface UpdateAssignmentData {
@@ -118,34 +112,6 @@ export class DriverService {
   }
 }
 
-export const registerDriver = async (
-  username: string,
-  email: string,
-  password: string,
-  repository: IDriverRepository
-) => {
-  // Create a basic driver record without the password
-  const basicDriverData = { username, email };
-
-  // Create user in Cognito and then update database
-  await createTempUserInCognito({ email });
-  await adminSetUserPassword(email, password);
-  await addUserToGroup(email, UserGroup.DRIVER);
-  const newDriver = await repository.create(basicDriverData);
-  const emailSnsResult = await sendNotification(
-    process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
-    {
-      type: EmailNotificationType.DRIVER_REGISTERED_EMAIL,
-      payload: {
-        username,
-        email,
-        viewRequestLink: `http://localhost:5173/driver/profile`,
-      },
-    }
-  );
-
-  return newDriver;
-};
 
 export const getDriverById = async (
   userId: number,

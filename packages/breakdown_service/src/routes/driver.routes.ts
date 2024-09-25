@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import {
   getDriverById,
-  registerDriver,
   updateDriverProfile,
 } from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
@@ -10,51 +9,12 @@ import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-import { getUserProfileById } from "src/service/user/user.service";
 import axios from "axios";
 
 const router = express.Router();
 const driverService = new DriverService();
 
-// Remove the "/driver" prefix from all routes
-/**
- * @deprecated This route is no longer in use. Driver registration is now handled through Clerk.
- */
-router.post(
-  "/register",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { username, email, password, userType } = req.body;
-      if (!username || !email || !password) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Username, email, and password are required"
-        );
-      }
-      if (userType === "driver") {
-        const newDriver = await registerDriver(
-          username,
-          email,
-          password,
-          DriverRepository
-        );
-        res.status(201).json({
-          message: "Driver registered successfully",
-          driver: newDriver,
-        });
-      } else {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          401,
-          "Invalid user type for driver registration"
-        );
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+
 
 router.get(
   "/assigned-requests",clerkAuthMiddleware("driver"),

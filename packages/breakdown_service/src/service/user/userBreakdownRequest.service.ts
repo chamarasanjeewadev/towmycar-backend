@@ -1,15 +1,11 @@
 import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import {
-  BreakdownRequestInput,
   BreakdownRequestWithUserDetails,
 } from "../../dto/breakdownRequest.dto";
-import * as userRepository from "../../repository/user.repository";
 import { sendNotification } from "../utils/sns.service";
-import { BreakdownRequestRepositoryType } from "../../repository/breakdownRequest.repository";
 import { sendPushNotificationAndEmail } from "../utils/sns.service";
 import { CombinedBreakdownRequestInput } from "../../dto/combinedBreakdownRequest.dto";
 import * as repository from "../../repository/breakdownRequest.repository";
-import * as cognitoService from "../utils/cognito.service";
 import { UserGroup, EmailNotificationType, UserStatus } from "../../enums";
 import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,

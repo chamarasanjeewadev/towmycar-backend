@@ -90,47 +90,7 @@ router.post(
   }
 );
 
-router.post(
-  "/register",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const result = requiredUserSchema.safeParse(req.body);
-      console.log("result...", result);
-      // TODO: do this in middlware
-      if (!result.success) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          result.error.issues.map(issue => issue.message).join(", ")
-        );
-      }
 
-      const { username, email, password, userType } = result.data;
-
-      if (userType === "user") {
-        const newUser = await service.CreateUser(
-          { email, username, password },
-          repo
-        );
-
-        res.status(201).json({
-          message: "User registered successfully",
-          user: newUser?.id,
-        });
-      } else {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          401,
-          "Invalid user type for user registration"
-        );
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-// ... other existing routes ...
 
 router.get(
   "/profile",

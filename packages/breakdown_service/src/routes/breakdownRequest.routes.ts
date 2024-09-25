@@ -1,17 +1,11 @@
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/userBreakdownRequest.service";
-import { clerkClient } from "@clerk/clerk-sdk-node";
-import * as repository from "../repository/breakdownRequest.repository";
 import {
   BreakdownRequestInput,
-  BreakdownRequestSchema,
 } from "../dto/breakdownRequest.dto";
-import { CombinedBreakdownRequestSchema } from "../dto/combinedBreakdownRequest.dto";
 import { z } from "zod";
 import { PaginationQuerySchema } from "../dto/query.dto";
-import { validateRequest } from "../middleware/requestValidator";
 import { errorHandler } from "../middleware/errorHandler";
-import { authenticateJWT } from "../middleware/auth";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 
 const router = express.Router();
