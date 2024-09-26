@@ -26,6 +26,7 @@ const create = async (
 ): Promise<number> => {
   const userResult = await DB.insert(user)
     .values({
+      //@ts-ignore
       authId: crypto.randomUUID(), // Generate a unique authId
       email: data.email,
       role: "driver", // Set the role to "driver"

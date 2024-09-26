@@ -1,20 +1,6 @@
 import { UserRegisterInput } from "../../dto/userRequest.dto";
 import { UserRepositoryType } from "../../repository/user.repository";
 
-// keep this for future reference removed creaeUser
-// const emailSnsResult = await sendNotification(
-//   process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
-//   {
-//     type: EmailNotificationType.USER_CREATED_EMAIL,
-//     payload: {
-//       firstName: input.username,
-//       lastName: input.username,
-//       email: input.email,
-//       viewRequestLink: `http://localhost:5173/user/profile`,
-//     },
-//   }
-// );
-
 export const getUserProfileByEmail = async (
   email: string,
   repo: UserRepositoryType
@@ -104,3 +90,32 @@ export const saveFcmToken = async (
     throw error;
   }
 };
+
+// Add this new function
+// export const createClerkUser = async (email: string, role: string = 'customer') => {
+//   try {
+//     const user = await Clerk.users.create({
+//       emailAddress: email,
+//       publicMetadata: {
+//         role: role,
+//       },
+//     });
+//     return user;
+//   } catch (error) {
+//     console.error("Error creating Clerk user:", error);
+//     throw error;
+//   }
+// };
+// keep this for future reference removed creaeUser
+// const emailSnsResult = await sendNotification(
+//   process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
+//   {
+//     type: EmailNotificationType.USER_CREATED_EMAIL,
+//     payload: {
+//       firstName: input.username,
+//       lastName: input.username,
+//       email: input.email,
+//       viewRequestLink: `http://localhost:5173/user/profile`,
+//     },
+//   }
+// );

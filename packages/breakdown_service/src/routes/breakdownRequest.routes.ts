@@ -1,42 +1,42 @@
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/userBreakdownRequest.service";
-import {
-  BreakdownRequestInput,
-} from "../dto/breakdownRequest.dto";
+import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { z } from "zod";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { errorHandler } from "../middleware/errorHandler";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 
 const router = express.Router();
-// router.use(authenticateJWT(["user"]));
-const authMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  // Example authentication middleware
-  const isValidUser = true;
-  if (!isValidUser) {
-    return res.status(403).json({ error: "authorization error" });
-  }
-  next();
-};
 
-// New route for combined breakdown request
+
+// Updated route for anonymous breakdown request
 router.post(
-  "/combined-breakdown-request",
+  "/anonymous-breakdown-request",
+  async (req: Request, res: Response) => {
+    try {
+      const response = await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
+        req.body as BreakdownRequestInput
+      );
+
+      return res.status(200).json(response);
+    } catch (error) {
+      console.error("Error processing anonymous breakdown request:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+router.post(
+  "/breakdown-request",
   clerkAuthMiddleware("customer"), // Check for "customer" role
   async (req: Request, res: Response) => {
     try {
       // Now you can access userId and userRole directly from the request
-      const {userId,role,customerId,driverId} = req.userInfo;
-      console.log("userId in route handler:", userId, "userRole:", role);
-      const response = await service.CreateCombinedBreakdownRequest(
+      const response = await service.BreakdownRequestService.CreateBreakdownRequest(
         req.body as BreakdownRequestInput,
-       req.userInfo
+        req.userInfo
       );
-      
+
       return res.status(200).json(response);
     } catch (error) {
       console.error("Error processing combined breakdown request:", error);

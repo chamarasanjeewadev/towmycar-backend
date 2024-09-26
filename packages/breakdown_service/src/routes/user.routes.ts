@@ -1,9 +1,7 @@
-import { getUserProfileById } from "./../service/user/user.service";
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/user.service";
 import * as repository from "../repository/user.repository";
 import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
-import { requiredUserSchema, UserInput } from "../dto/user.dto";
 import { UserRegisterInput } from "../dto/userRequest.dto";
 import { UserRepository } from "../repository/user.repository";
 import { saveFcmToken } from "../service/user/user.service";
@@ -13,8 +11,6 @@ import bodyParser from "body-parser";
 import { Webhook } from "svix";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-import * as driverService from "../service/driver/driver.service";
-import { DriverRepository } from "../repository/driver.repository";
 import axios from "axios";
 
 const router = express.Router();

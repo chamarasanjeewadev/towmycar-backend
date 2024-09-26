@@ -47,6 +47,9 @@ export type UserRepositoryType = {
     updateData: Partial<Vehicle>
   ) => Promise<Vehicle | null>;
   deleteVehicle: (id: number) => Promise<boolean>;
+  createAnonymousCustomer: (userInput: {
+    email: string;
+  }) => Promise<{ customer: any; user: any; isNewUser: boolean }>;
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
@@ -105,7 +108,10 @@ const getUserProfileById = async (id: number): Promise<any | null> => {
 };
 
 const getUserProfileByAuthId = async (authId: string): Promise<any | null> => {
-  const result = await DB.select().from(user).where(eq(user.authId, authId)).limit(1);
+  const result = await DB.select()
+    .from(user)
+    .where(eq(user.authId, authId))
+    .limit(1);
 
   if (result.length === 0) {
     return null;
@@ -113,12 +119,17 @@ const getUserProfileByAuthId = async (authId: string): Promise<any | null> => {
 
   const userProfile = result[0];
   if (userProfile.role === "driver") {
-    const driverProfile = await DB.select().from(driver).where(eq(driver.userId, userProfile.id)).limit(1);
+    const driverProfile = await DB.select()
+      .from(driver)
+      .where(eq(driver.userId, userProfile.id))
+      .limit(1);
     console.log("driverProfile", driverProfile);
     return { ...userProfile, driverProfile: driverProfile[0] };
-  } 
-  else if (userProfile.role === "customer") {
-    const customerProfile = await DB.select().from(customer).where(eq(customer.userId, userProfile.id)).limit(1);
+  } else if (userProfile.role === "customer") {
+    const customerProfile = await DB.select()
+      .from(customer)
+      .where(eq(customer.userId, userProfile.id))
+      .limit(1);
     console.log("customerProfile", customerProfile);
     return { ...userProfile, customerProfile: customerProfile[0] };
   }
@@ -190,48 +201,195 @@ const deleteVehicle = async (id: number): Promise<boolean> => {
   return result?.rowCount ? result.rowCount > 0 : false;
 };
 
-const createUserFromWebhook = async (userData: UserData): Promise<{ userId: number; role: string; customerId?: number; driverId?: number }> => {
+const createAnonymousCustomer = async (userInput: {
+  email: string;
+}): Promise<{ customer: any; user: any; isNewUser: boolean }> => {
+  try {
+    const result = await DB.transaction(async trx => {
+      // Check if user already exists
+      const existingUser = await trx
+        .select()
+        .from(user)
+        .where(eq(user.email, userInput.email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        // User exists, get the related customer
+        const existingCustomer = await trx
+          .select()
+          .from(customer)
+          .where(eq(customer.userId, existingUser[0].id))
+          .limit(1);
+
+        if (existingCustomer.length > 0) {
+          return {
+            customer: existingCustomer[0],
+            user: existingUser[0],
+            isNewUser: false,
+          };
+        }
+      }
+
+      // User doesn't exist or doesn't have a customer record, create new user and customer
+      //@ts-ignore
+      const userResult = await trx
+        .insert(user) //@ts-ignore
+        .values({
+          role: "customer",
+          email: userInput.email,
+          isActive: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      const newUser = userResult[0];
+
+      // Create customer record
+      //@ts-ignore
+      const customerResult = await trx
+        .insert(customer)
+        //@ts-ignore
+        .values({
+          userId: newUser.id,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      const newCustomer = customerResult[0];
+
+      return { customer: newCustomer, user: newUser, isNewUser: true };
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Error creating or retrieving anonymous customer:", error);
+    throw error;
+  }
+};
+
+const createUserFromWebhook = async (
+  userData: UserData
+): Promise<{
+  userId: number;
+  role: string;
+  customerId?: number;
+  driverId?: number;
+}> => {
   try {
     const { id, first_name, last_name, email_addresses, unsafe_metadata } = userData;
     const email = email_addresses?.[0]?.email_address;
-    const role = unsafe_metadata?.role ?? "driver" as string;
+    const role = unsafe_metadata?.role ?? ("customer" as string);
 
-    const result = await DB.transaction(async (trx) => {
-      //@ts-ignore
-      const userResult = await trx.insert(user).values({
-        authId: id,
-        email: email,
-        role: role,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }).returning();
-      const newUserId = userResult[0].id;
+    const result = await DB.transaction(async trx => {
+      // Check if user already exists
+      const existingUser = await trx
+        .select()
+        .from(user)
+        .where(eq(user.email, email))
+        .limit(1);
 
+      let newUserId: number;
       let customerId, driverId;
+      if (existingUser.length > 0) {
+        // User exists, update the record
+        const updateResult = await trx
+          .update(user)
+          .set({
+            //@ts-ignore
+            authId: id!,
+            role: role,
+            isActive: true,
+            updatedAt: new Date(),
+          })
+          .where(eq(user.email, email))
+          .returning();
+        newUserId = updateResult[0].id;
 
-      if (role === "driver") {
-        const driverResult = await trx.insert(driver).values({
-          userId: newUserId,
-          createdAt: new Date(),
-          // Add other driver-specific fields here
-        }).returning();
-        driverId = driverResult[0].id;
-      } else if (role === "customer") {
-        const customerResult = await trx.insert(customer).values({
-          userId: newUserId,
-          createdAt: new Date(),
-          // Add other customer-specific fields here
-        }).returning();
-        customerId = customerResult[0].id;
+        // Check for existing customer or driver record
+        if (role === "customer") {
+          const existingCustomer = await trx.select().from(customer).where(eq(customer.userId, newUserId)).limit(1);
+          if (existingCustomer.length > 0) {
+            customerId = existingCustomer[0].id;
+          } else {
+            // Create new customer record if it doesn't exist
+            const customerResult = await trx
+              .insert(customer)
+              //@ts-ignore
+              .values({
+                userId: newUserId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .returning();
+            customerId = customerResult[0].id;
+          }
+        } else if (role === "driver") {
+          const existingDriver = await trx.select().from(driver).where(eq(driver.userId, newUserId)).limit(1);
+          if (existingDriver.length > 0) {
+            driverId = existingDriver[0].id;
+          } else {
+            // Create new driver record if it doesn't exist
+            const driverResult = await trx
+              .insert(driver)
+              //@ts-ignore
+              .values({
+                userId: newUserId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .returning();
+            driverId = driverResult[0].id;
+          }
+        }
+      } else {
+        // User doesn't exist, create a new record
+        const userResult = await trx
+          .insert(user)
+            //@ts-ignore
+          .values({
+            //@ts-ignore
+            authId: id,
+            email: email,
+            role: role,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+        newUserId = userResult[0].id;
+
+        if (role === "driver") {
+          const driverResult = await trx
+            .insert(driver)
+            //@ts-ignore
+            .values({
+              userId: newUserId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+          driverId = driverResult[0].id;
+        } else if (role === "customer") {
+          const customerResult = await trx
+            .insert(customer)
+            //@ts-ignore
+            .values({
+              userId: newUserId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+          customerId = customerResult[0].id;
+        }
       }
-
       return { userId: newUserId, role, customerId, driverId };
     });
 
     return result;
   } catch (error) {
-    console.log("Error creating user from webhook:", error);
+    console.log("Error creating or updating user from webhook:", error);
     throw error;
   }
 };
@@ -250,4 +408,5 @@ export const UserRepository: UserRepositoryType = {
   updateVehicle,
   deleteVehicle,
   createUserFromWebhook,
+  createAnonymousCustomer,
 };
