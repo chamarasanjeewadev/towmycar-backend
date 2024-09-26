@@ -14,7 +14,7 @@ import { UserStatus } from "./enums";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
-  authId: varchar("auth_id", { length: 255 }).notNull(),
+  authId: varchar("auth_id", { length: 255 }),
   email: varchar("email", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
@@ -114,9 +114,8 @@ export const breakdownAssignment = pgTable("breakdown_assignment", {
   driverId: integer("driver_id")
     .references(() => driver.id, { onDelete: "cascade" })
     .notNull(),
-  driverStatus: varchar("driver_status", { length: 20 }).notNull(),
-  userStatus: varchar("user_status", { length: 20 })
-    .notNull(),
+  driverStatus: varchar("driver_status", { length: 20 }),
+  userStatus: varchar("user_status", { length: 20 }),
   estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
   explanation: text("estimate_explanation"),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),

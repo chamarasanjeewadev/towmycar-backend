@@ -203,6 +203,7 @@ export const DriverRepository: IDriverRepository = {
     data: UpdateAssignmentData
   ): Promise<boolean> {
     const updateData: Partial<typeof breakdownAssignment.$inferInsert> = {
+      //@ts-ignore
       driverStatus: data.status,
       ...(data.estimation !== undefined && { estimation: data.estimation }),
       ...(data.explanation !== undefined && { explanation: data.explanation }),

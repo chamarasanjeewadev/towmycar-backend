@@ -7,7 +7,7 @@ import {
   userProfile,
 } from "../../../database";
 import { sql, eq, and } from "drizzle-orm";
-import { DriverStatus } from "../enums";
+import { DriverStatus, UserStatus } from "../enums";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
@@ -97,7 +97,8 @@ const updateDriverRequests = async (
         nearbyDrivers.map(driver => ({
           requestId,
           driverId: driver.id,
-          status: DriverStatus.PENDING,
+          driverStatus: DriverStatus.PENDING,
+          userStatus: UserStatus.PENDING,
           assignedAt: now,
           createdAt: now,
           updatedAt: now,

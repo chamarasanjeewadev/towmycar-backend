@@ -229,6 +229,7 @@ const updateUserStatusInBreakdownAssignment = async (
 ): Promise<BreakdownAssignment | null> => {
   // @ts-ignore
   const result = await DB.update(breakdownAssignment)
+    // @ts-ignore
     .set({ userStatus: userStatus })
     .where(eq(breakdownAssignment.id, assignmentId))
     .returning();
