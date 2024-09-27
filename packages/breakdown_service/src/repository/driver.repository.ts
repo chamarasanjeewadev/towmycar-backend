@@ -65,6 +65,7 @@ export interface IDriverRepository {
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
   getDriverById(id: number): Promise<Driver | null>;
   getUserByRequestId(requestId: number): Promise<Partial<Customer> | null>;
+  updateDriver(driverId: number, updateData: Partial<Driver>): Promise<Driver | null>;
   getDriverProfileById(userId: number): Promise<any | null>;
   getDriverByRequestId(requestId: number): Promise<
     | (Partial<Driver> & {
@@ -333,6 +334,14 @@ export const DriverRepository: IDriverRepository = {
       .where(eq(breakdownRequest.id, requestId))
       .limit(1);
 
+    return result.length > 0 ? result[0] : null;
+  },
+
+  async updateDriver(driverId: number, updateData: Partial<Driver>): Promise<Driver | null> {
+    const result = await DB.update(driver)
+      .set(updateData)
+      .where(eq(driver.id, driverId))
+      .returning();
     return result.length > 0 ? result[0] : null;
   },
 

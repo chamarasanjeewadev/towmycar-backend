@@ -12,15 +12,21 @@ import { Webhook } from "svix";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
+import Stripe from "stripe";
+import { Driver } from "@breakdownrescue/database";
+import { DriverRepository } from "../repository/driver.repository";
 
 const router = express.Router();
 const repo = repository.UserRepository;
-//@ts-ignore
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-06-20",
+});
+
 router.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),
-  async function (req, res) {
-    const WEBHOOK_SECRET = "whsec_j17GnOHaNIOJaOzsGNJdV0m6lCI/WalX"; // process.env.WEBHOOK_SECRET
+  async function (req: Request, res: Response, next: NextFunction) {
+    const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
     if (!WEBHOOK_SECRET) {
       throw new Error("You need a WEBHOOK_SECRET in your .env");
     }
@@ -49,44 +55,70 @@ router.post(
       const userData = evt.data;
       try {
         const userInfo = await repo.createUserFromWebhook(userData);
-        const params = { userInfo: userInfo };
 
+        // Create Stripe customer
+        const stripeCustomer = await stripe.customers.create({
+          email: userData.email_addresses[0].email_address,
+          metadata: { driverId: userInfo.driverId?.toString() },
+        });
+
+        // Update driver with Stripe customer ID
+        if (userInfo.driverId) {
+          await DriverRepository.updateDriver(userInfo.driverId, {
+            stripeId: stripeCustomer.id,
+          });
+        }
+
+        const params = {
+          userInfo: {
+            ...userInfo,
+            stripeCustomerId: stripeCustomer.id,
+          },
+        };
+        // update user in clerk
         const updatedUser = await clerkClient.users.updateUser(
           evt.data.id,
           params
         );
+
         console.log("updatedUser.....", updatedUser);
         if (userInfo.userId) {
           await clerkClient.users.updateUserMetadata(evt.data.id, {
             privateMetadata: {
-              userInfo: userInfo,
+              userInfo: {
+                ...userInfo,
+                stripeCustomerId: stripeCustomer.id,
+              },
             },
             publicMetadata: {
-              userInfo: userInfo,
+              userInfo: {
+                ...userInfo,
+                stripeCustomerId: stripeCustomer.id,
+              },
             },
           });
         }
 
-        return res.status(200).json({
+        res.status(200).json({
           success: true,
-          message: "User created and processed successfully",
+          message:
+            "User created, processed, and Stripe customer created successfully",
         });
       } catch (error) {
-        return res.status(500).json({
+        console.error("Error processing user creation:", error);
+        res.status(500).json({
           success: false,
           message: "Error processing user creation",
         });
       }
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Webhook received",
+      });
     }
-
-    return res.status(200).json({
-      success: true,
-      message: "Webhook received",
-    });
   }
 );
-
-
 
 router.get(
   "/profile",
@@ -183,23 +215,27 @@ router.patch(
     }
   }
 );
-
-router.post("/fcm-token", validateRequest(fcmTokenSchema), async (req, res) => {
-  try {
-    const { token, browserInfo, userId } = req.body as FcmTokenInput;
-    console.log("req.body.........", req.body);
-    const result = await saveFcmToken(
-      userId,
-      token,
-      browserInfo,
-      UserRepository
-    );
-    res.status(201).json(result);
-  } catch (error) {
-    console.error("Error saving FCM token:", error);
-    res.status(500).json({ error: "Internal server error" });
+//@ts-ignore
+router.post(
+  "/fcm-token",
+  // validateRequest(fcmTokenSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { token, browserInfo, userId } = req.body as FcmTokenInput;
+      console.log("req.body.........", req.body);
+      const result = await saveFcmToken(
+        userId,
+        token,
+        browserInfo,
+        UserRepository
+      );
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error saving FCM token:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-});
+);
 
 // Add this new route for getting driver profile
 
@@ -243,6 +279,43 @@ router.post(
       } else {
         next(error);
       }
+    }
+  }
+);
+
+router.patch(
+  "/driver/:driverId",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const driverId = parseInt(req.params.driverId, 10);
+      if (isNaN(driverId)) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid driver ID"
+        );
+      }
+
+      const updateData: Partial<Driver> = req.body;
+
+      // You might want to add validation for updateData here
+
+      const updatedDriver = await DriverRepository.updateDriver(driverId, updateData);
+      if (!updatedDriver) {
+        throw new CustomError(
+          ERROR_CODES.RESOURCE_NOT_FOUND,
+          404,
+          "Driver not found"
+        );
+      }
+
+      res.json({
+        message: "Driver information updated successfully",
+        driver: updatedDriver,
+      });
+    } catch (error) {
+      next(error);
     }
   }
 );

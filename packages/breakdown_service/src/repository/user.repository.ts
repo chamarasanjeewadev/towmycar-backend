@@ -269,6 +269,8 @@ const createAnonymousCustomer = async (userInput: {
   }
 };
 
+
+
 const createUserFromWebhook = async (
   userData: UserData
 ): Promise<{
