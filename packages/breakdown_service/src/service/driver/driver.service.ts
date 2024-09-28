@@ -7,11 +7,11 @@ import { EmailNotificationType } from "../../enums";
 import { sendNotification } from "../utils/sns.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { DriverStatus } from "../../enums";
-import { Stripe } from 'stripe';
+import { Stripe } from "stripe";
 
 // Initialize Stripe client
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-06-20', // Use the latest API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2024-06-20", // Use the latest API version
 });
 
 interface UpdateAssignmentData {
@@ -85,7 +85,10 @@ export class DriverService {
         description: data?.description ?? "",
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
-    } else if (data.status === DriverStatus.ACCEPTED && parseFloat(data.estimation || '0') > 0 ) {
+    } else if (
+      data.status === DriverStatus.ACCEPTED &&
+      parseFloat(data.estimation || "0") > 0
+    ) {
       notificationType = EmailNotificationType.DRIVER_ACCEPT_EMAIL;
       payload = {
         requestId,
@@ -98,10 +101,10 @@ export class DriverService {
         driverEmail: "driverDetails.email",
         vehicleModel: driverDetails.vehicleType,
         vehiclePlateNumber: driverDetails.vehicleRegistration,
-        estimation: data.estimation
+        estimation: data.estimation,
       };
     } else {
-      throw new Error('Invalid status or estimation amount');
+      throw new Error("Invalid status or estimation amount");
     }
 
     const emailSnsResult = await sendNotification(
@@ -123,7 +126,6 @@ export class DriverService {
   }
 }
 
-
 export const getDriverById = async (
   userId: number,
   repository: IDriverRepository
@@ -139,7 +141,9 @@ export const getDriverById = async (
     if (driverProfile?.driverProfile?.stripePaymentMethodId) {
       try {
         // Retrieve payment method details from Stripe
-        const paymentMethod = await stripe.paymentMethods.retrieve(driverProfile?.driverProfile?.stripePaymentMethodId);
+        const paymentMethod = await stripe.paymentMethods.retrieve(
+          driverProfile?.driverProfile?.stripePaymentMethodId
+        );
 
         // Attach payment method details to the driver profile
         return {
@@ -152,7 +156,7 @@ export const getDriverById = async (
           },
         };
       } catch (stripeError) {
-        console.error('Error retrieving Stripe payment method:', stripeError);
+        console.error("Error retrieving Stripe payment method:", stripeError);
         // Return the driver profile without payment method if there's an error
         return driverProfile;
       }
@@ -161,8 +165,8 @@ export const getDriverById = async (
     // Return the driver profile without payment method if no Stripe payment method ID is available
     return driverProfile;
   } catch (error) {
-    console.error('Error in getDriverById:', error);
-    throw new Error('Failed to retrieve driver profile');
+    console.error("Error in getDriverById:", error);
+    throw new Error("Failed to retrieve driver profile");
   }
 };
 

@@ -65,7 +65,10 @@ export interface IDriverRepository {
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
   getDriverById(id: number): Promise<Driver | null>;
   getUserByRequestId(requestId: number): Promise<Partial<Customer> | null>;
-  updateDriver(driverId: number, updateData: Partial<Driver>): Promise<Driver | null>;
+  updateDriver(
+    driverId: number,
+    updateData: Partial<Driver>
+  ): Promise<Driver | null>;
   getDriverProfileById(userId: number): Promise<any | null>;
   getDriverByRequestId(requestId: number): Promise<
     | (Partial<Driver> & {
@@ -79,7 +82,10 @@ export interface IDriverRepository {
       })
     | null
   >;
-  updateDriverPaymentMethod(driverId: number, paymentMethodId: string): Promise<Driver | null>;
+  updateDriverPaymentMethod(
+    driverId: number,
+    paymentMethodId: string
+  ): Promise<Driver | null>;
   getDriverWithPaymentMethod(driverId: number): Promise<Driver | null>;
 }
 
@@ -339,7 +345,10 @@ export const DriverRepository: IDriverRepository = {
     return result.length > 0 ? result[0] : null;
   },
 
-  async updateDriver(driverId: number, updateData: Partial<Driver>): Promise<Driver | null> {
+  async updateDriver(
+    driverId: number,
+    updateData: Partial<Driver>
+  ): Promise<Driver | null> {
     const result = await DB.update(driver)
       .set(updateData)
       .where(eq(driver.id, driverId))
@@ -395,9 +404,12 @@ export const DriverRepository: IDriverRepository = {
     console.log("driverProfile", driverProfile);
     return { ...userProfile, driverProfile: driverProfile[0] };
   },
-  async updateDriverPaymentMethod(driverId: number, paymentMethodId: string): Promise<Driver | null> {
+  async updateDriverPaymentMethod(
+    driverId: number,
+    paymentMethodId: string
+  ): Promise<Driver | null> {
     const result = await DB.update(driver)
-    //@ts-ignore
+      //@ts-ignore
       .set({ stripePaymentMethodId: paymentMethodId })
       .where(eq(driver.id, driverId))
       .returning();
@@ -408,7 +420,7 @@ export const DriverRepository: IDriverRepository = {
       .from(driver)
       .where(eq(driver.id, driverId))
       .limit(1);
-    
+
     return result || null;
   },
 };
