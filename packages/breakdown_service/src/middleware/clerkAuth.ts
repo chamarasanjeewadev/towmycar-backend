@@ -11,6 +11,9 @@ import { ClerkExpressRequireAuth, clerkClient } from "@clerk/clerk-sdk-node";
 
 export const clerkAuthMiddleware = (requiredRole: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
+    // Log the endpoint information
+    console.log(`Endpoint called: ${req.method} ${req.originalUrl}`);
+
     ClerkExpressRequireAuth({
       onError: error => {
         console.error("Clerk authentication error:", error);
@@ -27,17 +30,18 @@ export const clerkAuthMiddleware = (requiredRole: string) => {
         try {
           const user = await clerkClient.users.getUser(clerkUserId);
           //@ts-ignore
-          const {role,userId,customerId,driverId} = user.privateMetadata.userInfo;
+          const { role, userId, customerId, driverId } =
+            user.privateMetadata.userInfo;
 
           if (role !== requiredRole) {
             return res.status(403).json({ error: "Insufficient permissions" });
           }
-         req.userInfo={
-          userId,
-          role,
-          customerId,
-          driverId
-         }
+          req.userInfo = {
+            userId,
+            role,
+            customerId,
+            driverId,
+          };
           console.log("userId:", userId, "userRole:", req.userInfo);
         } catch (error) {
           console.error("Error fetching user data:", error);

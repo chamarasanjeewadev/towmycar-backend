@@ -10,10 +10,13 @@ import { driverProfileSchema } from "../dto/driver.dto";
 import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
+import Stripe from "stripe";
 
 const router = express.Router();
 const driverService = new DriverService();
-
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20', // Updated to the latest API version
+});
 
 
 router.get(
@@ -116,6 +119,26 @@ router.patch(
         Number(requestId),
         updateData
       );
+
+      // Retrieve the driver's payment method ID
+      const driver = await driverService.getDriverWithPaymentMethod(Number(driverId));
+      if (!driver || !driver.stripePaymentMethodId) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Driver's payment method not found"
+        );
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 1000,
+        currency: 'usd',
+        customer: driver.stripeId,
+        payment_method: driver.stripePaymentMethodId,
+        off_session: true, // Indicates the payment is happening without user interaction
+        confirm: true, // Automatically confirm the PaymentIntent
+      });
+
       if (updated) {
         res.json({ message: `Driver request status updated to ${status}` });
       } else {

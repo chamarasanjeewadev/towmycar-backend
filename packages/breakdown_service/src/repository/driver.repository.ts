@@ -79,6 +79,8 @@ export interface IDriverRepository {
       })
     | null
   >;
+  updateDriverPaymentMethod(driverId: number, paymentMethodId: string): Promise<Driver | null>;
+  getDriverWithPaymentMethod(driverId: number): Promise<Driver | null>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -392,5 +394,21 @@ export const DriverRepository: IDriverRepository = {
       .limit(1);
     console.log("driverProfile", driverProfile);
     return { ...userProfile, driverProfile: driverProfile[0] };
+  },
+  async updateDriverPaymentMethod(driverId: number, paymentMethodId: string): Promise<Driver | null> {
+    const result = await DB.update(driver)
+    //@ts-ignore
+      .set({ stripePaymentMethodId: paymentMethodId })
+      .where(eq(driver.id, driverId))
+      .returning();
+    return result.length > 0 ? result[0] : null;
+  },
+  async getDriverWithPaymentMethod(driverId: number): Promise<Driver | null> {
+    const [result] = await DB.select()
+      .from(driver)
+      .where(eq(driver.id, driverId))
+      .limit(1);
+    
+    return result || null;
   },
 };

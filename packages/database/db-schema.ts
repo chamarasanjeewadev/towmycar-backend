@@ -48,6 +48,8 @@ export const driver = pgTable("driver", {
     .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
+  stripeId: varchar("stripe_id", { length: 255 }),  // Stripe customer ID
+  stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }),  // New field for Stripe payment method ID
   phoneNumber: varchar("phone_number", { length: 20 }),
   vehicleType: varchar("vehicle_type", { length: 100 }),
   vehicleRegistration: varchar("vehicle_registration", { length: 20 }),

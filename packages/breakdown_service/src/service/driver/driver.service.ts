@@ -7,6 +7,13 @@ import { EmailNotificationType } from "../../enums";
 import { sendNotification } from "../utils/sns.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { DriverStatus } from "../../enums";
+import { Stripe } from 'stripe';
+
+// Initialize Stripe client
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2024-06-20', // Use the latest API version
+});
+
 interface UpdateAssignmentData {
   status: string;
   estimation?: string;
@@ -110,6 +117,10 @@ export class DriverService {
   async getDriverProfileByEmail(email: string) {
     return DriverRepository.getDriverProfileByEmail(email);
   }
+
+  async getDriverWithPaymentMethod(driverId: number) {
+    return DriverRepository.getDriverWithPaymentMethod(driverId);
+  }
 }
 
 
@@ -117,7 +128,42 @@ export const getDriverById = async (
   userId: number,
   repository: IDriverRepository
 ) => {
-  return repository.getDriverProfileById(userId);
+  try {
+    const driverProfile = await repository.getDriverProfileById(userId);
+
+    if (!driverProfile) {
+      throw new Error(`Driver with id ${userId} not found`);
+    }
+
+    // Check if the driver has a Stripe payment method ID
+    if (driverProfile?.driverProfile?.stripePaymentMethodId) {
+      try {
+        // Retrieve payment method details from Stripe
+        const paymentMethod = await stripe.paymentMethods.retrieve(driverProfile?.driverProfile?.stripePaymentMethodId);
+
+        // Attach payment method details to the driver profile
+        return {
+          ...driverProfile,
+          paymentMethod: {
+            brand: paymentMethod.card?.brand,
+            last4: paymentMethod.card?.last4,
+            expirationMonth: paymentMethod.card?.exp_month,
+            expirationYear: paymentMethod.card?.exp_year,
+          },
+        };
+      } catch (stripeError) {
+        console.error('Error retrieving Stripe payment method:', stripeError);
+        // Return the driver profile without payment method if there's an error
+        return driverProfile;
+      }
+    }
+
+    // Return the driver profile without payment method if no Stripe payment method ID is available
+    return driverProfile;
+  } catch (error) {
+    console.error('Error in getDriverById:', error);
+    throw new Error('Failed to retrieve driver profile');
+  }
 };
 
 export const updateDriverProfile = async (

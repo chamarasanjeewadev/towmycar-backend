@@ -50,6 +50,20 @@
       "when": 1727352896353,
       "tag": "0006_crazy_starfox",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1727441462881,
+      "tag": "0007_cold_human_torch",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1727507443841,
+      "tag": "0008_dizzy_donald_blake",
+      "breakpoints": true
     }
   ]
 }

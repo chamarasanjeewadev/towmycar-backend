@@ -9,6 +9,7 @@ declare global {
         role: string;
         customerId?: number;
         driverId?: number;
+        stripeCustomerId?: string;
       };
      
     }
