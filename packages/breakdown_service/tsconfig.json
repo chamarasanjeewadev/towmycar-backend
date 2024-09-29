@@ -29,7 +29,7 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@breakdownrescue/database": ["../database"]
+      "@breakdownrescue/database": ["../database/index.ts"]
     },
     // "moduleResolution": "node",                       /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
@@ -104,6 +104,6 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*", "global.d.ts"],
+  "include": ["src/**/*", "../database/index.ts"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

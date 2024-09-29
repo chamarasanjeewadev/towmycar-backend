@@ -42,6 +42,7 @@ export type BreakdownRequestQueryType = {
     userId: number,
     requestId?: number
   ) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
+  getBreakdownAssignmentsByRequestId: (requestId: number) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
 };
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<
@@ -133,7 +134,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 const getBreakdownAssignmentsByUserIdAndRequestId = async (
   userId: number,
   requestId?: number
-): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]> => {
+): Promise<(BreakdownAssignment & { driver: Driver; user: User })[] => {
   let query = DB.select({
     assignment: {
       id: breakdownAssignment.id,
@@ -179,8 +180,38 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
   })[];
 };
 
+const getBreakdownAssignmentsByRequestId = async (
+  requestId: number
+): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
+  const result = await DB.select({
+    assignment: breakdownAssignment,
+    driver: {
+      id: driver.id,
+      email: user.email,
+      fullName: user.firstName,
+      phoneNumber: driver.phoneNumber,
+    },
+    user: {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
+  })
+    .from(breakdownAssignment)
+    .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+    .innerJoin(breakdownRequest, eq(breakdownAssignment.requestId, breakdownRequest.id))
+    .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+    .innerJoin(user, eq(customer.userId, user.id))
+    .where(eq(breakdownAssignment.requestId, requestId))
+    .orderBy(desc(breakdownAssignment.updatedAt));
+
+  return result as unknown as (BreakdownAssignment & { driver: Driver; user: User })[];
+};
+
 export const BreakdownRequestQuery: BreakdownRequestQueryType = {
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,
+  getBreakdownAssignmentsByRequestId,
 };

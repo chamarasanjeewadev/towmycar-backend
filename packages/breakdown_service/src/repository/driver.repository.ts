@@ -8,7 +8,7 @@ import {
   Driver,
   Customer,
   BreakdownAssignment,
-} from "@breakdownrescue/database";
+} from "../../../database";
 import { eq, and, desc, not, or } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError } from "../utils/error/errors";
@@ -102,15 +102,13 @@ export const DriverRepository: IDriverRepository = {
     driverId: number
   ): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]> {
     const result = await DB.select({
-      driverRequest: {
-        id: breakdownAssignment.id,
-        requestId: breakdownAssignment.requestId,
-        status: breakdownAssignment.driverStatus,
-        estimation: breakdownAssignment.estimation,
-        explanation: breakdownAssignment.explanation,
-        updatedAt: breakdownAssignment.updatedAt,
-        userLocation: breakdownRequest.userLocation,
-      },
+      id: breakdownAssignment.id,
+      requestId: breakdownAssignment.requestId,
+      status: breakdownAssignment.driverStatus,
+      estimation: breakdownAssignment.estimation,
+      explanation: breakdownAssignment.explanation,
+      updatedAt: breakdownAssignment.updatedAt,
+      userLocation: breakdownRequest.userLocation,
       driver: {
         id: driver.id,
         name: driver.phoneNumber,
@@ -145,7 +143,7 @@ export const DriverRepository: IDriverRepository = {
     (BreakdownAssignment & { driver: Driver; user: Customer }) | null
   > {
     const [result] = await DB.select({
-      driverRequest: {
+      breakdownRequest: {
         id: breakdownAssignment.id,
         requestId: breakdownAssignment.requestId,
         status: breakdownAssignment.driverStatus,
@@ -200,7 +198,7 @@ export const DriverRepository: IDriverRepository = {
     if (!result) return null;
     // @ts-ignore
     return {
-      ...result.driverRequest,
+      ...result.breakdownRequest,
       driver: result.driver,
       user: result.user,
     } as BreakdownAssignment & { driver: Driver; user: Customer };

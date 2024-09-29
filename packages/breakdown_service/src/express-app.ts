@@ -5,7 +5,7 @@ import userRoutes from "./routes/user.routes";
 import breakdownRequestRoutes from "./routes/breakdownRequest.routes";
 import driverRoutes from "./routes/driver.routes";
 import stripeRoutes from "./routes/stripe.routes";
-
+import chatRoutes from "./routes/chat.routes";
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -13,6 +13,7 @@ app.use(httpLogger);
 
 app.use("/user", userRoutes);
 app.use("/driver", driverRoutes);
+app.use("/chat", chatRoutes);
 app.use("/user", breakdownRequestRoutes);
 app.use("/stripe", stripeRoutes);
 
