@@ -166,6 +166,11 @@ const updateUserStatusInBreakdownAssignment = async (
   return false;
 };
 
+// Add this new method to the BreakdownRequestService object
+const getBreakdownAssignmentsByRequestId = async (requestId: number) => {
+  return await BreakdownRequestRepository.getBreakdownAssignmentsByRequestId(requestId);
+};
+
 const createAnonymousCustomerAndBreakdownRequest = async (
   breakdownRequestInput: BreakdownRequestInput
 ) => {
@@ -201,13 +206,25 @@ const createAnonymousCustomerAndBreakdownRequest = async (
   }
 };
 
+const getBreakdownAssignmentsByDriverIdAndRequestId = async (
+  driverId: number,
+  requestId?: number
+) => {
+  return await BreakdownRequestRepository.getBreakdownAssignmentsByDriverIdAndRequestId(
+    driverId,
+    requestId
+  );
+};
+
 export const BreakdownRequestService = {
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByUserIdAndRequestId,
-  updateUserStatusInBreakdownAssignment: updateUserStatusInBreakdownAssignment,
-  createAnonymousCustomerAndBreakdownRequest, // Add this line
+  updateUserStatusInBreakdownAssignment,
+  createAnonymousCustomerAndBreakdownRequest,
   CreateBreakdownRequest,
+  getBreakdownAssignmentsByRequestId,
+  getBreakdownAssignmentsByDriverIdAndRequestId, // Add this new method
 };
 
 // export const CreateAnonymousBreakdownRequest = async (

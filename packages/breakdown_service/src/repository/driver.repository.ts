@@ -8,7 +8,7 @@ import {
   Driver,
   Customer,
   BreakdownAssignment,
-} from "../../../database";
+} from "@breakdownrescue/database";
 import { eq, and, desc, not, or } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError } from "../utils/error/errors";

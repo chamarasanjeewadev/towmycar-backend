@@ -58,6 +58,12 @@ export type BreakdownRequestRepositoryType = {
   getBreakdownAssignmentsByRequestId: (
     requestId: number
   ) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
+  getBreakdownAssignmentsByDriverIdAndRequestId: (
+    driverId: number,
+    requestId?: number
+  ) => Promise<
+    (BreakdownAssignment & { driver: Driver; customer: User }) | null
+  >;
 };
 
 const saveBreakdownRequest = async (
@@ -244,15 +250,14 @@ const getBreakdownAssignmentsByRequestId = async (
   requestId: number
 ): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
   const result = await DB.select({
-    assignment: {
-      id: breakdownAssignment.id,
-      requestId: breakdownAssignment.requestId,
-      status: breakdownAssignment.driverStatus,
-      userStatus: breakdownAssignment.userStatus,
-      estimation: breakdownAssignment.estimation,
-      explanation: breakdownAssignment.explanation,
-      updatedAt: breakdownAssignment.updatedAt,
-    },
+    id: breakdownAssignment.id,
+    requestId: breakdownAssignment.requestId,
+    status: breakdownAssignment.driverStatus,
+    userStatus: breakdownAssignment.userStatus,
+    estimation: breakdownAssignment.estimation,
+    explanation: breakdownAssignment.explanation,
+    updatedAt: breakdownAssignment.updatedAt,
+
     driver: {
       id: driver.id,
       email: user.email,
@@ -268,7 +273,10 @@ const getBreakdownAssignmentsByRequestId = async (
   })
     .from(breakdownAssignment)
     .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
-    .innerJoin(breakdownRequest, eq(breakdownAssignment.requestId, breakdownRequest.id))
+    .innerJoin(
+      breakdownRequest,
+      eq(breakdownAssignment.requestId, breakdownRequest.id)
+    )
     .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
     .innerJoin(user, eq(customer.userId, user.id))
     .where(eq(breakdownAssignment.requestId, requestId))
@@ -279,6 +287,62 @@ const getBreakdownAssignmentsByRequestId = async (
     user: User;
   })[];
 };
+
+const getBreakdownAssignmentsByDriverIdAndRequestId = async (
+  driverId: number,
+  requestId?: number
+): Promise<
+  (BreakdownAssignment & { driver: Driver; customer: User }) | null
+> => {
+  let query = DB.select({
+    id: breakdownAssignment.id,
+    requestId: breakdownAssignment.requestId,
+    status: breakdownAssignment.driverStatus,
+    userStatus: breakdownAssignment.userStatus,
+    estimation: breakdownAssignment.estimation,
+    explanation: breakdownAssignment.explanation,
+    updatedAt: breakdownAssignment.updatedAt,
+
+    driver: {
+      id: driver.id,
+      email: user.email,
+      fullName: user.firstName,
+      phoneNumber: driver.phoneNumber,
+    },
+    customer: {
+      id: customer.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
+  })
+    .from(breakdownAssignment)
+    .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+    .innerJoin(user, eq(driver.userId, user.id))
+    .innerJoin(
+      breakdownRequest,
+      eq(breakdownAssignment.requestId, breakdownRequest.id)
+    )
+    .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+    .where(eq(driver.id, driverId));
+
+  if (requestId) {
+    // @ts-ignore
+    query = query.where(eq(breakdownAssignment.requestId, requestId));
+  }
+
+  const result = await query
+    .orderBy(desc(breakdownAssignment.updatedAt))
+    .limit(1);
+
+  return result.length > 0
+    ? (result?.[0] as unknown as BreakdownAssignment & {
+        driver: Driver;
+        customer: User;
+      })
+    : null;
+};
+
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
@@ -286,4 +350,5 @@ export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   getBreakdownAssignmentsByUserIdAndRequestId,
   updateUserStatusInBreakdownAssignment,
   getBreakdownAssignmentsByRequestId,
+  getBreakdownAssignmentsByDriverIdAndRequestId,
 };

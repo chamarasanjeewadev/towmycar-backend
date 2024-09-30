@@ -86,8 +86,7 @@ export class DriverService {
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
     } else if (
-      data.status === DriverStatus.ACCEPTED &&
-      parseFloat(data.estimation || "0") > 0
+      data.status === DriverStatus.ACCEPTED 
     ) {
       notificationType = EmailNotificationType.DRIVER_ACCEPT_EMAIL;
       payload = {

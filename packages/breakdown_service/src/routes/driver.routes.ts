@@ -11,16 +11,17 @@ import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import Stripe from "stripe";
+import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 
 const router = express.Router();
 const driverService = new DriverService();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20', // Updated to the latest API version
+  apiVersion: "2024-06-20", // Updated to the latest API version
 });
 
-
 router.get(
-  "/assigned-requests",clerkAuthMiddleware("driver"),
+  "/assigned-requests",
+  clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = req.userInfo.driverId;
@@ -82,8 +83,8 @@ router.patch(
     try {
       const driverId = req.userInfo.driverId;
       const requestId = parseInt(req.params.requestId);
-      const { status, estimation, explanation } = req.body;
-      
+      let { status, estimation, explanation } = req.body;
+
       if (!driverId || !status) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -92,7 +93,11 @@ router.patch(
         );
       }
 
-      if (status !== DriverStatus.ACCEPTED && status !== DriverStatus.REJECTED && status !== DriverStatus.QUOTED) {
+      if (
+        status !== DriverStatus.ACCEPTED &&
+        status !== DriverStatus.REJECTED &&
+        status !== DriverStatus.QUOTED
+      ) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
@@ -100,23 +105,38 @@ router.patch(
         );
       }
 
-      if (estimation !== undefined && typeof estimation !== "number") {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Estimation must be a number representing money"
-        );
+      let parsedEstimation: number | undefined;
+      if (estimation !== undefined) {
+        parsedEstimation = Number(estimation);
+        if (isNaN(parsedEstimation)) {
+          throw new CustomError(
+            ERROR_CODES.INVALID_INPUT,
+            400,
+            "Estimation must be a valid number"
+          );
+        }
       }
 
       const updateData = {
         status,
-        ...(estimation !== undefined && { estimation }),
-        ...(explanation !== undefined && { explanation }),
+        ...(parsedEstimation !== undefined && { estimation: parsedEstimation }),
+        ...(explanation && { explanation }),
       };
 
       if (status === DriverStatus.ACCEPTED) {
         // Retrieve the driver's payment method ID
-        const driver = await driverService.getDriverWithPaymentMethod(Number(driverId));
+        const driver = await driverService.getDriverWithPaymentMethod(
+          Number(driverId)
+        );
+        if (!estimation) {
+          const breakdownAssignment =
+            await BreakdownRequestService.getBreakdownAssignmentsByDriverIdAndRequestId(
+              Number(driverId),
+              Number(requestId)
+            );
+          estimation = breakdownAssignment?.estimation;
+        }
+
         if (!driver || !driver.stripePaymentMethodId) {
           throw new CustomError(
             ERROR_CODES.INVALID_INPUT,
@@ -124,18 +144,17 @@ router.patch(
             "Driver's payment method not found"
           );
         }
-
         try {
           const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(estimation * 10), // Convert to cents and ensure it's an integer
-            currency: 'usd',
+            amount: Math.round(Number(estimation ?? 5) * 10), // Convert to cents and ensure it's an integer
+            currency: "usd",
             customer: driver.stripeId,
             payment_method: driver.stripePaymentMethodId,
             off_session: true,
             confirm: true,
           });
 
-          if (paymentIntent.status !== 'succeeded') {
+          if (paymentIntent.status !== "succeeded") {
             throw new CustomError(
               ERROR_CODES.PAYMENT_FAILED,
               400,
@@ -155,7 +174,10 @@ router.patch(
       const updated = await driverService.updateBreakdownAssignment(
         Number(driverId),
         Number(requestId),
-        updateData
+        {
+          ...updateData,
+          estimation: parsedEstimation?.toString(),
+        }
       );
 
       if (updated) {
@@ -179,8 +201,8 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userInfo.userId;
-      
-      const driverProfile = await getDriverById(userId,DriverRepository);
+
+      const driverProfile = await getDriverById(userId, DriverRepository);
       if (!driverProfile) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
@@ -197,7 +219,8 @@ router.get(
 );
 
 router.patch(
-  "/profile",clerkAuthMiddleware("driver"),
+  "/profile",
+  clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = req.userInfo.driverId;
@@ -263,11 +286,14 @@ router.post(
       res.json(response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        next(new CustomError(
-          ERROR_CODES.DATABASE_ERROR,
-          error.response?.status || 500,
-          error.response?.data?.message || "Error verifying vehicle registration"
-        ));
+        next(
+          new CustomError(
+            ERROR_CODES.DATABASE_ERROR,
+            error.response?.status || 500,
+            error.response?.data?.message ||
+              "Error verifying vehicle registration"
+          )
+        );
       } else {
         next(error);
       }

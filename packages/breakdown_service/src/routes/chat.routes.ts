@@ -1,18 +1,19 @@
 import express, { Request, Response } from "express";
 import Pusher from "pusher";
 import bodyParser from "body-parser";
-import { BreakdownRequestRepository } from "../repository/breakdownRequest.repository";
+import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 import { DriverService } from "../service/driver/driver.service";
 import {
   BreakdownAssignment,
   Driver,
   Customer,
 } from "@breakdownrescue/database";
+import * as ChatService from "../service/chat/chat.service";
 
 // Add this enum at the top of the file
 export enum MessageSender {
   Driver = "driver",
-  Customer = "customer"
+  Customer = "customer",
 }
 
 const router = express.Router();
@@ -53,7 +54,10 @@ router.post("/send-message", async (req: Request, res: Response) => {
     }
 
     // Determine the event name based on the sender
-    const eventName = from === MessageSender.Driver ? "user-chat-message" : "driver-chat-message";
+    const eventName =
+      from === MessageSender.Driver
+        ? "user-chat-message"
+        : "driver-chat-message";
 
     // Trigger Pusher event
     await pusher.trigger(`breakdown-${requestId}-${driverId}`, eventName, {
@@ -61,8 +65,18 @@ router.post("/send-message", async (req: Request, res: Response) => {
       message,
       from,
     });
-    console.log(`Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${eventName}`);
-    // TODO: Save the message to the database
+    console.log(
+      `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${eventName}`
+    );
+
+    // Save the message to the database
+    await ChatService.upsertChat({
+      requestId: parseInt(requestId, 10),
+      driverId: parseInt(driverId, 10),
+      message,
+      sender: from,
+      sentAt: new Date(),
+    });
 
     res.status(200).json({ message: "Message sent successfully" });
   } catch (error) {
@@ -79,7 +93,7 @@ router.get("/assignments/:requestId", async (req: Request, res: Response) => {
     }
 
     const assignments =
-      await BreakdownRequestRepository.getBreakdownAssignmentsByRequestId(
+      await BreakdownRequestService.getBreakdownAssignmentsByRequestId(
         requestId
       );
     res.status(200).json(assignments);
@@ -130,6 +144,51 @@ router.get(
     }
   }
 );
+
+// New route to get all chats for a request
+router.get("/chats/:requestId", async (req: Request, res: Response) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (isNaN(requestId)) {
+      return res.status(400).json({ error: "Invalid request ID" });
+    }
+
+    const chats = await ChatService.getChatsForRequest(requestId);
+    res.status(200).json(chats);
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// New route to upsert a chat
+router.post("/chats", async (req: Request, res: Response) => {
+  try {
+    const chatData = req.body;
+    const upsertedChat = await ChatService.upsertChat(chatData);
+    res.status(200).json(upsertedChat);
+  } catch (error) {
+    console.error("Error upserting chat:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// New route to get chats by driverId and requestId
+router.get("/chats/:driverId/:requestId", async (req: Request, res: Response) => {
+  try {
+    const driverId = parseInt(req.params.driverId, 10);
+    const requestId = parseInt(req.params.requestId, 10);
+    if (isNaN(driverId) || isNaN(requestId)) {
+      return res.status(400).json({ error: "Invalid driver ID or request ID" });
+    }
+
+    const chats = await ChatService.getChatsForDriverAndRequest(driverId, requestId);
+    res.status(200).json(chats);
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;
 
