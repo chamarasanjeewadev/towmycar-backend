@@ -1,12 +1,8 @@
 {
-    "private": true,
-    "scripts": {
-    
-    },
-    "workspaces": [
-      "packages/*"
-    ],
-    "devDependencies": {
-
-    }
-  }
+  "private": true,
+  "scripts": {},
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {}
+}

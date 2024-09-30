@@ -24,3 +24,4 @@ yarn-error.log*
 
 db/*
 packages/database/db/migrations/*
+packages/database/db/migrations/meta/*

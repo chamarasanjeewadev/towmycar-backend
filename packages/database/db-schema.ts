@@ -148,6 +148,20 @@ export const vehicles = pgTable("vehicles", {
     .notNull(),
 });
 
+export const chats = pgTable("chats", {
+  id: serial("id").primaryKey().notNull(),
+  requestId: integer("request_id")
+    .references(() => breakdownRequest.id, { onDelete: "cascade" })
+    .notNull(),
+  driverId: integer("driver_id")
+    .references(() => driver.id, { onDelete: "cascade" })
+    .notNull(),
+  sender: varchar("sender_type", { length: 10 }).notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type User = typeof user.$inferSelect;
 export type Customer = typeof customer.$inferSelect;
 export type Driver = typeof driver.$inferSelect;
@@ -155,3 +169,5 @@ export type BreakdownRequest = typeof breakdownRequest.$inferSelect;
 export type BreakdownAssignment = typeof breakdownAssignment.$inferSelect;
 export type FcmToken = typeof fcmTokens.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
+export type Chat = typeof chats.$inferSelect;
+
