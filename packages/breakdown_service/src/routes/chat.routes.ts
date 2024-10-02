@@ -39,35 +39,35 @@ router.post("/send-message", async (req: Request, res: Response) => {
     username,
     requestId,
     driverId,
-    from,
+    sender,
   }: {
     message: string;
     username: string;
     requestId: string;
     driverId: string;
-    from: MessageSender;
+    sender: MessageSender;
   } = req.body;
 
   try {
     // Validate input
-    if (!message || !username || !requestId || !driverId || !from) {
+    if (!message || !username || !requestId || !driverId || !sender) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     // Determine the event name based on the sender
-    const eventName =
-      from === MessageSender.Driver
+    const pusherEventName =
+      sender === MessageSender.Driver
         ? "user-chat-message"
         : "driver-chat-message";
 
     // Trigger Pusher event
-    await pusher.trigger(`breakdown-${requestId}-${driverId}`, eventName, {
+    await pusher.trigger(`breakdown-${requestId}-${driverId}`, pusherEventName, {
       username,
       message,
-      from,
+      sender,
     });
     console.log(
-      `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${eventName}`
+      `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${pusherEventName}`
     );
 
     // Save the message to the database
@@ -75,7 +75,7 @@ router.post("/send-message", async (req: Request, res: Response) => {
       requestId: parseInt(requestId, 10),
       driverId: parseInt(driverId, 10),
       message,
-      sender: from,
+      sender,
       sentAt: new Date(),
     });
 
