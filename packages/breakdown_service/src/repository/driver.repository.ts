@@ -9,7 +9,7 @@ import {
   Customer,
   BreakdownAssignment,
 } from "@breakdownrescue/database";
-import { eq, and, desc, not, or } from "drizzle-orm";
+import { eq, and, desc, not, or, aliasedTable } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
@@ -101,21 +101,31 @@ export const DriverRepository: IDriverRepository = {
   async getDriverRequestsWithInfo(
     driverId: number
   ): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]> {
+    const driverUser = aliasedTable(user, "driver_user")
     const result = await DB.select({
       id: breakdownAssignment.id,
       requestId: breakdownAssignment.requestId,
-      status: breakdownAssignment.driverStatus,
+      driverStatus: breakdownAssignment.driverStatus,
+      userStatus: breakdownAssignment.userStatus,
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
       updatedAt: breakdownAssignment.updatedAt,
       userLocation: breakdownRequest.userLocation,
+      createdAt: breakdownAssignment.assignedAt,
       driver: {
         id: driver.id,
-        name: driver.phoneNumber,
+        firstName: driverUser.firstName,
+        lastName: driverUser.lastName,
+        email: driverUser.email,
+        // phoneNumber: driverUser.phoneNumber,
+        // vehicleType: driverUser.vehicleType,
+        // vehicleRegistration: driverUser.vehicleRegistration,
+        // licenseNumber: driverUser.licenseNumber,
       },
       user: {
         id: customer.id,
-        name: customer.mobileNumber,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
       },
     })
@@ -125,8 +135,9 @@ export const DriverRepository: IDriverRepository = {
         breakdownRequest,
         eq(breakdownAssignment.requestId, breakdownRequest.id)
       )
-      .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-      .innerJoin(user, eq(customer.userId, user.id))
+      .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
+      .leftJoin(driverUser, eq(driverUser.id, driver.id))
+      .leftJoin(user, eq(customer.userId, user.id))
       .where(eq(breakdownAssignment.driverId, driverId))
       .orderBy(desc(breakdownAssignment.updatedAt));
 

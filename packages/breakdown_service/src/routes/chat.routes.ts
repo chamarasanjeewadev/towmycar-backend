@@ -7,6 +7,7 @@ import {
   BreakdownAssignment,
   Driver,
   Customer,
+  User,
 } from "@breakdownrescue/database";
 import * as ChatService from "../service/chat/chat.service";
 
@@ -118,26 +119,38 @@ router.get(
       );
 
       // Transform the assignments to include only necessary information
-      const transformedAssignments = assignments.map(
-        (
-          assignment: BreakdownAssignment & { driver: Driver; user: Customer }
-        ) => ({
-          id: assignment.id,
-          requestId: assignment.requestId,
-          status: assignment.driverStatus,
-          estimation: assignment.estimation,
-          explanation: assignment.explanation,
-          updatedAt: assignment.updatedAt,
-          userLocation: assignment.user.postcode,
-          userInfo: {
-            id: assignment.user.id,
-            name: assignment.user.mobileNumber,
-            email: assignment.user.postcode,
-          },
-        })
-      );
+      // const transformedAssignments = assignments.map(
+      //   (
+      //     assignment: BreakdownAssignment & {
+      //       driver: Driver & Partial<User>;
+      //       user: Customer & Partial<User>;
+      //     }
+      //   ) => ({
+      //     id: assignment.id,
+      //     requestId: assignment.requestId,
+      //     driverStatus: assignment.driverStatus,
+      //     userStatus: assignment.userStatus,
+      //     estimation: assignment.estimation,
+      //     explanation: assignment.explanation,
+      //     updatedAt: assignment.updatedAt,
+      //     userLocation: assignment.user.postcode,
+      //     user: {
+      //       id: assignment.user.id,
+      //       firstName: assignment.user?.firstName,
+      //       lastName: assignment.user?.lastName,
+      //       email: assignment.user?.email,
+      //     },
+      //     driver: {
+      //       id: assignment.driver?.id,
+      //       firstName: assignment.driver?.firstName,
+      //       lastName: assignment.driver?.lastName,
+      //       email: assignment.driver?.email,
+      //     },
+          
+      //   })
+      // );
 
-      res.status(200).json(transformedAssignments);
+      res.status(200).json(assignments);
     } catch (error) {
       console.error("Error fetching driver assignments:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -174,21 +187,29 @@ router.post("/chats", async (req: Request, res: Response) => {
 });
 
 // New route to get chats by driverId and requestId
-router.get("/chats/:driverId/:requestId", async (req: Request, res: Response) => {
-  try {
-    const driverId = parseInt(req.params.driverId, 10);
-    const requestId = parseInt(req.params.requestId, 10);
-    if (isNaN(driverId) || isNaN(requestId)) {
-      return res.status(400).json({ error: "Invalid driver ID or request ID" });
-    }
+router.get(
+  "/chats/:driverId/:requestId",
+  async (req: Request, res: Response) => {
+    try {
+      const driverId = parseInt(req.params.driverId, 10);
+      const requestId = parseInt(req.params.requestId, 10);
+      if (isNaN(driverId) || isNaN(requestId)) {
+        return res
+          .status(400)
+          .json({ error: "Invalid driver ID or request ID" });
+      }
 
-    const chats = await ChatService.getChatsForDriverAndRequest(driverId, requestId);
-    res.status(200).json(chats);
-  } catch (error) {
-    console.error("Error fetching chats:", error);
-    res.status(500).json({ error: "Internal server error" });
+      const chats = await ChatService.getChatsForDriverAndRequest(
+        driverId,
+        requestId
+      );
+      res.status(200).json(chats);
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-});
+);
 
 export default router;
 

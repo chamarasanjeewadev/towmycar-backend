@@ -5,64 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1727169980225,
-      "tag": "0000_wide_jetstream",
+      "when": 1727702654386,
+      "tag": "0000_bored_miracleman",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1727197794847,
-      "tag": "0001_black_toad_men",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1727198263646,
-      "tag": "0002_dear_vargas",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1727281933334,
-      "tag": "0003_cynical_toxin",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1727341778620,
-      "tag": "0004_icy_la_nuit",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1727352399216,
-      "tag": "0005_stiff_sunset_bain",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1727352896353,
-      "tag": "0006_crazy_starfox",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1727441462881,
-      "tag": "0007_cold_human_torch",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1727507443841,
-      "tag": "0008_dizzy_donald_blake",
+      "when": 1727702714524,
+      "tag": "0001_small_triathlon",
       "breakpoints": true
     }
   ]
