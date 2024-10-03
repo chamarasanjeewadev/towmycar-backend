@@ -9,7 +9,8 @@ const requiredDriverSchema = z.object({
 });
 
 export const driverProfileSchema = z.object({
-  fullName: z.string().min(1, { message: "Please enter your full name" }),
+  firstName: z.string().min(1, { message: "Please enter your first name" }),
+  lastName: z.string().min(1, { message: "Please enter your last name" }),
   phoneNumber: z.string().min(1, { message: "Please enter your phone number" }),
   vehicleType: z.string().min(1, { message: "Please enter your vehicle type" }),
   vehicleRegistration: z

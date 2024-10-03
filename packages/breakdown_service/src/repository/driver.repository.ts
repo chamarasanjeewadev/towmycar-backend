@@ -101,7 +101,7 @@ export const DriverRepository: IDriverRepository = {
   async getDriverRequestsWithInfo(
     driverId: number
   ): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]> {
-    const driverUser = aliasedTable(user, "driver_user")
+    const driverUser = aliasedTable(user, "driver_user");
     const result = await DB.select({
       id: breakdownAssignment.id,
       requestId: breakdownAssignment.requestId,
@@ -295,19 +295,47 @@ export const DriverRepository: IDriverRepository = {
     id: number,
     data: Partial<DriverProfileDtoType>
   ): Promise<Driver> {
-    const { primaryLocation, ...restData } = data;
+    const { primaryLocation, firstName, lastName, ...restData } = data;
     const prim = {
-      x: data.primaryLocation.longitude,
-      y: data.primaryLocation.latitude,
+      x: primaryLocation?.longitude,
+      y: primaryLocation?.latitude,
     };
-    const updatedDriver = await DB.update(driver)
-      .set({
-        ...restData,
-        primaryLocation: prim,
-      } as any) // Use 'as any' to bypass TypeScript checks
-      .where(eq(driver.id, id))
-      .returning();
-    return updatedDriver[0];
+
+    return await DB.transaction(async tx => {
+      // First, get the userId from the driver table
+      const [driverRecord] = await tx
+        .select({ userId: driver.userId })
+        .from(driver)
+        .where(eq(driver.id, id));
+
+      if (!driverRecord) {
+        throw new Error("Driver not found");
+      }
+
+      // Update user table
+      if (firstName || lastName) {
+        await tx
+          .update(user)
+          //@ts-ignore
+          .set({
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+          })
+          .where(eq(user.id, driverRecord.userId));
+      }
+
+      // Update driver table
+      const [updatedDriver] = await tx
+        .update(driver)
+        .set({
+          ...restData,
+          ...(primaryLocation && { primaryLocation: prim }),
+        } as any)
+        .where(eq(driver.id, id))
+        .returning();
+
+      return updatedDriver;
+    });
   },
 
   async getDriverProfileByEmail(email: string): Promise<any | null> {
@@ -319,9 +347,16 @@ export const DriverRepository: IDriverRepository = {
   },
 
   async getDriverById(id: number): Promise<Driver | null> {
-    const [foundDriver] = await DB.select()
+    //@ts-ignore
+    const [foundDriver] = await DB.select({
+      ...driver,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    })
       .from(driver)
+      .innerJoin(user, eq(driver.userId, user.id))
       .where(eq(driver.id, id));
+    //@ts-ignore
     return foundDriver || null;
   },
 
@@ -396,22 +431,17 @@ export const DriverRepository: IDriverRepository = {
     return result.length > 0 ? result[0] : null;
   },
   async getDriverProfileById(userId: number): Promise<any | null> {
-    const result = await DB.select()
+    //@ts-ignore
+    const result = await DB.select({
+      ...user,
+      driverProfile: driver,
+    })
       .from(user)
+      .leftJoin(driver, eq(driver.userId, user.id))
       .where(eq(user.id, userId))
       .limit(1);
 
-    if (result.length === 0) {
-      return null;
-    }
-
-    const userProfile = result[0];
-    const driverProfile = await DB.select()
-      .from(driver)
-      .where(eq(driver.userId, userProfile.id))
-      .limit(1);
-    console.log("driverProfile", driverProfile);
-    return { ...userProfile, driverProfile: driverProfile[0] };
+    return result.length > 0 ? result[0] : null;
   },
   async updateDriverPaymentMethod(
     driverId: number,
