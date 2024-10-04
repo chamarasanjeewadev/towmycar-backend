@@ -3,8 +3,8 @@ import { UserRepository } from "../../repository/user.repository";
 import { BreakdownRequestWithUserDetails } from "../../dto/breakdownRequest.dto";
 import { sendNotification } from "../utils/sns.service";
 import { sendPushNotificationAndEmail } from "../utils/sns.service";
-import { CombinedBreakdownRequestInput as BreakdownRequestInput } from "../../dto/combinedBreakdownRequest.dto";
 import { EmailNotificationType, UserStatus } from "../../enums";
+import { BreakdownRequestInput } from "../../dto/breakdownRequest.dto";
 import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
@@ -22,10 +22,12 @@ const CreateBreakdownRequest = async (
   }
 ) => {
   try {
-    const breakdownRequestData = {
+    const breakdownRequestData: BreakdownRequestInput = {
       customerId: userInfo.customerId,
       requestType: combinedInput.requestType,
-      locationAddress: combinedInput.locationAddress,
+      address: combinedInput.address,
+      regNo: combinedInput.regNo,
+      weight: combinedInput.weight,
       userLocation: {
         latitude: combinedInput.userLocation.latitude,
         longitude: combinedInput.userLocation.longitude,

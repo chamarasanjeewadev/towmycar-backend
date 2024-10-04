@@ -22,6 +22,27 @@
       "when": 1727982118166,
       "tag": "0002_fantastic_gorgon",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1728034115053,
+      "tag": "0003_tranquil_whistler",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1728036737905,
+      "tag": "0004_careful_gertrude_yorkes",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1728036799436,
+      "tag": "0005_youthful_kingpin",
+      "breakpoints": true
     }
   ]
 }

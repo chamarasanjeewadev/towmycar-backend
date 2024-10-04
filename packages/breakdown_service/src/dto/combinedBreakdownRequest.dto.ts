@@ -5,10 +5,11 @@ export const CombinedBreakdownRequestSchema = z.object({
   lastName: z.string(),
   email: z.string().email(),
   postcode: z.string(),
-  vehicleRegistration: z.string(),
+  regNo: z.string(),
+  weight: z.number(),
   mobileNumber: z.string(),
   requestType: z.string(),
-  locationAddress: z.string(),
+  address: z.string(),
   userLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),

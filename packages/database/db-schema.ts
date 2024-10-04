@@ -76,8 +76,10 @@ export const breakdownRequest = pgTable("breakdown_request", {
   customerId: integer("customer_id")
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
-  requestType: varchar("request_type", { length: 50 }).notNull(),
-  locationAddress: text("location_address").notNull(),
+  regNo: varchar("reg_no", { length: 20 }),
+  weight: numeric("weight", { precision: 10, scale: 2 }),
+  requestType: varchar("request_type", { length: 50 }),
+  address: text("address"),
   userLocation: geometry("user_location", {
     type: "point",
     mode: "xy",

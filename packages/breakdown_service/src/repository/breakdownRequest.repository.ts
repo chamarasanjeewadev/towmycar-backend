@@ -24,6 +24,8 @@ type BreakdownRequestWithUserDetails = {
   location: string;
   description: string | null;
   status: string;
+  regNo: string | null;  // Add this line
+  weight: number | null;  // Add this line
   userId: number;
   firstName: string | null;
   lastName: string | null;
@@ -74,7 +76,7 @@ const saveBreakdownRequest = async (
     // id: 0,
     customerId: data.customerId,
     requestType: data.requestType,
-    locationAddress: data.locationAddress,
+    address: data.address,
     userLocation: {
       x: data.userLocation.longitude,
       y: data.userLocation.latitude,
@@ -82,6 +84,8 @@ const saveBreakdownRequest = async (
     // userLocation: sql`POINT(${data.userLocation.longitude}, ${data.userLocation.latitude})`,
     status: UserStatus.PENDING,
     description: data.description,
+    regNo: data.regNo,
+    weight: data?.weight?.toString() ?? null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -98,7 +102,7 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
   return DB.select({
     id: breakdownRequest.id,
     requestType: breakdownRequest.requestType,
-    location: breakdownRequest.locationAddress,
+    location: breakdownRequest.address,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
     userId: breakdownRequest.customerId,
@@ -123,64 +127,70 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   console.log("hit repo..", customerId, requestId);
   const offset = (page - 1) * pageSize;
 
-  const baseQuery = DB.select({
-    id: breakdownRequest.id,
-    requestType: breakdownRequest.requestType,
-    location: breakdownRequest.locationAddress,
-    description: breakdownRequest.description,
-    status: breakdownRequest.status,
-    userId: breakdownRequest.customerId,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    userEmail: user.email,
-  })
-    .from(breakdownRequest)
-    .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
-    .leftJoin(user, eq(user.id, customer.userId));
-  let filteredQuery = baseQuery.orderBy(desc(breakdownRequest.updatedAt));
+  try {
+    const baseQuery = DB.select({
+      id: breakdownRequest.id,
+      requestType: breakdownRequest.requestType,
+      location: breakdownRequest.address,
+      description: breakdownRequest.description,
+      status: breakdownRequest.status,
+      regNo: breakdownRequest.regNo ?? null,  // Provide null as default
+      weight: breakdownRequest.weight ?? null,  // Provide null as default
+      userId: breakdownRequest.customerId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userEmail: user.email,
+    })
+      .from(breakdownRequest)
+      .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
+      .leftJoin(user, eq(user.id, customer.userId));
 
-  if (customerId) {
-    // @ts-ignore
-    filteredQuery = filteredQuery.where(
-      eq(breakdownRequest.customerId, customerId)
-    );
-  }
+    let filteredQuery = baseQuery.orderBy(desc(breakdownRequest.updatedAt));
 
-  if (requestId) {
-    // @ts-ignore
-    filteredQuery = filteredQuery.where(eq(breakdownRequest.id, requestId));
-  }
+    if (customerId) {
+      // @ts-ignore
+      filteredQuery = filteredQuery.where(
+        eq(breakdownRequest.customerId, customerId)
+      );
+    }
 
-  const requests = await filteredQuery.limit(pageSize).offset(offset);
+    if (requestId) {
+      // @ts-ignore
+      filteredQuery = filteredQuery.where(eq(breakdownRequest.id, requestId));
+    }
 
-  const countQuery = DB.select({
-    count: sql<number>`cast(count(*) as integer)`,
-  }).from(breakdownRequest);
+    const requests = await filteredQuery.limit(pageSize).offset(offset);
 
-  let filteredCountQuery = countQuery;
+    const countQuery = DB.select({
+      count: sql<number>`cast(count(*) as integer)`,
+    }).from(breakdownRequest);
 
-  if (customerId) {
-    // @ts-ignore
-    filteredCountQuery = filteredCountQuery.where(
-      eq(breakdownRequest.customerId, customerId)
-    );
-    // @ts-ignore
+    let filteredCountQuery = countQuery;
+
+    if (customerId) {
+      // @ts-ignore
+      filteredCountQuery = filteredCountQuery.where(
+        eq(breakdownRequest.customerId, customerId)
+      );
+    }
+
+    if (requestId) {
+      // @ts-ignore
+      filteredCountQuery = filteredCountQuery.where(
+        eq(breakdownRequest.id, requestId)
+      );
+    }
+
     const [{ count }] = await filteredCountQuery;
+
+    return {
+      requests,
+      totalCount: count,
+    };
+  } catch (error) {
+    console.error("Error in getPaginatedBreakdownRequestsWithUserDetails:", error);
+    throw new Error("Failed to fetch paginated breakdown requests with user details");
   }
-
-  if (requestId) {
-    // @ts-ignore
-    filteredCountQuery = filteredCountQuery.where(
-      eq(breakdownRequest.id, requestId)
-    );
-  }
-
-  const [{ count }] = await filteredCountQuery;
-
-  return {
-    requests,
-    totalCount: count,
-  };
 };
 
 const getBreakdownAssignmentsByUserIdAndRequestId = async (
@@ -250,7 +260,6 @@ const updateUserStatusInBreakdownAssignment = async (
 const getBreakdownAssignmentsByRequestId = async (
   requestId: number
 ): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
-  
   const driverUser = aliasedTable(user, "driver_user");
   const result = await DB.select({
     id: breakdownAssignment.id,

@@ -65,8 +65,10 @@ exports.breakdownRequest = (0, pg_core_1.pgTable)("breakdown_request", {
     customerId: (0, pg_core_1.integer)("customer_id")
         .references(() => exports.customer.id, { onDelete: "cascade" })
         .notNull(),
-    requestType: (0, pg_core_1.varchar)("request_type", { length: 50 }).notNull(),
-    locationAddress: (0, pg_core_1.text)("location_address").notNull(),
+    regNo: (0, pg_core_1.varchar)("reg_no", { length: 20 }),
+    weight: (0, pg_core_1.numeric)("weight", { precision: 10, scale: 2 }),
+    requestType: (0, pg_core_1.varchar)("request_type", { length: 50 }),
+    address: (0, pg_core_1.text)("address"),
     userLocation: (0, pg_core_1.geometry)("user_location", {
         type: "point",
         mode: "xy",

@@ -5,7 +5,9 @@ export const BreakdownRequestSchema = z.object({
   // User profile fields
   userId: z.number(), // Change this from string to number
   requestType: z.string(),
-  locationAddress: z.string(),
+  address: z.string(),
+  regNo: z.string(),
+  weight: z.number(),
   userLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),
@@ -17,7 +19,9 @@ export const BreakdownRequestSchema = z.object({
 export type BreakdownRequestInput = {
   customerId: number;
   requestType: string;
-  locationAddress: string;
+  regNo: string;
+  weight: number;
+  address: string;
   userLocation: {
     longitude: number;
     latitude: number;
