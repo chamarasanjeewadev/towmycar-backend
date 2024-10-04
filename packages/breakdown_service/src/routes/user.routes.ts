@@ -5,7 +5,6 @@ import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { UserRegisterInput } from "../dto/userRequest.dto";
 import { UserRepository } from "../repository/user.repository";
 import { saveFcmToken } from "../service/user/user.service";
-import { validateRequest } from "../middleware/requestValidator";
 import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
 import { Webhook } from "svix";
@@ -54,7 +53,10 @@ router.post(
     if (evt.type === "user.created") {
       const userData = evt.data;
       try {
-        const userInfo = await repo.createUserFromWebhook(userData);
+        // Replace this line:
+        // const userInfo = await repo.createUserFromWebhook(userData);
+        // With this:
+        const userInfo = await service.createUserFromWebhook(userData, repo);
 
         // Create Stripe customer
         const stripeCustomer = await stripe.customers.create({
@@ -109,6 +111,20 @@ router.post(
         res.status(500).json({
           success: false,
           message: "Error processing user creation",
+        });
+      }
+    } else if (evt.type === "user.updated") {
+      const userData = evt.data;
+      try {
+        // Replace this line:
+        // const userInfo = await repo.createUserFromWebhook(userData);
+        // With this:
+        const userInfo = await service.createUserFromWebhook(userData, repo);
+      } catch (error) {
+        console.error("Error processing user update:", error);
+        res.status(500).json({
+          success: false,
+          message: "Error processing user update",
         });
       }
     } else {
@@ -301,7 +317,10 @@ router.patch(
 
       // You might want to add validation for updateData here
 
-      const updatedDriver = await DriverRepository.updateDriver(driverId, updateData);
+      const updatedDriver = await DriverRepository.updateDriver(
+        driverId,
+        updateData
+      );
       if (!updatedDriver) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,

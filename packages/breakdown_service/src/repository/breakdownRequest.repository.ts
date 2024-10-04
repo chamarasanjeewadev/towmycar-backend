@@ -4,7 +4,7 @@ import {
   BreakdownRequest,
 } from "@breakdownrescue/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { sql } from "drizzle-orm";
+import { aliasedTable, sql } from "drizzle-orm";
 import { UserStatus } from "../enums";
 import {
   customer,
@@ -208,6 +208,7 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      imageUrl: user.imageUrl,
     },
   })
     .from(breakdownAssignment)
@@ -249,6 +250,8 @@ const updateUserStatusInBreakdownAssignment = async (
 const getBreakdownAssignmentsByRequestId = async (
   requestId: number
 ): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
+  
+  const driverUser = aliasedTable(user, "driver_user");
   const result = await DB.select({
     id: breakdownAssignment.id,
     requestId: breakdownAssignment.requestId,
@@ -260,15 +263,17 @@ const getBreakdownAssignmentsByRequestId = async (
 
     driver: {
       id: driver.id,
-      email: user.email,
-      fullName: user.firstName,
+      email: driverUser.email,
+      firstName: driverUser.firstName,
       phoneNumber: driver.phoneNumber,
+      imageUrl: driverUser.imageUrl,
     },
     customer: {
       id: customer.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      imageUrl: user.imageUrl,
     },
   })
     .from(breakdownAssignment)
@@ -277,8 +282,9 @@ const getBreakdownAssignmentsByRequestId = async (
       breakdownRequest,
       eq(breakdownAssignment.requestId, breakdownRequest.id)
     )
-    .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-    .innerJoin(user, eq(customer.userId, user.id))
+    .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
+    .leftJoin(user, eq(customer.userId, user.id))
+    .leftJoin(driverUser, eq(driverUser.id, driver.userId))
     .where(eq(breakdownAssignment.requestId, requestId))
     .orderBy(desc(breakdownAssignment.updatedAt));
 

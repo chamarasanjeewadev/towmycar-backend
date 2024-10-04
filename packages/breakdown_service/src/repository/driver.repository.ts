@@ -100,7 +100,7 @@ export const DriverRepository: IDriverRepository = {
   },
   async getDriverRequestsWithInfo(
     driverId: number
-  ): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]> {
+  ): Promise<BreakdownRequestType[]> {
     const driverUser = aliasedTable(user, "driver_user");
     const result = await DB.select({
       id: breakdownAssignment.id,
@@ -117,6 +117,7 @@ export const DriverRepository: IDriverRepository = {
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
         email: driverUser.email,
+        
         // phoneNumber: driverUser.phoneNumber,
         // vehicleType: driverUser.vehicleType,
         // vehicleRegistration: driverUser.vehicleRegistration,
@@ -127,6 +128,8 @@ export const DriverRepository: IDriverRepository = {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        // authId: user.authId,
+        imageUrl: user.imageUrl,
       },
     })
       .from(breakdownAssignment)
@@ -141,10 +144,7 @@ export const DriverRepository: IDriverRepository = {
       .where(eq(breakdownAssignment.driverId, driverId))
       .orderBy(desc(breakdownAssignment.updatedAt));
 
-    return result as unknown as (BreakdownAssignment & {
-      driver: Driver;
-      user: Customer;
-    })[];
+    return result;
   },
 
   async getSpecificDriverRequestWithInfo(

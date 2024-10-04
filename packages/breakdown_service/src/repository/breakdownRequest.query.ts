@@ -134,7 +134,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
 const getBreakdownAssignmentsByUserIdAndRequestId = async (
   userId: number,
   requestId?: number
-): Promise<(BreakdownAssignment & { driver: Driver; user: User })[] => {
+): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
   let query = DB.select({
     assignment: {
       id: breakdownAssignment.id,

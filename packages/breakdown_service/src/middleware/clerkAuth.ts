@@ -2,6 +2,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { ClerkExpressRequireAuth, clerkClient } from "@clerk/clerk-sdk-node";
+import { APIError, AuthorizeError } from "../utils/error/errors";
 
 // interface ExtendedRequest extends Request {
 //   userRole?: string;
@@ -17,7 +18,8 @@ export const clerkAuthMiddleware = (requiredRole: string) => {
     ClerkExpressRequireAuth({
       onError: error => {
         console.error("Clerk authentication error:", error);
-        res.status(401).json({ error: "Authentication failed" });
+        // Return AuthorizeError instead of sending a response directly
+        next(new AuthorizeError("Clerk authentication failed"));
       },
     })(req, res, async err => {
       if (err) {
@@ -34,7 +36,8 @@ export const clerkAuthMiddleware = (requiredRole: string) => {
             user.privateMetadata.userInfo;
 
           if (role !== requiredRole) {
-            return res.status(403).json({ error: "Insufficient permissions" });
+            // Use AuthorizeError for insufficient permissions as well
+            return next(new AuthorizeError("Insufficient permissions"));
           }
           req.userInfo = {
             userId,
@@ -45,7 +48,8 @@ export const clerkAuthMiddleware = (requiredRole: string) => {
           console.log("userId:", userId, "userRole:", req.userInfo);
         } catch (error) {
           console.error("Error fetching user data:", error);
-          return res.status(500).json({ error: "Internal server error" });
+          // Use APIError for internal server errors
+          return next(new APIError("Error fetching user data"));
         }
       }
 

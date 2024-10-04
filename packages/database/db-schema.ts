@@ -18,6 +18,7 @@ export const user = pgTable("user", {
   email: varchar("email", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
+  imageUrl: varchar("image_url", { length: 255 }),
   role: varchar("role", { length: 50 }).notNull(),
   isActive: boolean("is_active").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

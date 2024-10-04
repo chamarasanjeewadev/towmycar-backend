@@ -5,7 +5,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "nodemon --exec ts-node  src/server.ts",
+    "dev2": "nodemon --exec ts-node --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest"

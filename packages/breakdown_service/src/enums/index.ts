@@ -30,3 +30,7 @@ export enum UserStatus {
   REJECTED = 'REJECTED',
   PENDING = 'PENDING'
 }
+export enum Role {
+  CUSTOMER = "customer",
+  DRIVER = "driver"
+}

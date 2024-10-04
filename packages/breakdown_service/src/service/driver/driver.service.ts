@@ -33,15 +33,14 @@ export class DriverService {
   }
 
   async getDriverRequestsWithInfo(driverId: number) {
-    return DriverRepository.getDriverRequestsWithInfo(driverId);
+    const driverRequests = await DriverRepository.getDriverRequestsWithInfo(
+      driverId
+    );
+    
+    return driverRequests;
   }
 
-  async getSpecificDriverRequestWithInfo(driverId: number, requestId: number) {
-    return DriverRepository.getSpecificDriverRequestWithInfo(
-      driverId,
-      requestId
-    );
-  }
+ 
 
   async updateBreakdownAssignment(
     driverId: number,
@@ -186,16 +185,6 @@ export const getDriverByEmail = async (
 
 export const getDriverRequestsWithInfo = async (driverId: number) => {
   return await DriverRepository.getDriverRequestsWithInfo(driverId);
-};
-
-export const getDriverRequestWithInfo = async (
-  driverId: number,
-  requestId: number
-) => {
-  return await DriverRepository.getSpecificDriverRequestWithInfo(
-    driverId,
-    requestId
-  );
 };
 
 export const getDriverProfileByEmail = async (email: string) => {

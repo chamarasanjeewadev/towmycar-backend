@@ -21,6 +21,7 @@ export type UserRepositoryType = {
     role: string;
     customerId?: number;
     driverId?: number;
+    imageUrl?: string;
   }>;
   getOrCreateUser: (
     user: UserRegisterInput
@@ -280,7 +281,7 @@ const createUserFromWebhook = async (
   driverId?: number;
 }> => {
   try {
-    const { id, first_name, last_name, email_addresses, unsafe_metadata } = userData;
+    const { id, first_name, last_name, image_url, email_addresses, unsafe_metadata } = userData;
     const email = email_addresses?.[0]?.email_address;
     const role = unsafe_metadata?.role ?? ("customer" as string);
 
@@ -304,6 +305,7 @@ const createUserFromWebhook = async (
             role: role,
             isActive: true,
             updatedAt: new Date(),
+            imageUrl: image_url,
           })
           .where(eq(user.email, email))
           .returning();
@@ -356,6 +358,7 @@ const createUserFromWebhook = async (
             email: email,
             role: role,
             isActive: true,
+            imageUrl: image_url,
             createdAt: new Date(),
             updatedAt: new Date(),
           })

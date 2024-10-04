@@ -1,5 +1,6 @@
 import { UserRegisterInput } from "../../dto/userRequest.dto";
 import { UserRepositoryType } from "../../repository/user.repository";
+import { UserData } from "../../dto/userRequest.dto"; // Make sure to import UserData
 
 export const getUserProfileByEmail = async (
   email: string,
@@ -119,3 +120,17 @@ export const saveFcmToken = async (
 //     },
 //   }
 // );
+
+// Add this new function
+export const createUserFromWebhook = async (
+  userData: UserData,
+  repo: UserRepositoryType
+) => {
+  try {
+    const result = await repo.createUserFromWebhook(userData);
+    return result;
+  } catch (error) {
+    console.error("Error creating user from webhook:", error);
+    throw error;
+  }
+};
