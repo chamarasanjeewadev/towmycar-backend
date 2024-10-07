@@ -3532,6 +3532,11 @@ expect@^29.0.0, expect@^29.7.0:
     jest-message-util "^29.7.0"
     jest-util "^29.7.0"
 
+express-rate-limit@^7.4.1:
+  version "7.4.1"
+  resolved "https://registry.yarnpkg.com/express-rate-limit/-/express-rate-limit-7.4.1.tgz#90954ecbcde9e7ae7b5000325395f86991191d94"
+  integrity sha512-KS3efpnpIDVIXopMc65EMbWbUht7qvTCdtCR2dD/IZmi9MIkopYESwyRqLgv8Pfu589+KqDqOdzJWW7AHoACeg==
+
 express-rate-limiter@^1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/express-rate-limiter/-/express-rate-limiter-1.3.1.tgz#4c3444e796969d971817abdbb6a3b8a86fcda9b4"

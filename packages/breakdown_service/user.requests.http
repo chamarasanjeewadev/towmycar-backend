@@ -140,11 +140,35 @@ x-api-key: AntSFFGFiT7FeqsH2ISlS1ltsRrwTYWw9bY1dSX3
   "registrationNumber": "FE13FEP"
 }
 
-### Verify Vehicle Registration
-POST http://localhost:{{port}}/user/verify-vehicle-registration
+
+LJ06YXB- NO WEIGHT 
+LY57HXU- NO WEIGHT 1075
+
+S600ANU 2500
+AD19LZN 1950
+BD07XAA 1180
+
+### Verify Vehicle Registration (DVLA API)
+POST https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles
 Content-Type: application/json
-Authorization: Bearer <your-clerk-jwt-token-here>
+x-api-key: {{$dotenv VEHICLE_REGISTRATION_API_KEY}}
+
 {
-  "registrationNumber": "FE13FEP"
+  "registrationNumber": "SA12JVN"
 }
+
+### Verify Vehicle Registration (CheckCarDetails API)
+GET https://api.checkcardetails.co.uk/vehicledata/vehicleregistration?apikey={{$dotenv CHECK_CAR_DETAILS_API_KEY}}&vrm=S600ANU
+Content-Type: application/json
+
+
+
+
+
+
+
+
+
+
+
 

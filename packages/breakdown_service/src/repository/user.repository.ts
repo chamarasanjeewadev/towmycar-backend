@@ -159,8 +159,15 @@ const saveFcmToken = async (
     .values({
       userId: userId,
       token: token,
+      browserInfo: browserInfo,
+    })
+    .onConflict(['userId', 'token'])
+    .merge({
+      browserInfo: browserInfo,
+      updatedAt: new Date(), // Assuming you have an updatedAt column
     })
     .returning();
+
   return result[0].id;
 };
 
@@ -216,11 +223,7 @@ const createAnonymousCustomer = async (userInput: {
 
       if (existingUser.length > 0) {
         // User exists, get the related customer
-        const existingCustomer = await trx
-          .select()
-          .from(customer)
-          .where(eq(customer.userId, existingUser[0].id))
-          .limit(1);
+        const existingCustomer = await trx.select().from(customer).where(eq(customer.userId, existingUser[0].id)).limit(1);
 
         if (existingCustomer.length > 0) {
           return {

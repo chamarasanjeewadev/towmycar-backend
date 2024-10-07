@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.chats = exports.vehicles = exports.breakdownAssignment = exports.fcmTokens = exports.breakdownRequest = exports.driver = exports.customer = exports.user = void 0;
+exports.serviceRatings = exports.chats = exports.vehicles = exports.breakdownAssignment = exports.fcmTokens = exports.breakdownRequest = exports.driver = exports.customer = exports.user = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const enums_1 = require("./enums");
 // Renamed userAuth to user
@@ -148,4 +148,28 @@ exports.chats = (0, pg_core_1.pgTable)("chats", {
     message: (0, pg_core_1.text)("message").notNull(),
     sentAt: (0, pg_core_1.timestamp)("sent_at").defaultNow().notNull(),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
+});
+// New table for ratings and feedback
+exports.serviceRatings = (0, pg_core_1.pgTable)("service_ratings", {
+    id: (0, pg_core_1.serial)("id").primaryKey().notNull(),
+    requestId: (0, pg_core_1.integer)("request_id")
+        .references(() => exports.breakdownRequest.id, { onDelete: "cascade" })
+        .notNull(),
+    customerId: (0, pg_core_1.integer)("customer_id")
+        .references(() => exports.customer.id, { onDelete: "cascade" })
+        .notNull(),
+    driverId: (0, pg_core_1.integer)("driver_id").references(() => exports.driver.id, {
+        onDelete: "cascade",
+    }),
+    customerRating: (0, pg_core_1.integer)("customer_rating"),
+    customerFeedback: (0, pg_core_1.text)("customer_feedback"),
+    driverRating: (0, pg_core_1.integer)("driver_rating"),
+    driverFeedback: (0, pg_core_1.text)("driver_feedback"),
+    serviceProvided: (0, pg_core_1.boolean)('serviceProvided').default(false),
+    createdAt: (0, pg_core_1.timestamp)("created_at", { withTimezone: true })
+        .defaultNow()
+        .notNull(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at", { withTimezone: true })
+        .defaultNow()
+        .notNull(),
 });

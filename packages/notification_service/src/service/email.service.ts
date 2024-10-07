@@ -90,7 +90,6 @@ export const sendEmail = async (
       `Failed to send email to ${payload} for request ${payload}:`,
       error
     );
-    throw error;
   }
 };
 

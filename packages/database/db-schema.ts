@@ -49,8 +49,8 @@ export const driver = pgTable("driver", {
     .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
-  stripeId: varchar("stripe_id", { length: 255 }),  // Stripe customer ID
-  stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }),  // New field for Stripe payment method ID
+  stripeId: varchar("stripe_id", { length: 255 }), // Stripe customer ID
+  stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }), // New field for Stripe payment method ID
   phoneNumber: varchar("phone_number", { length: 20 }),
   vehicleType: varchar("vehicle_type", { length: 100 }),
   vehicleRegistration: varchar("vehicle_registration", { length: 20 }),
@@ -174,3 +174,30 @@ export type FcmToken = typeof fcmTokens.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type Chat = typeof chats.$inferSelect;
 
+// New table for ratings and feedback
+export const serviceRatings = pgTable("service_ratings", {
+  id: serial("id").primaryKey().notNull(),
+  requestId: integer("request_id")
+    .references(() => breakdownRequest.id, { onDelete: "cascade" })
+    .notNull(),
+  customerId: integer("customer_id")
+    .references(() => customer.id, { onDelete: "cascade" })
+    .notNull(),
+  driverId: integer("driver_id").references(() => driver.id, {
+    onDelete: "cascade",
+  }),
+  customerRating: integer("customer_rating"),
+  customerFeedback: text("customer_feedback"),
+  driverRating: integer("driver_rating"),
+  driverFeedback: text("driver_feedback"),
+  serviceProvided: boolean('serviceProvided').default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// Add the new type at the end of the file
+export type ServiceRating = typeof serviceRatings.$inferSelect;

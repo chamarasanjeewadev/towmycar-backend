@@ -2,21 +2,20 @@ import {
   DB,
   breakdownRequest,
   BreakdownRequest,
-} from "@breakdownrescue/database";
-import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { aliasedTable, sql } from "drizzle-orm";
-import { UserStatus } from "../enums";
-import {
+  serviceRatings,
+  breakdownAssignment,
   customer,
   user,
-  breakdownAssignment,
   driver,
   Driver,
   BreakdownAssignment,
   User,
 } from "@breakdownrescue/database";
+import { BreakdownRequestInput, BreakdownRequestWithUserDetails } from "../dto/breakdownRequest.dto";
+import { aliasedTable, sql } from "drizzle-orm";
+import { UserStatus, DriverStatus } from "../enums";
 import { eq, desc, and } from "drizzle-orm";
-import { DriverStatus } from "../enums";
+
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
   id: number;
@@ -30,6 +29,16 @@ type BreakdownRequestWithUserDetails = {
   firstName: string | null;
   lastName: string | null;
   userEmail: string | null;
+};
+
+// Add these imports at the top of the file
+import { serviceRatings } from "@breakdownrescue/database";
+
+// Add this new type definition
+type CloseBreakdownParams = {
+  requestId: number;
+  customerRating: number;
+  customerFeedback: string;
 };
 
 // declare repository type
@@ -66,6 +75,7 @@ export type BreakdownRequestRepositoryType = {
   ) => Promise<
     (BreakdownAssignment & { driver: Driver; customer: User }) | null
   >;
+  closeBreakdownAndUpdateRating: (params: CloseBreakdownParams) => Promise<void>;
 };
 
 const saveBreakdownRequest = async (
@@ -99,12 +109,14 @@ const saveBreakdownRequest = async (
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<
   BreakdownRequestWithUserDetails[]
 > => {
-  return DB.select({
+  const results = await DB.select({
     id: breakdownRequest.id,
     requestType: breakdownRequest.requestType,
     location: breakdownRequest.address,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
+    regNo: breakdownRequest.regNo,
+    weight: breakdownRequest.weight,
     userId: breakdownRequest.customerId,
     firstName: user.firstName,
     lastName: user.lastName,
@@ -113,6 +125,11 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
     .from(breakdownRequest)
     .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
     .leftJoin(user, eq(user.id, customer.userId));
+
+  return results.map(result => ({
+    ...result,
+    weight: result.weight ? Number(result.weight) : null,
+  }));
 };
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
@@ -184,7 +201,10 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     const [{ count }] = await filteredCountQuery;
 
     return {
-      requests,
+      requests: requests.map(request => ({
+        ...request,
+        weight: request.weight ? Number(request.weight) : null,
+      })),
       totalCount: count,
     };
   } catch (error) {
@@ -256,6 +276,8 @@ const updateUserStatusInBreakdownAssignment = async (
 
   return result.length > 0 ? result[0] : null;
 };
+
+
 
 const getBreakdownAssignmentsByRequestId = async (
   requestId: number
@@ -358,6 +380,64 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
     : null;
 };
 
+// Update the method implementation
+const closeBreakdownAndUpdateRating = async (params: CloseBreakdownParams): Promise<void> => {
+  const { requestId, customerRating, customerFeedback } = params;
+
+  try {
+    await DB.transaction(async (tx) => {
+      await tx.update(breakdownAssignment)
+        .set({ 
+          userStatus: UserStatus.CLOSED as string
+        })
+        .where(eq(breakdownAssignment.requestId, requestId));
+
+      await tx.update(breakdownRequest)
+        .set({ status: UserStatus.CLOSED as string })
+        .where(eq(breakdownRequest.id, requestId));
+
+      // Get the customer ID and all driver IDs associated with this request
+      const assignments = await tx.select({
+        driverId: breakdownAssignment.driverId,
+        customerId: breakdownRequest.customerId,
+      })
+        .from(breakdownAssignment)
+        .innerJoin(breakdownRequest, eq(breakdownAssignment.requestId, breakdownRequest.id))
+        .where(eq(breakdownAssignment.requestId, requestId));
+
+      if (assignments.length === 0) {
+        throw new Error("No assignments found for this request");
+      }
+
+      const customerId = assignments[0].customerId;
+      console.log('serviceRatings:', serviceRatings);
+      // Update or insert service ratings for all assignments
+      for (const assignment of assignments) {
+        await tx
+          .insert(serviceRatings)
+          .values({
+            requestId,
+            customerId,
+            driverId: assignment?.driverId,
+            customerRating,
+            customerFeedback,
+          })
+          .onConflictDoUpdate({
+            target: serviceRatings.id, // Assuming 'id' is the primary key
+            set: {
+              customerRating,
+              customerFeedback,
+              updatedAt: new Date(),
+            },
+          });
+      }
+    });
+  } catch (error) {
+    console.error("Error in closeBreakdownAndUpdateRating:", error);
+    throw error;
+  }
+};
+
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
@@ -366,4 +446,5 @@ export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   updateUserStatusInBreakdownAssignment,
   getBreakdownAssignmentsByRequestId,
   getBreakdownAssignmentsByDriverIdAndRequestId,
+  closeBreakdownAndUpdateRating,
 };

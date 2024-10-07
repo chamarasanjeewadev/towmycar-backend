@@ -25,3 +25,4 @@ yarn-error.log*
 db/*
 packages/database/db/migrations/*
 packages/database/db/migrations/meta/*
+packages/notification_service/src/utils/serviceAccount.json

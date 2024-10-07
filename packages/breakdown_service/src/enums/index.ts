@@ -22,13 +22,16 @@ export enum DriverStatus {
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
   QUOTED = 'QUOTED',
-  PENDING = 'PENDING'
+  PENDING = 'PENDING',
+  CLOSED = 'CLOSED'
+
 }
 
 export enum UserStatus {
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
-  PENDING = 'PENDING'
+  PENDING = 'PENDING',
+  CLOSED = 'CLOSED'
 }
 export enum Role {
   CUSTOMER = "customer",

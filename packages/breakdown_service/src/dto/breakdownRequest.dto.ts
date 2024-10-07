@@ -35,8 +35,10 @@ export interface BreakdownRequestWithUserDetails {
   location: string;
   description: string | null;
   status: string;
+  regNo: string | null;
+  weight: number | null;
   userId: number;
-  userName: string;
+  firstName: string | null;
+  lastName: string | null;
   userEmail: string | null;
-  // Add more user fields as needed
 }

@@ -1,3 +1,4 @@
+import { UserNotificationService } from './../service/notification.service';
 import AWS from "aws-sdk";
 import { logger } from "./index";
 import { SQS_QUEUE_URL } from "../config";
@@ -37,7 +38,7 @@ export const pollMessagesFromSQS = async () => {
               
               sendEmail(messageData.type, messageData.payload);
               // send push notification
-              // sendDriverAcceptanceBreakdownPushNotification()
+              UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(messageData.type, messageData.payload);
               const deleteParams = {
                 QueueUrl: queueURL,
                 ReceiptHandle: message.ReceiptHandle ?? "",

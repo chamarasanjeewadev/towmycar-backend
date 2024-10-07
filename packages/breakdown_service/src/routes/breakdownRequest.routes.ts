@@ -147,6 +147,41 @@ router.patch(
   }
 );
 
+// New route for closing breakdown request and updating rating
+router.post(
+  "/close-and-rate/:requestId",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response) => {
+    try {
+      const requestId = parseInt(req.params.requestId, 10);
+      const { customerRating, customerFeedback } = req.body;
+
+      if (isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+
+      if (typeof customerRating !== 'number' || customerRating < 1 || customerRating > 5) {
+        return res.status(400).json({ error: "Invalid rating. Must be a number between 1 and 5." });
+      }
+
+      if (typeof customerFeedback !== 'string') {
+        return res.status(400).json({ error: "Invalid feedback. Must be a string." });
+      }
+
+      await service.BreakdownRequestService.closeBreakdownAndUpdateRating(
+        requestId,
+        customerRating,
+        customerFeedback
+      );
+
+      res.status(200).json({ message: "Breakdown request closed and rated successfully" });
+    } catch (error) {
+      console.error("Error closing breakdown request and updating rating:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // Add error handling middleware at the end of your router
 router.use(errorHandler);
 

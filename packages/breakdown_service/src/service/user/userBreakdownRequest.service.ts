@@ -158,6 +158,7 @@ const updateUserStatusInBreakdownAssignment = async (
       payload: {
         requestId: updatedAssignment.requestId,
         userStatus,
+        userId: 88,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${assignmentId}`,
       },
     });
@@ -218,6 +219,19 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   );
 };
 
+const closeBreakdownAndUpdateRating = async (
+  requestId: number,
+  customerRating: number,
+  customerFeedback: string
+): Promise<void> => {
+  await BreakdownRequestRepository.closeBreakdownAndUpdateRating({
+    requestId,
+    customerRating,
+    customerFeedback,
+  });
+  // TODO send notifications to drivers
+};
+
 export const BreakdownRequestService = {
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
@@ -226,7 +240,8 @@ export const BreakdownRequestService = {
   createAnonymousCustomerAndBreakdownRequest,
   CreateBreakdownRequest,
   getBreakdownAssignmentsByRequestId,
-  getBreakdownAssignmentsByDriverIdAndRequestId, // Add this new method
+  getBreakdownAssignmentsByDriverIdAndRequestId,
+  closeBreakdownAndUpdateRating, // Add this new method
 };
 
 // export const CreateAnonymousBreakdownRequest = async (
