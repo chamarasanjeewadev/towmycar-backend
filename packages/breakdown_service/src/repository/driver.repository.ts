@@ -13,7 +13,7 @@ import { eq, and, desc, not, or, aliasedTable } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
-import { DriverStatus, UserStatus } from "../enums";
+import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
 
 interface UpdateAssignmentData {
   status: string;
@@ -87,6 +87,7 @@ export interface IDriverRepository {
     paymentMethodId: string
   ): Promise<Driver | null>;
   getDriverWithPaymentMethod(driverId: number): Promise<Driver | null>;
+  updateBreakdownRequestStatus(requestId: number, status: BreakdownRequestStatus): Promise<boolean>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -117,6 +118,7 @@ export const DriverRepository: IDriverRepository = {
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
         email: driverUser.email,
+        imageUrl:driverUser.imageUrl
         
         // phoneNumber: driverUser.phoneNumber,
         // vehicleType: driverUser.vehicleType,
@@ -257,11 +259,14 @@ export const DriverRepository: IDriverRepository = {
           and(
             eq(breakdownAssignment.driverId, driverId),
             eq(breakdownAssignment.requestId, requestId)
-            // eq(breakdownAssignment.status, data.status),
-            // eq(breakdownAssignment.userStatus, data.userStatus)
           )
         )
         .returning({ id: breakdownAssignment.id });
+
+      // If the update was successful and the status is QUOTED, update the breakdownRequest status
+      if (updatedRows.length > 0 && data.status === DriverStatus.QUOTED) {
+        await this.updateBreakdownRequestStatus(requestId, UserStatus.INPROGRESS);
+      }
 
       // If no rows were updated, it means the assignment doesn't exist or is not in pending state
       if (updatedRows.length === 0) {
@@ -461,5 +466,18 @@ export const DriverRepository: IDriverRepository = {
       .limit(1);
 
     return result || null;
+  },
+  async updateBreakdownRequestStatus(requestId: number, status: BreakdownRequestStatus): Promise<boolean> {
+    const result = await DB.update(breakdownRequest)
+      .set({ status })
+      .where(
+        and(
+          eq(breakdownRequest.id, requestId),
+          eq(breakdownRequest.status, BreakdownRequestStatus.WAITING)
+        )
+      )
+      .returning({ id: breakdownRequest.id });
+
+    return result.length > 0;
   },
 };

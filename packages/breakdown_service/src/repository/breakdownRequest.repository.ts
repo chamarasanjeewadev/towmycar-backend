@@ -11,9 +11,9 @@ import {
   BreakdownAssignment,
   User,
 } from "@breakdownrescue/database";
-import { BreakdownRequestInput, BreakdownRequestWithUserDetails } from "../dto/breakdownRequest.dto";
+import { BreakdownRequestInput  } from "../dto/breakdownRequest.dto";
 import { aliasedTable, sql } from "drizzle-orm";
-import { UserStatus, DriverStatus } from "../enums";
+import { UserStatus, DriverStatus, BreakdownRequestStatus } from "../enums";
 import { eq, desc, and } from "drizzle-orm";
 
 // Add this type definition
@@ -31,10 +31,6 @@ type BreakdownRequestWithUserDetails = {
   userEmail: string | null;
 };
 
-// Add these imports at the top of the file
-import { serviceRatings } from "@breakdownrescue/database";
-
-// Add this new type definition
 type CloseBreakdownParams = {
   requestId: number;
   customerRating: number;
@@ -91,8 +87,7 @@ const saveBreakdownRequest = async (
       x: data.userLocation.longitude,
       y: data.userLocation.latitude,
     },
-    // userLocation: sql`POINT(${data.userLocation.longitude}, ${data.userLocation.latitude})`,
-    status: UserStatus.PENDING,
+    status: BreakdownRequestStatus.WAITING,
     description: data.description,
     regNo: data.regNo,
     weight: data?.weight?.toString() ?? null,
@@ -153,6 +148,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
       status: breakdownRequest.status,
       regNo: breakdownRequest.regNo ?? null,  // Provide null as default
       weight: breakdownRequest.weight ?? null,  // Provide null as default
+      createdAt:breakdownRequest.createdAt,
       userId: breakdownRequest.customerId,
       firstName: user.firstName,
       lastName: user.lastName,

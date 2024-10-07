@@ -96,12 +96,13 @@ router.patch(
       if (
         status !== DriverStatus.ACCEPTED &&
         status !== DriverStatus.REJECTED &&
-        status !== DriverStatus.QUOTED
+        status !== DriverStatus.QUOTED &&
+        status !== DriverStatus.CLOSED
       ) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          'Status must be either "accepted" or "rejected"'
+          'Status must be "ACCEPTED", "REJECTED", "QUOTED", or "CLOSED"'
         );
       }
 
@@ -117,9 +118,9 @@ router.patch(
         }
       }
 
-      const updateData = {
+      const dataToUpdate = {
         status,
-        ...(parsedEstimation !== undefined && { estimation: parsedEstimation }),
+        ...(parsedEstimation !== undefined && { estimation: parsedEstimation.toString() }),
         ...(explanation && { explanation }),
       };
 
@@ -170,13 +171,13 @@ router.patch(
         }
       }
 
-      // If payment succeeded or status is not ACCEPTED, update the database
+      // Update the assignment and breakdown request status
       const updated = await driverService.updateBreakdownAssignment(
         Number(driverId),
         Number(requestId),
         {
-          ...updateData,
-          estimation: parsedEstimation?.toString(),
+          ...dataToUpdate,
+          ...(parsedEstimation !== undefined && { estimation: parsedEstimation.toString() }),
         }
       );
 

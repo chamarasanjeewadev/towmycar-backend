@@ -31,9 +31,17 @@ export enum UserStatus {
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
   PENDING = 'PENDING',
+  INPROGRESS = 'INPROGRESS',
   CLOSED = 'CLOSED'
 }
 export enum Role {
   CUSTOMER = "customer",
   DRIVER = "driver"
+}
+
+export enum BreakdownRequestStatus{
+  INPROGRESS = 'INPROGRESS',
+  WAITING='WAITING',
+  CLOSED = 'CLOSED' ,
+  QUOTED='QUOTED'
 }

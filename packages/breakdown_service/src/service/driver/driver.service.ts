@@ -3,10 +3,14 @@ import {
   IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
-import { EmailNotificationType } from "../../enums";
+import {
+  EmailNotificationType,
+  UserStatus,
+  DriverStatus,
+  BreakdownRequestStatus,
+} from "../../enums";
 import { sendNotification } from "../utils/sns.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
-import { DriverStatus } from "../../enums";
 import { Stripe } from "stripe";
 
 // Initialize Stripe client
@@ -36,11 +40,9 @@ export class DriverService {
     const driverRequests = await DriverRepository.getDriverRequestsWithInfo(
       driverId
     );
-    
+
     return driverRequests;
   }
-
- 
 
   async updateBreakdownAssignment(
     driverId: number,
@@ -53,16 +55,14 @@ export class DriverService {
         requestId,
         data
       );
-    console.log("acceptance data...", data);
-
-    // Fetch driver details using the new method
+    // Fetch driver details
     const driverDetails = await DriverRepository.getDriverById(driverId);
 
     if (!driverDetails) {
       throw new Error(`Driver with id ${driverId} not found`);
     }
 
-    // Fetch user details using the new method
+    // Fetch user details
     const userDetails = await DriverRepository.getDriverByRequestId(requestId);
 
     if (!userDetails) {
@@ -74,6 +74,9 @@ export class DriverService {
     let payload: any;
 
     if (data.status === DriverStatus.QUOTED) {
+      // set request in progress mode since driver quoted....
+      await  DriverRepository.updateBreakdownRequestStatus(requestId,  BreakdownRequestStatus.QUOTED);
+
       notificationType = EmailNotificationType.DRIVER_QUOTATION_UPDATED_EMAIL;
       payload = {
         requestId,
@@ -84,6 +87,8 @@ export class DriverService {
         description: data?.description ?? "",
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
+
+      // Update the breakdown request status to IN_PROGRESS when a driver quotes
     } else if (data.status === DriverStatus.ACCEPTED) {
       notificationType = EmailNotificationType.DRIVER_ACCEPT_EMAIL;
       payload = {
@@ -99,7 +104,31 @@ export class DriverService {
         vehiclePlateNumber: driverDetails.vehicleRegistration,
         estimation: data.estimation,
       };
-    } else {
+    }
+    else if (data.status === DriverStatus.REJECTED) {
+
+      notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
+      payload = {
+        requestId,
+        driverId,
+        user: userDetails,
+        status: data.status,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+      };
+    }
+    else if (data.status === DriverStatus.CLOSED) {
+
+      return breakdownRequestUpdated;
+      // notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
+      // payload = {
+      //   requestId,
+      //   driverId,
+      //   user: userDetails,
+      //   status: data.status,
+      //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+      // };
+    }
+    else {
       throw new Error("Invalid status or estimation amount");
     }
 
