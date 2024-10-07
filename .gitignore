@@ -26,3 +26,6 @@ db/*
 packages/database/db/migrations/*
 packages/database/db/migrations/meta/*
 packages/notification_service/src/utils/serviceAccount.json
+# Ignore all service account JSON files
+**/service-account*.json
+**/serviceAccount*.json
