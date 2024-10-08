@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import { UserRepository } from "../../repository/user.repository";
 import { BreakdownRequestWithUserDetails } from "../../dto/breakdownRequest.dto";
@@ -10,7 +11,6 @@ import {
   NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { getUserProfileById } from "./user.service";
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,

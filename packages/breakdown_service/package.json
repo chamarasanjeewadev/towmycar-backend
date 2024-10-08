@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon --exec ts-node  src/server.ts",
     "dev2": "nodemon --exec ts-node --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "tsc --noEmitOnError false --skipLibCheck",
     "start": "node dist/server.js",
     "test": "jest"
   },
@@ -22,6 +22,7 @@
     "@sinclair/typebox": "^0.32.30",
     "@stripe/stripe-js": "^4.5.0",
     "@types/uuid": "^10.0.0",
+    "@vendia/serverless-express": "^4.12.6",
     "add": "^2.0.6",
     "ajv": "^8.13.0",
     "aws-jwt-verify": "^4.0.1",

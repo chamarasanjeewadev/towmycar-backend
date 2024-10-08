@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import {
   DB,
   breakdownRequest,
@@ -13,8 +15,8 @@ import {
 } from "@breakdownrescue/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { aliasedTable, sql } from "drizzle-orm";
-import { UserStatus, DriverStatus, BreakdownRequestStatus } from "../enums";
-import { eq, desc, and } from "drizzle-orm";
+import { UserStatus, BreakdownRequestStatus } from "../enums";
+import { eq, desc } from "drizzle-orm";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {

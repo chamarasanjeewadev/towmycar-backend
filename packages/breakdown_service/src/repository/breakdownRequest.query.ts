@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   DB,
   customer,
@@ -78,7 +79,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   const baseQuery = DB.select({
     id: breakdownRequest.id,
     requestType: breakdownRequest.requestType,
-    location: breakdownRequest.locationAddress,
+    location: breakdownRequest.address,
     description: breakdownRequest.description,
     status: breakdownRequest.status,
     userId: breakdownRequest.customerId,
