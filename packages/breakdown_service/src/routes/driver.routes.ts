@@ -5,13 +5,13 @@ import {
 } from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
 import { DriverService } from "../service/driver/driver.service";
-import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import Stripe from "stripe";
 import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
+import { CustomError, ERROR_CODES } from "./../utils";
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -120,7 +120,9 @@ router.patch(
 
       const dataToUpdate = {
         status,
-        ...(parsedEstimation !== undefined && { estimation: parsedEstimation.toString() }),
+        ...(parsedEstimation !== undefined && {
+          estimation: parsedEstimation.toString(),
+        }),
         ...(explanation && { explanation }),
       };
 
@@ -140,7 +142,7 @@ router.patch(
 
         if (!driver || !driver.stripePaymentMethodId) {
           throw new CustomError(
-            ERROR_CODES.INVALID_INPUT,
+            ERROR_CODES.STRIPE_CARD_NOT_ADDED,
             400,
             "Driver's payment method not found"
           );
@@ -177,7 +179,9 @@ router.patch(
         Number(requestId),
         {
           ...dataToUpdate,
-          ...(parsedEstimation !== undefined && { estimation: parsedEstimation.toString() }),
+          ...(parsedEstimation !== undefined && {
+            estimation: parsedEstimation.toString(),
+          }),
         }
       );
 

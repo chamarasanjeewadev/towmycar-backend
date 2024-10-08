@@ -1,7 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import * as service from "../service/user/user.service";
 import * as repository from "../repository/user.repository";
-import { CustomError, ERROR_CODES } from "../utils/errorHandlingSetup";
 import { UserRegisterInput } from "../dto/userRequest.dto";
 import { UserRepository } from "../repository/user.repository";
 import { saveFcmToken } from "../service/user/user.service";
@@ -14,6 +13,7 @@ import axios from "axios";
 import Stripe from "stripe";
 import { Driver } from "@breakdownrescue/database";
 import { DriverRepository } from "../repository/driver.repository";
+import { CustomError, ERROR_CODES } from "./../utils";
 
 const router = express.Router();
 const repo = repository.UserRepository;

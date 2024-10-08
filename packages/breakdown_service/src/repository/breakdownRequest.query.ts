@@ -183,8 +183,16 @@ const getBreakdownAssignmentsByUserIdAndRequestId = async (
 const getBreakdownAssignmentsByRequestId = async (
   requestId: number
 ): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
-  const result = await DB.select({
-    assignment: breakdownAssignment,
+  let query = DB.select({
+    assignment: {
+      id: breakdownAssignment.id,
+      requestId: breakdownAssignment.requestId,
+      status: breakdownAssignment.driverStatus,
+      userStatus: breakdownAssignment.userStatus,
+      estimation: breakdownAssignment.estimation,
+      explanation: breakdownAssignment.explanation,
+      updatedAt: breakdownAssignment.updatedAt,
+    },
     driver: {
       id: driver.id,
       email: user.email,
@@ -200,13 +208,19 @@ const getBreakdownAssignmentsByRequestId = async (
   })
     .from(breakdownAssignment)
     .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
-    .innerJoin(breakdownRequest, eq(breakdownAssignment.requestId, breakdownRequest.id))
-    .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-    .innerJoin(user, eq(customer.userId, user.id))
-    .where(eq(breakdownAssignment.requestId, requestId))
-    .orderBy(desc(breakdownAssignment.updatedAt));
+    .innerJoin(
+      breakdownRequest,
+      eq(breakdownAssignment.requestId, breakdownRequest.id)
+    )
+    .innerJoin(user, eq(breakdownRequest.customerId, user.id))
+    .where(eq(breakdownRequest.id, requestId))
 
-  return result as unknown as (BreakdownAssignment & { driver: Driver; user: User })[];
+  const result = await query.orderBy(desc(breakdownAssignment.updatedAt));
+
+  return result as unknown as (BreakdownAssignment & {
+    driver: Driver;
+    user: User;
+  })[];
 };
 
 export const BreakdownRequestQuery: BreakdownRequestQueryType = {

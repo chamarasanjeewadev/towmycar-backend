@@ -11,7 +11,7 @@ import {
   BreakdownAssignment,
   User,
 } from "@breakdownrescue/database";
-import { BreakdownRequestInput  } from "../dto/breakdownRequest.dto";
+import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { aliasedTable, sql } from "drizzle-orm";
 import { UserStatus, DriverStatus, BreakdownRequestStatus } from "../enums";
 import { eq, desc, and } from "drizzle-orm";
@@ -23,8 +23,8 @@ type BreakdownRequestWithUserDetails = {
   location: string;
   description: string | null;
   status: string;
-  regNo: string | null;  // Add this line
-  weight: number | null;  // Add this line
+  regNo: string | null; // Add this line
+  weight: number | null; // Add this line
   userId: number;
   firstName: string | null;
   lastName: string | null;
@@ -53,10 +53,6 @@ export type BreakdownRequestRepositoryType = {
     totalCount: number;
   }>;
 
-  getBreakdownAssignmentsByUserIdAndRequestId: (
-    userId: number,
-    requestId?: number
-  ) => Promise<(BreakdownAssignment & { driver: Driver; user: any })[]>;
   updateUserStatusInBreakdownAssignment: (
     // userId: number,
     assignmentId: number,
@@ -71,7 +67,9 @@ export type BreakdownRequestRepositoryType = {
   ) => Promise<
     (BreakdownAssignment & { driver: Driver; customer: User }) | null
   >;
-  closeBreakdownAndUpdateRating: (params: CloseBreakdownParams) => Promise<void>;
+  closeBreakdownAndUpdateRating: (
+    params: CloseBreakdownParams
+  ) => Promise<void>;
 };
 
 const saveBreakdownRequest = async (
@@ -146,9 +144,9 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
       location: breakdownRequest.address,
       description: breakdownRequest.description,
       status: breakdownRequest.status,
-      regNo: breakdownRequest.regNo ?? null,  // Provide null as default
-      weight: breakdownRequest.weight ?? null,  // Provide null as default
-      createdAt:breakdownRequest.createdAt,
+      regNo: breakdownRequest.regNo ?? null, // Provide null as default
+      weight: breakdownRequest.weight ?? null, // Provide null as default
+      createdAt: breakdownRequest.createdAt,
       userId: breakdownRequest.customerId,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -204,59 +202,14 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
       totalCount: count,
     };
   } catch (error) {
-    console.error("Error in getPaginatedBreakdownRequestsWithUserDetails:", error);
-    throw new Error("Failed to fetch paginated breakdown requests with user details");
+    console.error(
+      "Error in getPaginatedBreakdownRequestsWithUserDetails:",
+      error
+    );
+    throw new Error(
+      "Failed to fetch paginated breakdown requests with user details"
+    );
   }
-};
-
-const getBreakdownAssignmentsByUserIdAndRequestId = async (
-  userId: number,
-  requestId?: number
-): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
-  let query = DB.select({
-    assignment: {
-      id: breakdownAssignment.id,
-      requestId: breakdownAssignment.requestId,
-      status: breakdownAssignment.driverStatus,
-      userStatus: breakdownAssignment.userStatus,
-      estimation: breakdownAssignment.estimation,
-      explanation: breakdownAssignment.explanation,
-      updatedAt: breakdownAssignment.updatedAt,
-    },
-    driver: {
-      id: driver.id,
-      email: user.email,
-      fullName: user.firstName,
-      phoneNumber: driver.phoneNumber,
-    },
-    user: {
-      id: customer.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      imageUrl: user.imageUrl,
-    },
-  })
-    .from(breakdownAssignment)
-    .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
-    .innerJoin(
-      breakdownRequest,
-      eq(breakdownAssignment.requestId, breakdownRequest.id)
-    )
-    .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-    .innerJoin(user, eq(user.id, customer.userId))
-    .where(eq(customer.id, userId));
-
-  if (requestId) {
-    // @ts-ignore
-    query = query.where(eq(breakdownRequest.id, requestId));
-  }
-  const result = await query.orderBy(desc(breakdownAssignment.updatedAt));
-
-  return result as unknown as (BreakdownAssignment & {
-    driver: Driver;
-    user: any;
-  })[];
 };
 
 const updateUserStatusInBreakdownAssignment = async (
@@ -273,8 +226,6 @@ const updateUserStatusInBreakdownAssignment = async (
   return result.length > 0 ? result[0] : null;
 };
 
-
-
 const getBreakdownAssignmentsByRequestId = async (
   requestId: number
 ): Promise<(BreakdownAssignment & { driver: Driver; user: User })[]> => {
@@ -282,7 +233,7 @@ const getBreakdownAssignmentsByRequestId = async (
   const result = await DB.select({
     id: breakdownAssignment.id,
     requestId: breakdownAssignment.requestId,
-    status: breakdownAssignment.driverStatus,
+    driverStatus: breakdownAssignment.driverStatus,
     userStatus: breakdownAssignment.userStatus,
     estimation: breakdownAssignment.estimation,
     explanation: breakdownAssignment.explanation,
@@ -377,28 +328,36 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
 };
 
 // Update the method implementation
-const closeBreakdownAndUpdateRating = async (params: CloseBreakdownParams): Promise<void> => {
+const closeBreakdownAndUpdateRating = async (
+  params: CloseBreakdownParams
+): Promise<void> => {
   const { requestId, customerRating, customerFeedback } = params;
 
   try {
-    await DB.transaction(async (tx) => {
-      await tx.update(breakdownAssignment)
-        .set({ 
-          userStatus: UserStatus.CLOSED as string
+    await DB.transaction(async tx => {
+      await tx
+        .update(breakdownAssignment)
+        .set({
+          userStatus: UserStatus.CLOSED as string,
         })
         .where(eq(breakdownAssignment.requestId, requestId));
 
-      await tx.update(breakdownRequest)
+      await tx
+        .update(breakdownRequest)
         .set({ status: UserStatus.CLOSED as string })
         .where(eq(breakdownRequest.id, requestId));
 
       // Get the customer ID and all driver IDs associated with this request
-      const assignments = await tx.select({
-        driverId: breakdownAssignment.driverId,
-        customerId: breakdownRequest.customerId,
-      })
+      const assignments = await tx
+        .select({
+          driverId: breakdownAssignment.driverId,
+          customerId: breakdownRequest.customerId,
+        })
         .from(breakdownAssignment)
-        .innerJoin(breakdownRequest, eq(breakdownAssignment.requestId, breakdownRequest.id))
+        .innerJoin(
+          breakdownRequest,
+          eq(breakdownAssignment.requestId, breakdownRequest.id)
+        )
         .where(eq(breakdownAssignment.requestId, requestId));
 
       if (assignments.length === 0) {
@@ -406,7 +365,7 @@ const closeBreakdownAndUpdateRating = async (params: CloseBreakdownParams): Prom
       }
 
       const customerId = assignments[0].customerId;
-      console.log('serviceRatings:', serviceRatings);
+      console.log("serviceRatings:", serviceRatings);
       // Update or insert service ratings for all assignments
       for (const assignment of assignments) {
         await tx
@@ -438,7 +397,6 @@ export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
-  getBreakdownAssignmentsByUserIdAndRequestId,
   updateUserStatusInBreakdownAssignment,
   getBreakdownAssignmentsByRequestId,
   getBreakdownAssignmentsByDriverIdAndRequestId,

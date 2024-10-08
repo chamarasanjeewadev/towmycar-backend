@@ -3,20 +3,19 @@ import * as service from "../service/user/userBreakdownRequest.service";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { z } from "zod";
 import { PaginationQuerySchema } from "../dto/query.dto";
-import { errorHandler } from "../middleware/errorHandler";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 
 const router = express.Router();
-
 
 // Updated route for anonymous breakdown request
 router.post(
   "/anonymous-breakdown-request",
   async (req: Request, res: Response) => {
     try {
-      const response = await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
-        req.body as BreakdownRequestInput
-      );
+      const response =
+        await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
+          req.body as BreakdownRequestInput
+        );
 
       return res.status(200).json(response);
     } catch (error) {
@@ -32,10 +31,11 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       // Now you can access userId and userRole directly from the request
-      const response = await service.BreakdownRequestService.CreateBreakdownRequest(
-        req.body as BreakdownRequestInput,
-        req.userInfo
-      );
+      const response =
+        await service.BreakdownRequestService.CreateBreakdownRequest(
+          req.body as BreakdownRequestInput,
+          req.userInfo
+        );
 
       return res.status(200).json(response);
     } catch (error) {
@@ -98,8 +98,7 @@ router.get("/assignments/:requestId?", async (req: Request, res: Response) => {
 
     console.log("req.params", req.params);
     const assignments =
-      await service.BreakdownRequestService.getBreakdownAssignmentsByUserIdAndRequestId(
-        userId,
+      await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
         requestId
       );
     res.status(200).json(assignments);
@@ -160,12 +159,20 @@ router.post(
         return res.status(400).json({ error: "Invalid request ID" });
       }
 
-      if (typeof customerRating !== 'number' || customerRating < 1 || customerRating > 5) {
-        return res.status(400).json({ error: "Invalid rating. Must be a number between 1 and 5." });
+      if (
+        typeof customerRating !== "number" ||
+        customerRating < 1 ||
+        customerRating > 5
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Invalid rating. Must be a number between 1 and 5." });
       }
 
-      if (typeof customerFeedback !== 'string') {
-        return res.status(400).json({ error: "Invalid feedback. Must be a string." });
+      if (typeof customerFeedback !== "string") {
+        return res
+          .status(400)
+          .json({ error: "Invalid feedback. Must be a string." });
       }
 
       await service.BreakdownRequestService.closeBreakdownAndUpdateRating(
@@ -174,15 +181,20 @@ router.post(
         customerFeedback
       );
 
-      res.status(200).json({ message: "Breakdown request closed and rated successfully" });
+      res
+        .status(200)
+        .json({ message: "Breakdown request closed and rated successfully" });
     } catch (error) {
-      console.error("Error closing breakdown request and updating rating:", error);
+      console.error(
+        "Error closing breakdown request and updating rating:",
+        error
+      );
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
 
 // Add error handling middleware at the end of your router
-router.use(errorHandler);
+
 
 export default router;

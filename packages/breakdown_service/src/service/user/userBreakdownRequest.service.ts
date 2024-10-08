@@ -92,17 +92,6 @@ const getAllBreakdownRequestsWithUserDetails = async (): Promise<
       "Unknown",
   }));
 };
-const getBreakdownAssignmentsByUserIdAndRequestId = async (
-  userId: number,
-  requestId?: number
-) => {
-  const assignments =
-    await BreakdownRequestRepository.getBreakdownAssignmentsByUserIdAndRequestId(
-      userId,
-      requestId
-    );
-  return assignments;
-};
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
@@ -171,7 +160,9 @@ const updateUserStatusInBreakdownAssignment = async (
 
 // Add this new method to the BreakdownRequestService object
 const getBreakdownAssignmentsByRequestId = async (requestId: number) => {
-  return await BreakdownRequestRepository.getBreakdownAssignmentsByRequestId(requestId);
+  return await BreakdownRequestRepository.getBreakdownAssignmentsByRequestId(
+    requestId
+  );
 };
 
 const createAnonymousCustomerAndBreakdownRequest = async (
@@ -235,11 +226,10 @@ const closeBreakdownAndUpdateRating = async (
 export const BreakdownRequestService = {
   getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
-  getBreakdownAssignmentsByUserIdAndRequestId,
+  getBreakdownAssignmentsByRequestId,
   updateUserStatusInBreakdownAssignment,
   createAnonymousCustomerAndBreakdownRequest,
   CreateBreakdownRequest,
-  getBreakdownAssignmentsByRequestId,
   getBreakdownAssignmentsByDriverIdAndRequestId,
   closeBreakdownAndUpdateRating, // Add this new method
 };

@@ -125,7 +125,7 @@ export const DriverRepository: IDriverRepository = {
         // vehicleRegistration: driverUser.vehicleRegistration,
         // licenseNumber: driverUser.licenseNumber,
       },
-      user: {
+      customer: {
         id: customer.id,
         firstName: user.firstName,
         lastName: user.lastName,

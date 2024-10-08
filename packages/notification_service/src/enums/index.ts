@@ -24,3 +24,4 @@ export enum UserStatus {
   REJECTED = 'REJECTED',
   PENDING = 'PENDING'
 }
+
