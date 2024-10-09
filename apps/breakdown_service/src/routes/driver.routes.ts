@@ -11,7 +11,7 @@ import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import Stripe from "stripe";
 import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
-import { CustomError, ERROR_CODES } from "./../utils";
+import { CustomError, ERROR_CODES } from "../utils";
 
 const router = express.Router();
 const driverService = new DriverService();

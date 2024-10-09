@@ -5,7 +5,7 @@ import {
   breakdownAssignment,
   breakdownRequests,
   userProfile,
-} from "../../../database";
+} from "@breakdownrescue/database";
 import { sql, eq, and } from "drizzle-orm";
 import { DriverStatus, UserStatus } from "../enums";
 // Define a type for the nearby driver data

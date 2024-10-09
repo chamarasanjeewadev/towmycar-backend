@@ -13,7 +13,7 @@ import axios from "axios";
 import Stripe from "stripe";
 import { Driver } from "@breakdownrescue/database";
 import { DriverRepository } from "../repository/driver.repository";
-import { CustomError, ERROR_CODES } from "./../utils";
+import { CustomError, ERROR_CODES } from "../utils";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -84,7 +84,7 @@ router.post(
         );
 
         console.log("updatedUser.....", updatedUser);
-        if (userInfo.userId) {
+        if (userInfo?.userId) {
           await clerkClient.users.updateUserMetadata(evt.data.id, {
             privateMetadata: {
               userInfo: {

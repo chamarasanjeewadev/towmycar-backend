@@ -1,6 +1,6 @@
 import winston from "winston";
 import { Request, Response, NextFunction } from "express";
-import { BaseError, CustomError, APIError } from "./../utils";
+import { BaseError, CustomError, APIError } from "../utils";
 
 // Step 1: Set Up Winston for Logging
 const logger = winston.createLogger({
@@ -24,26 +24,26 @@ export const errorMiddleware = (
   let statusCode = 500;
   let errorCode = "INTERNAL_ERROR";
   let message = "Something went wrong";
-  let code=""
+  let code = "";
 
   // if (err instanceof BaseError) {
   //   statusCode = err.statusCode;
   //   message = err.message;
   //   errorCode = err.name;
   //   code=err.code
-   if (err instanceof CustomError) {
+  if (err instanceof CustomError) {
     statusCode = err.statusCode;
     message = err.message;
-    code=err.code
+    code = err.code;
     errorCode = err.code;
   } else if (err instanceof APIError) {
     statusCode = err.statusCode;
     message = err.message;
     errorCode = err.name;
-  }else{
+  } else {
     message = err.message;
     errorCode = err.name;
-    code=err.stack
+    code = err.stack;
   }
 
   // Log the error using winston
@@ -55,7 +55,7 @@ export const errorMiddleware = (
   res.status(statusCode).json({
     status: "error",
     code: statusCode,
-    info:{message,errorCode,statusCode,customeErrorCode:code},
-    message:message,
+    info: { message, errorCode, statusCode, customeErrorCode: code },
+    message: message,
   });
 };

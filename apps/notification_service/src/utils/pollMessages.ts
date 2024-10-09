@@ -1,4 +1,4 @@
-import { UserNotificationService } from './../service/notification.service';
+import { UserNotificationService } from '../service/notification.service';
 import AWS from "aws-sdk";
 import { logger } from "./index";
 import { SQS_QUEUE_URL } from "../config";
