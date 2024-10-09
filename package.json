@@ -1,9 +1,12 @@
 {
+  "name": "vehicle-breakdown-backend",
   "private": true,
+  "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "yarn workspaces run build"
   },
-  "workspaces": ["apps/*",
+  "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "devDependencies": {}

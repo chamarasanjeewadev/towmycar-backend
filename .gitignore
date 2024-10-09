@@ -21,6 +21,7 @@ yarn-error.log*
 
 # Ignore IDE settings (VS Code, for example)
 .vscode/
+.turbo/
 
 db/*
 packages/database/db/migrations/*
