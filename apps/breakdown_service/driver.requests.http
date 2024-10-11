@@ -68,6 +68,10 @@ Authorization: Bearer <your-auth-token-here>
 GET {{baseUrl}}/profile?email=test5@breakdown.com
 Authorization: Bearer <your-auth-token-here>
 
+###
+
+GET http://localhost:{{port}}/
+
 ### Verify Vehicle Registration
 
 

@@ -3,11 +3,17 @@
   "private": true,
   "packageManager": "yarn@1.22.19",
   "scripts": {
-    "build": "yarn workspaces run build"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "deploy": "turbo run deploy"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "devDependencies": {}
+  "devDependencies": {
+    "turbo": "latest"
+  }
 }

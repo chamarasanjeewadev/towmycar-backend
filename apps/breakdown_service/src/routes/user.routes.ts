@@ -27,23 +27,41 @@ router.post(
   async function (req: Request, res: Response, next: NextFunction) {
     const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
     if (!WEBHOOK_SECRET) {
-      throw new Error("You need a WEBHOOK_SECRET in your .env");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error: WEBHOOK_SECRET is missing",
+      });
     }
+
+    console.log("All headers:", JSON.stringify(req.headers, null, 2));
 
     const headers = req.headers;
     const payload = req.body;
 
-    const svix_id = headers["svix-id"];
-    const svix_timestamp = headers["svix-timestamp"];
-    const svix_signature = headers["svix-signature"];
+    // Log each header individually
+    console.log("svix-id:", headers["svix-id"]);
+    console.log("svix-timestamp:", headers["svix-timestamp"]);
+    console.log("svix-signature:", headers["svix-signature"]);
 
-    if (!svix_id || !svix_timestamp || !svix_signature) {
-      return res
-        .status(400)
-        .json({ message: "Error occurred -- no svix headers" });
+    const svixId = headers["svix-id"];
+    const svixTimestamp = headers["svix-timestamp"];
+    const svixSignature = headers["svix-signature"];
+
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      console.log("Missing headers detected");
+      return res.status(400).json({
+        success: false,
+        message: "Error occurred -- missing svix headers",
+      });
     }
 
     const wh = new Webhook(WEBHOOK_SECRET);
+    // const svixHeaders = {
+    //   "svix-id": svixId as string,
+    //   "svix-timestamp": svixTimestamp as string,
+    //   "svix-signature": svixSignature as string,
+    // };
+    // wh.verify(payload, svixHeaders); this does not work
 
     let evt;
 
@@ -53,9 +71,6 @@ router.post(
     if (evt.type === "user.created") {
       const userData = evt.data;
       try {
-        // Replace this line:
-        // const userInfo = await repo.createUserFromWebhook(userData);
-        // With this:
         const userInfo = await service.createUserFromWebhook(userData, repo);
 
         // Create Stripe customer
@@ -65,7 +80,7 @@ router.post(
         });
 
         // Update driver with Stripe customer ID
-        if (userInfo.driverId) {
+        if (userInfo?.driverId) {
           await DriverRepository.updateDriver(userInfo.driverId, {
             stripeId: stripeCustomer.id,
           });
@@ -101,36 +116,40 @@ router.post(
           });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
           success: true,
-          message:
-            "User created, processed, and Stripe customer created successfully",
+          message: "User created, processed, and Stripe customer created successfully",
         });
       } catch (error) {
         console.error("Error processing user creation:", error);
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           message: "Error processing user creation",
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     } else if (evt.type === "user.updated") {
       const userData = evt.data;
       try {
-        // Replace this line:
-        // const userInfo = await repo.createUserFromWebhook(userData);
-        // With this:
         const userInfo = await service.createUserFromWebhook(userData, repo);
+        return res.status(200).json({
+          success: true,
+          message: "User updated successfully",
+        });
       } catch (error) {
         console.error("Error processing user update:", error);
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           message: "Error processing user update",
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     } else {
-      res.status(200).json({
+      // For any other event types
+      return res.status(200).json({
         success: true,
-        message: "Webhook received",
+        message: "Webhook received and acknowledged",
+        eventType: evt.type,
       });
     }
   }

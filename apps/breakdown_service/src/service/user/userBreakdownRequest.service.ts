@@ -34,34 +34,36 @@ const CreateBreakdownRequest = async (
       },
       description: combinedInput.description,
     };
+    console.log("breakdownRequestData", breakdownRequestData);
 
     const breakdownRequestId =
       await BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData
       );
+      console.log("breakdownRequestId", breakdownRequestId);
 
     // Send request to breakdown service to find near by drivers
-    const combinedSnsResult = await sendNotification(
-      BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-      { breakdownRequestId, ...breakdownRequestData }
-    );
+    // const combinedSnsResult = await sendNotification(
+    //   BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
+    //   { breakdownRequestId, ...breakdownRequestData }
+    // );
 
     // send request to notification service to send email to the user
-    const emailSnsResult = await sendNotification(
-      NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
-      {
-        type: EmailNotificationType.USER_REQUEST_EMAIL,
-        payload: {
-          breakdownRequestId: breakdownRequestId,
-          userId: userInfo.userId,
-          firstName: combinedInput.firstName,
-          lastName: combinedInput.lastName,
-          email: combinedInput.email,
-          userLocation: breakdownRequestData.userLocation,
-          viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${breakdownRequestId}`,
-        },
-      }
-    );
+    // const emailSnsResult = await sendNotification(
+    //   NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
+    //   {
+    //     type: EmailNotificationType.USER_REQUEST_EMAIL,
+    //     payload: {
+    //       breakdownRequestId: breakdownRequestId,
+    //       userId: userInfo.userId,
+    //       firstName: combinedInput.firstName,
+    //       lastName: combinedInput.lastName,
+    //       email: combinedInput.email,
+    //       userLocation: breakdownRequestData.userLocation,
+    //       viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${breakdownRequestId}`,
+    //     },
+    //   }
+    // );
     // console.log("Sending Kafka message");
     // await sendKafkaMessage("breakdown-requests", {
     //   breakdownRequestId,
@@ -76,7 +78,7 @@ const CreateBreakdownRequest = async (
     };
   } catch (error) {
     console.error("Error in CreateCombinedBreakdownRequest:", error);
-    throw new Error("Failed to process combined breakdown request");
+    throw new Error("Failed to process combined breakdown request",error);
   }
 };
 

@@ -4,33 +4,44 @@ FROM node:18-alpine AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
+# Copy package.json and yarn.lock from the root
+COPY package.json yarn.lock ./
 
-# Install dependencies, including devDependencies to compile TypeScript
-RUN npm install
+# Copy turbo.json if it exists
+COPY turbo.json* ./
 
-# Copy the rest of the application code to the working directory
-COPY . .
+# Copy the entire apps directory
+COPY apps ./apps
 
-# Build the TypeScript code
-RUN npm run build
+# Copy the packages directory
+COPY packages ./packages
 
-# Stage 2: Create a minimal image for the application
-FROM node:18-alpine
+# Install dependencies, including Turborepo
+RUN yarn install
 
-# Set the working directory inside the container
-WORKDIR /app
+# Ensure Turbo is in the PATH
+ENV PATH /app/node_modules/.bin:$PATH
 
-# Copy only the necessary files from the builder stage
-COPY --from=builder /app/package*.json /app/
-COPY --from=builder /app/dist /app/dist
+# Build all packages and the breakdown_service
+RUN yarn turbo run build --filter=@breakdownrescue/breakdown_service...
 
-# Install only production dependencies
-RUN npm install --production
+# Stage 2: Create a minimal image for running the application
+FROM public.ecr.aws/lambda/nodejs:20
 
-# Expose the port the app runs on
-EXPOSE 9000
+# Set the working directory to the Lambda function root
+WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Define the command to run the app
-CMD ["npm", "start"]
+# Copy built assets from the builder stage
+COPY --from=builder /app/apps/breakdown_service/dist ./
+
+# Copy the entire node_modules directory
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy the built database package
+COPY --from=builder /app/packages/database/dist ./node_modules/@breakdownrescue/database
+
+# Set NODE_ENV to production
+ENV NODE_ENV=production
+
+# Set the CMD to point to the handler function
+CMD [ "server.handler" ]

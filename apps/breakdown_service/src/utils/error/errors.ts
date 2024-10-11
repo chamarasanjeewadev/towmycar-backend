@@ -95,3 +95,14 @@ export class CustomError extends BaseError {
     );
   }
 }
+
+export class DataBaseError extends BaseError {
+  constructor(code: string, statusCode: number, message?: string) {
+    super(
+      "DataBaseError",
+      statusCode,
+      code,
+      message || ERROR_MESSAGES[code] || "An error occurred"
+    );
+  }
+}

@@ -3,15 +3,21 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx ./migration.ts",
-    "db:studio": "drizzle-kit studio --port 6000"
+    "db:studio": "drizzle-kit studio --port 6000",
+    "build": "tsc"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.669.0",
     "@types/node": "^22.5.4",
     "@types/pg": "^8.11.8",
+    "aws-sdk": "^2.1687.0",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.33.0",
     "pg": "^8.12.0"

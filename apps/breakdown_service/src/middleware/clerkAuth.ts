@@ -33,11 +33,11 @@ export const clerkAuthMiddleware = (requiredRole: string) => {
           const user = await clerkClient.users.getUser(clerkUserId);
           //@ts-ignore
           const { role, userId, customerId, driverId } =
-            user.privateMetadata.userInfo;
+            user.privateMetadata?.userInfo||{};
 
           if (role !== requiredRole) {
             // Use AuthorizeError for insufficient permissions as well
-            return next(new AuthorizeError("Insufficient permissions"));
+            return next(new AuthorizeError("Insufficient permissions from clerk"));
           }
           req.userInfo = {
             userId,

@@ -78,27 +78,32 @@ const saveBreakdownRequest = async (
   data: BreakdownRequestInput
 ): Promise<number> => {
   //@ts-ignore
-  const x: BreakdownRequest = {
-    // id: 0,
-    customerId: data.customerId,
-    requestType: data.requestType,
-    address: data.address,
-    userLocation: {
-      x: data.userLocation.longitude,
-      y: data.userLocation.latitude,
-    },
-    status: BreakdownRequestStatus.WAITING,
-    description: data.description,
-    regNo: data.regNo,
-    weight: data?.weight?.toString() ?? null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  const breakdownResult = await DB.insert(breakdownRequest)
-    .values(x)
-    .returning({ id: breakdownRequest.id });
+  try {
+    const x: BreakdownRequest = {
+      // id: 0,
+      customerId: data.customerId,
+      requestType: data.requestType,
+      address: data.address,
+      userLocation: {
+        x: data.userLocation.longitude,
+        y: data.userLocation.latitude,
+      },
+      status: BreakdownRequestStatus.WAITING,
+      description: data.description,
+      regNo: data.regNo,
+      weight: data?.weight?.toString() ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const breakdownResult = await DB.insert(breakdownRequest)
+      .values(x)
+      .returning({ id: breakdownRequest.id });
 
-  return breakdownResult[0].id;
+    return breakdownResult[0].id;
+  } catch (error: Error) {
+    console.log("error occured at breakdown repo", error);
+    throw error;
+  }
 };
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<

@@ -1,4 +1,6 @@
 // @ts-nocheck
+
+import { DataBaseError, ERROR_CODES } from "./../utils/error/errors";
 import {
   UserRequestInput,
   UserRegisterInput,
@@ -15,6 +17,7 @@ import {
   customer,
   User,
 } from "@breakdownrescue/database";
+
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
   createUserFromWebhook: (userData: UserData) => Promise<{
@@ -162,7 +165,7 @@ const saveFcmToken = async (
       token: token,
       browserInfo: browserInfo,
     })
-    .onConflict(['userId', 'token'])
+    .onConflict(["userId", "token"])
     .merge({
       browserInfo: browserInfo,
       updatedAt: new Date(), // Assuming you have an updatedAt column
@@ -224,7 +227,11 @@ const createAnonymousCustomer = async (userInput: {
 
       if (existingUser.length > 0) {
         // User exists, get the related customer
-        const existingCustomer = await trx.select().from(customer).where(eq(customer.userId, existingUser[0].id)).limit(1);
+        const existingCustomer = await trx
+          .select()
+          .from(customer)
+          .where(eq(customer.userId, existingUser[0].id))
+          .limit(1);
 
         if (existingCustomer.length > 0) {
           return {
@@ -269,12 +276,12 @@ const createAnonymousCustomer = async (userInput: {
 
     return result;
   } catch (error) {
+    console.log("error occured.................................................", error);
     console.error("Error creating or retrieving anonymous customer:", error);
+    throw new DataBaseError(ERROR_CODES.DATABASE_ERROR, error);
     throw error;
   }
 };
-
-
 
 const createUserFromWebhook = async (
   userData: UserData
@@ -285,7 +292,14 @@ const createUserFromWebhook = async (
   driverId?: number;
 }> => {
   try {
-    const { id, first_name, last_name, image_url, email_addresses, unsafe_metadata } = userData;
+    const {
+      id,
+      first_name,
+      last_name,
+      image_url,
+      email_addresses,
+      unsafe_metadata,
+    } = userData;
     const email = email_addresses?.[0]?.email_address;
     const role = unsafe_metadata?.role ?? ("customer" as string);
 
@@ -317,7 +331,11 @@ const createUserFromWebhook = async (
 
         // Check for existing customer or driver record
         if (role === "customer") {
-          const existingCustomer = await trx.select().from(customer).where(eq(customer.userId, newUserId)).limit(1);
+          const existingCustomer = await trx
+            .select()
+            .from(customer)
+            .where(eq(customer.userId, newUserId))
+            .limit(1);
           if (existingCustomer.length > 0) {
             customerId = existingCustomer[0].id;
           } else {
@@ -334,7 +352,11 @@ const createUserFromWebhook = async (
             customerId = customerResult[0].id;
           }
         } else if (role === "driver") {
-          const existingDriver = await trx.select().from(driver).where(eq(driver.userId, newUserId)).limit(1);
+          const existingDriver = await trx
+            .select()
+            .from(driver)
+            .where(eq(driver.userId, newUserId))
+            .limit(1);
           if (existingDriver.length > 0) {
             driverId = existingDriver[0].id;
           } else {
@@ -355,7 +377,7 @@ const createUserFromWebhook = async (
         // User doesn't exist, create a new record
         const userResult = await trx
           .insert(user)
-            //@ts-ignore
+          //@ts-ignore
           .values({
             //@ts-ignore
             authId: id,

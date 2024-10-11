@@ -10,7 +10,7 @@ const router = express.Router();
 // Updated route for anonymous breakdown request
 router.post(
   "/anonymous-breakdown-request",
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const response =
         await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
@@ -19,18 +19,16 @@ router.post(
 
       return res.status(200).json(response);
     } catch (error) {
-      console.error("Error processing anonymous breakdown request:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+      next(error);
     }
   }
 );
 
 router.post(
   "/breakdown-request",
-  clerkAuthMiddleware("customer"), // Check for "customer" role
-  async (req: Request, res: Response) => {
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Now you can access userId and userRole directly from the request
       const response =
         await service.BreakdownRequestService.CreateBreakdownRequest(
           req.body as BreakdownRequestInput,
@@ -39,17 +37,15 @@ router.post(
 
       return res.status(200).json(response);
     } catch (error) {
-      console.error("Error processing combined breakdown request:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+      next(error);
     }
   }
 );
 
-// New route for getting breakdown requests by user ID (paginated)
 router.get(
   "/list",
   clerkAuthMiddleware("customer"),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { userId, customerId } = req.userInfo;
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
@@ -71,19 +67,14 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error fetching breakdown requests:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
-      }
-      res.status(500).json({ error: "Internal Server Error" });
+      next(error);
     }
   }
 );
 
-// New route for getting user's breakdown assignments
-router.get("/assignments/:requestId?", async (req: Request, res: Response) => {
+router.get("/assignments/:requestId?", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = null; //parseInt(req.params.userId, 10);
+    const userId = null;
     const requestId = req.params.requestId
       ? parseInt(req.params.requestId, 10)
       : undefined;
@@ -96,22 +87,19 @@ router.get("/assignments/:requestId?", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid request ID" });
     }
 
-    console.log("req.params", req.params);
     const assignments =
       await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
         requestId
       );
     res.status(200).json(assignments);
   } catch (error) {
-    console.error("Error fetching user's breakdown assignments:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(error);
   }
 });
 
-// Updated route for updating user status in breakdown assignment
 router.patch(
   "/assignment/:assignmentId/status",
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const assignmentId = parseInt(req.params.assignmentId, 10);
       const { userStatus } = req.body;
@@ -119,8 +107,7 @@ router.patch(
       if (isNaN(assignmentId)) {
         return res.status(400).json({ error: "Invalid assignment ID" });
       }
-      console.log("assignmentId", assignmentId);
-      console.log("userStatus", userStatus);
+
       const updated =
         await service.BreakdownRequestService.updateUserStatusInBreakdownAssignment(
           assignmentId,
@@ -137,20 +124,15 @@ router.patch(
           .json({ error: "Assignment not found or update failed" });
       }
     } catch (error) {
-      console.error(
-        "Error updating user status in breakdown assignment:",
-        error
-      );
-      res.status(500).json({ error: "Internal Server Error" });
+      next(error);
     }
   }
 );
 
-// New route for closing breakdown request and updating rating
 router.post(
   "/close-and-rate/:requestId",
   clerkAuthMiddleware("customer"),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const requestId = parseInt(req.params.requestId, 10);
       const { customerRating, customerFeedback } = req.body;
@@ -185,16 +167,9 @@ router.post(
         .status(200)
         .json({ message: "Breakdown request closed and rated successfully" });
     } catch (error) {
-      console.error(
-        "Error closing breakdown request and updating rating:",
-        error
-      );
-      res.status(500).json({ error: "Internal Server Error" });
+      next(error);
     }
   }
 );
-
-// Add error handling middleware at the end of your router
-
 
 export default router;

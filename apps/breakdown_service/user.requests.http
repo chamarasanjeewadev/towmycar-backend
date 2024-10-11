@@ -172,3 +172,26 @@ Content-Type: application/json
 
 
 
+
+### Create Anonymous Breakdown Request
+POST https://z7supi5fdw3gp5evgamxo4eifm0lghya.lambda-url.us-east-1.on.aws/user/anonymous-breakdown-request
+Content-Type: application/json
+
+{
+  "firstName": "Anonymous",
+  "lastName": "User",
+  "email": "anonymous@example.com",
+  "postcode": "AB123CD",
+  "vehicleRegistration": "XYZ789",
+  "mobileNumber": "0123456789",
+  "requestType": "Battery Issue",
+  "location": "Park Avenue, City Center",
+  "description": "Car won't start, possibly due to a dead battery"
+}
+
+###
+### Get User Profile
+GET https://z7supi5fdw3gp5evgamxo4eifm0lghya.lambda-url.us-east-1.on.aws/user/profile
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18ybjlLd3V2b2NyUnNzZXJuRE5Yd09oMGNaRUYiLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3Mjg2NDMwOTEsImlhdCI6MTcyODY0MzAzMSwiaXNzIjoiaHR0cHM6Ly9yZWxheGVkLW1pZGdlLTMxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTcyODY0MzAyMSwic2lkIjoic2Vzc18ybjlPbnQ0VjVYRjJrQ3liZTdTeHNFNkJnYkIiLCJzdWIiOiJ1c2VyXzJuOU9ubnYxUU9kN0dIMUhFazlaWW1mUEc2UyJ9.h1Qyj4y2a7pxpngdvmNwGQB9s8UTSwRuADaB8KQnsM676Fn__k52thIFhUmSA1Bk0UpfZY8UiQmj_hWDFcJ9-oOo909kd1xi0tnmpRMASNS7LrNTwDCRyUZQj6FFB1E89Nk_eQsJD1zIii9EMn-PQtUUeuMMYLCfz39FVfGAVvWBe2kbqjdEbytY_BOnJCTZmy5R0synpQM8gIDmFX_YXeYrDHxcWi0HsbRG00pyq7rFe5yO9snBAiFtYrkFZAsdpGqpeDGIR32VPllE0goU4n-EuvW_NsKITAddo4jng_FhUuIHloTmD0Ld2R0NWh4L0WnUFJyPDTgPAQ7nw3AkRw
+
