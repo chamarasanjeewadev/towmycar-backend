@@ -250,6 +250,7 @@ const getBreakdownAssignmentsByRequestId = async (
       id: driver.id,
       email: driverUser.email,
       firstName: driverUser.firstName,
+      lastName: driverUser.lastName,
       phoneNumber: driver.phoneNumber,
       imageUrl: driverUser.imageUrl,
     },

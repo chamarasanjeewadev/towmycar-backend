@@ -43,10 +43,10 @@ const CreateBreakdownRequest = async (
       console.log("breakdownRequestId", breakdownRequestId);
 
     // Send request to breakdown service to find near by drivers
-    // const combinedSnsResult = await sendNotification(
-    //   BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-    //   { breakdownRequestId, ...breakdownRequestData }
-    // );
+    const combinedSnsResult = await sendNotification(
+      BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
+      { breakdownRequestId, ...breakdownRequestData }
+    );
 
     // send request to notification service to send email to the user
     // const emailSnsResult = await sendNotification(

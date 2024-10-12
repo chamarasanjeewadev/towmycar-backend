@@ -7,6 +7,7 @@
     "dev": "nodemon src/server.ts",
     "test": "jest",
     "db:generate": "drizzle-kit generate:pg",
+    "build": "tsc --noEmitOnError false --skipLibCheck",
     "db:push": "drizzle-kit push:pg",
     "db:migrate": "tsx ./migration.ts",
     "db:studio": "drizzle-kit studio --port 6000"
@@ -16,12 +17,12 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.645.0",
+    "@breakdownrescue/database": "*",
     "@sinclair/typebox": "^0.32.30",
     "ajv": "^8.13.0",
     "aws-sdk": "^2.1690.0",
     "axios": "^1.7.2",
     "class-validator": "^0.14.1",
-    "@breakdownrescue/database": "*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.33.0",
@@ -33,6 +34,7 @@
     "pino-pretty": "^11.1.0"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",

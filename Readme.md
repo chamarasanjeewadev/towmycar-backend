@@ -50,3 +50,8 @@ To manage your Docker containers and clear persisted data, you can use the provi
   docker build -t breakdown-service -f apps/breakdown_service/Dockerfile .
   docker tag breakdown-service:latest 211125761584.dkr.ecr.us-east-1.amazonaws.com/breakdown_service:latest
   docker push 211125761584.dkr.ecr.us-east-1.amazonaws.com/breakdown_service:latest
+
+
+  docker build -t quotation-service -f apps/quotation_service/Dockerfile .
+  docker tag quotation-service:latest 211125761584.dkr.ecr.us-east-1.amazonaws.com/quotation_service:latest
+  docker push 211125761584.dkr.ecr.us-east-1.amazonaws.com/quotation_service:latest
