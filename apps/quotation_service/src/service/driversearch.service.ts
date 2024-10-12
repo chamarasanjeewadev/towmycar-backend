@@ -4,10 +4,13 @@ import {
 } from "../repository/driversearch.repository";
 import { sendNotification } from "../utils/sns.service";
 import { EmailNotificationType } from "../enums";
-import { VIEW_REQUEST_BASE_URL, NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../config";
+import {
+  VIEW_REQUEST_BASE_URL,
+  NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
+} from "../config";
 
 export type DriverSearchServiceType = {
-  findAndUpdateNearbyDrivers: (
+  findAndNotifyNearbyDrivers: (
     latitude: number,
     longitude: number,
     requestId: number,
@@ -27,7 +30,7 @@ const findAndUpdateNearbyDrivers = async (
       latitude,
       longitude
     );
-console.log("nearbyDrivers...........",nearbyDrivers)
+    console.log("nearbyDrivers...........", nearbyDrivers);
     // Pass the full nearbyDrivers array to updateDriverRequests
     await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
 
@@ -72,5 +75,5 @@ console.log("nearbyDrivers...........",nearbyDrivers)
 };
 
 export const DriverSearchService: DriverSearchServiceType = {
-  findAndUpdateNearbyDrivers,
+  findAndNotifyNearbyDrivers: findAndUpdateNearbyDrivers,
 };
