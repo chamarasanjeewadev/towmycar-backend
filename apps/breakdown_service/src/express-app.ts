@@ -14,7 +14,7 @@ const app = express();
 app.use(
   cors({
     origin: "*", // Allow all origins, or specify your frontend domain like "https://your-frontend.com"
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
     allowedHeaders: "*", // Allow all headers
     credentials: true,
     exposedHeaders: [

@@ -3948,10 +3948,25 @@ drizzle-kit@^0.24.2:
     esbuild "^0.19.7"
     esbuild-register "^3.5.0"
 
+drizzle-kit@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/drizzle-kit/-/drizzle-kit-0.25.0.tgz#f81d5f5035b1365e56d09754e747f71e619fb324"
+  integrity sha512-Rcf0nYCAKizwjWQCY+d3zytyuTbDb81NcaPor+8NebESlUz1+9W3uGl0+r9FhU4Qal5Zv9j/7neXCSCe7DHzjA==
+  dependencies:
+    "@drizzle-team/brocli" "^0.10.1"
+    "@esbuild-kit/esm-loader" "^2.5.5"
+    esbuild "^0.19.7"
+    esbuild-register "^3.5.0"
+
 drizzle-orm@^0.33.0:
   version "0.33.0"
   resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.33.0.tgz#ece81e3e85f7559b5f7c01fc09e654e9a2f087fe"
   integrity sha512-SHy72R2Rdkz0LEq0PSG/IdvnT3nGiWuRk+2tXZQ90GVq/XQhpCzu/EFT3V2rox+w8MlkBQxifF8pCStNYnERfA==
+
+drizzle-orm@^0.34.1:
+  version "0.34.1"
+  resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.34.1.tgz#38ed4a285c08e223db84a69dab4e1d18db5f8e3f"
+  integrity sha512-t+zCwyWWt8xTqtYV4doE/xYmT7hpv1L8pQ66zddEz+3VWyedBBtctjMAp22mAJPfyWurRQXUJ1nrTtqLq+DqNA==
 
 duplexify@^4.0.0, duplexify@^4.1.3:
   version "4.1.3"

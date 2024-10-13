@@ -12,7 +12,7 @@ export const sendNotification = async (topicArn: string, message: any) => {
   };
   try {
     const result = await sns.publish(snsParams).promise();
-    console.log(`SNS notification sent for breakdown request ${snsParams}`);
+    console.log(`SNS notification sent for breakdown request ${message} ${topicArn}`);
     return {
       MessageId: result.MessageId,
       PublishTime: new Date().toISOString(),

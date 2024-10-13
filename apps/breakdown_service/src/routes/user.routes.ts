@@ -8,12 +8,12 @@ import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
 import { Webhook } from "svix";
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import Stripe from "stripe";
 import { Driver } from "@breakdownrescue/database";
 import { DriverRepository } from "../repository/driver.repository";
 import { CustomError, ERROR_CODES } from "../utils";
+import { clerkAuthMiddleware } from "middleware/clerkAuth";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -25,135 +25,133 @@ router.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),
   async function (req: Request, res: Response, next: NextFunction) {
-    const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
-    if (!WEBHOOK_SECRET) {
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error: WEBHOOK_SECRET is missing",
-      });
-    }
+    try {
+      const { headers, body: payload } = req;
+      validateWebhookSecret();
+      logWebhookHeaders(headers);
+      validateSvixHeaders(headers);
 
-    console.log("All headers:", JSON.stringify(req.headers, null, 2));
+      const evt = payload;
+      console.log("data....", evt);
 
-    const headers = req.headers;
-    const payload = req.body;
-
-    // Log each header individually
-    console.log("svix-id:", headers["svix-id"]);
-    console.log("svix-timestamp:", headers["svix-timestamp"]);
-    console.log("svix-signature:", headers["svix-signature"]);
-
-    const svixId = headers["svix-id"];
-    const svixTimestamp = headers["svix-timestamp"];
-    const svixSignature = headers["svix-signature"];
-
-    if (!svixId || !svixTimestamp || !svixSignature) {
-      console.log("Missing headers detected");
-      return res.status(400).json({
-        success: false,
-        message: "Error occurred -- missing svix headers",
-      });
-    }
-
-    const wh = new Webhook(WEBHOOK_SECRET);
-    // const svixHeaders = {
-    //   "svix-id": svixId as string,
-    //   "svix-timestamp": svixTimestamp as string,
-    //   "svix-signature": svixSignature as string,
-    // };
-    // wh.verify(payload, svixHeaders); this does not work
-
-    let evt;
-
-    evt = payload;
-    console.log("data....", evt);
-
-    if (evt.type === "user.created") {
-      const userData = evt.data;
-      try {
-        const userInfo = await service.createUserFromWebhook(userData, repo);
-
-        // Create Stripe customer
-        const stripeCustomer = await stripe.customers.create({
-          email: userData.email_addresses[0].email_address,
-          metadata: { driverId: userInfo.driverId?.toString() },
-        });
-
-        // Update driver with Stripe customer ID
-        if (userInfo?.driverId) {
-          await DriverRepository.updateDriver(userInfo.driverId, {
-            stripeId: stripeCustomer.id,
-          });
-        }
-
-        const params = {
-          userInfo: {
-            ...userInfo,
-            stripeCustomerId: stripeCustomer.id,
-          },
-        };
-        // update user in clerk
-        const updatedUser = await clerkClient.users.updateUser(
-          evt.data.id,
-          params
-        );
-
-        console.log("updatedUser.....", updatedUser);
-        if (userInfo?.userId) {
-          await clerkClient.users.updateUserMetadata(evt.data.id, {
-            privateMetadata: {
-              userInfo: {
-                ...userInfo,
-                stripeCustomerId: stripeCustomer.id,
-              },
-            },
-            publicMetadata: {
-              userInfo: {
-                ...userInfo,
-                stripeCustomerId: stripeCustomer.id,
-              },
-            },
-          });
-        }
-
-        return res.status(200).json({
-          success: true,
-          message: "User created, processed, and Stripe customer created successfully",
-        });
-      } catch (error) {
-        console.error("Error processing user creation:", error);
-        return res.status(500).json({
-          success: false,
-          message: "Error processing user creation",
-          error: error instanceof Error ? error.message : String(error),
-        });
+      switch (evt.type) {
+        case "user.created":
+          return handleUserCreated(evt, res);
+        case "user.updated":
+          return handleUserUpdated(evt, res);
+        default:
+          return handleOtherEvents(evt, res);
       }
-    } else if (evt.type === "user.updated") {
-      const userData = evt.data;
-      try {
-        const userInfo = await service.createUserFromWebhook(userData, repo);
-        return res.status(200).json({
-          success: true,
-          message: "User updated successfully",
-        });
-      } catch (error) {
-        console.error("Error processing user update:", error);
-        return res.status(500).json({
-          success: false,
-          message: "Error processing user update",
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    } else {
-      // For any other event types
-      return res.status(200).json({
-        success: true,
-        message: "Webhook received and acknowledged",
-        eventType: evt.type,
-      });
+    } catch (error) {
+      handleWebhookError(error, res);
     }
   }
 );
+
+function validateWebhookSecret() {
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+  if (!WEBHOOK_SECRET) {
+    throw new Error("Server configuration error: WEBHOOK_SECRET is missing");
+  }
+}
+
+function logWebhookHeaders(headers: any) {
+  console.log("All headers:", JSON.stringify(headers, null, 2));
+  console.log("svix-id:", headers["svix-id"]);
+  console.log("svix-timestamp:", headers["svix-timestamp"]);
+  console.log("svix-signature:", headers["svix-signature"]);
+}
+
+function validateSvixHeaders(headers: any) {
+  const svixId = headers["svix-id"];
+  const svixTimestamp = headers["svix-timestamp"];
+  const svixSignature = headers["svix-signature"];
+
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    throw new Error("Error occurred -- missing svix headers");
+  }
+}
+
+async function handleUserCreated(evt: any, res: Response) {
+  const userData = evt.data;
+  const userInfo = await service.createUserFromWebhook(userData, repo);
+  const stripeCustomerId = await createStripeCustomerIfDriver(userInfo, userData);
+  await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
+
+  return res.status(200).json({
+    success: true,
+    message: "User created, processed, and Stripe customer created successfully",
+  });
+}
+
+async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
+  if (userInfo?.driverId) {
+    const stripeCustomer = await stripe.customers.create({
+      email: userData.email_addresses[0].email_address,
+      metadata: { driverId: userInfo.driverId?.toString() },
+    });
+    await DriverRepository.updateDriver(userInfo.driverId, {
+      stripeId: stripeCustomer.id,
+    });
+    return stripeCustomer.id;
+  }
+  return undefined;
+}
+
+async function updateClerkUser(clerkUserId: string, userInfo: any, stripeCustomerId: string | undefined) {
+  const params = {
+    userInfo: {
+      ...userInfo,
+      ...(stripeCustomerId && { stripeCustomerId }),
+    },
+  };
+
+  const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
+  console.log("updatedUser.....", updatedUser);
+
+  if (userInfo?.userId) {
+    await clerkClient.users.updateUserMetadata(clerkUserId, {
+      privateMetadata: {
+        userInfo: {
+          ...userInfo,
+          ...(stripeCustomerId && { stripeCustomerId }),
+        },
+      },
+      publicMetadata: {
+        userInfo: {
+          ...userInfo,
+          ...(stripeCustomerId && { stripeCustomerId }),
+        },
+      },
+    });
+  }
+}
+
+async function handleUserUpdated(evt: any, res: Response) {
+  const userData = evt.data;
+  await service.createUserFromWebhook(userData, repo);
+  return res.status(200).json({
+    success: true,
+    message: "User updated successfully",
+  });
+}
+
+function handleOtherEvents(evt: any, res: Response) {
+  return res.status(200).json({
+    success: true,
+    message: "Webhook received and acknowledged",
+    eventType: evt.type,
+  });
+}
+
+function handleWebhookError(error: any, res: Response) {
+  console.error("Error processing webhook:", error);
+  return res.status(500).json({
+    success: false,
+    message: "Error processing webhook",
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
 
 router.get(
   "/profile",

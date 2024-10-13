@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import { UserRepository } from "../../repository/user.repository";
 import { BreakdownRequestWithUserDetails } from "../../dto/breakdownRequest.dto";
@@ -11,6 +10,7 @@ import {
   NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
+import { CustomError } from "utils";
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -36,16 +36,16 @@ const CreateBreakdownRequest = async (
     };
     console.log("breakdownRequestData", breakdownRequestData);
 
-    const breakdownRequestId =
+    const requestId =
       await BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData
       );
-      console.log("breakdownRequestId", breakdownRequestId);
+      console.log("breakdownRequestId", requestId);
 
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendNotification(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-      { breakdownRequestId, ...breakdownRequestData }
+      { requestId, ...breakdownRequestData }
     );
 
     // send request to notification service to send email to the user
@@ -72,13 +72,13 @@ const CreateBreakdownRequest = async (
     // });
 
     return {
-      breakdownRequestId,
+      requestId,
       status: "Breakdown reported successfully.",
       userId: userInfo.userId,
     };
   } catch (error) {
     console.error("Error in CreateCombinedBreakdownRequest:", error);
-    throw new Error("Failed to process combined breakdown request",error);
+    throw new CustomError("Failed to process combined breakdown request",error);
   }
 };
 

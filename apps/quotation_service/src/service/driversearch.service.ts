@@ -14,15 +14,13 @@ export type DriverSearchServiceType = {
     latitude: number,
     longitude: number,
     requestId: number,
-    userId: number
   ) => Promise<NearbyDriver[]>;
 };
 
-const findAndUpdateNearbyDrivers = async (
+const findAndNotifyNearbyDrivers = async (
   latitude: number,
   longitude: number,
   requestId: number,
-  userId: number
 ): Promise<NearbyDriver[]> => {
   try {
     // Find nearby drivers
@@ -31,8 +29,17 @@ const findAndUpdateNearbyDrivers = async (
       longitude
     );
     console.log("nearbyDrivers...........", nearbyDrivers);
-    // Pass the full nearbyDrivers array to updateDriverRequests
-    await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
+
+    // Only update and return if nearby drivers are available
+    if (nearbyDrivers && nearbyDrivers.length > 0) {
+      // Pass the full nearbyDrivers array to updateDriverRequests
+      await DriverSearchRepository.updateDriverRequests(requestId, nearbyDrivers);
+      console.log("Updated driver requests for requestId:", requestId);
+      return nearbyDrivers;
+    } else {
+      console.log("No nearby drivers found for requestId:", requestId);
+      return [];
+    }
 
     // Get user details
     // const user = await DriverSearchRepository.getUserById(userId);
@@ -75,5 +82,5 @@ const findAndUpdateNearbyDrivers = async (
 };
 
 export const DriverSearchService: DriverSearchServiceType = {
-  findAndNotifyNearbyDrivers: findAndUpdateNearbyDrivers,
+  findAndNotifyNearbyDrivers,
 };

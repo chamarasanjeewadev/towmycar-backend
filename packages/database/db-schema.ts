@@ -9,6 +9,7 @@ import {
   numeric,
   uuid,
   boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 import { UserStatus } from "./enums";
 // Renamed userAuth to user
@@ -111,21 +112,28 @@ export const fcmTokens = pgTable("fcm_tokens", {
 });
 
 // Updated breakdownAssignment table
-export const breakdownAssignment = pgTable("breakdown_assignment", {
-  id: serial("id").primaryKey().notNull(),
-  requestId: integer("request_id")
-    .references(() => breakdownRequest.id, { onDelete: "cascade" })
-    .notNull(),
-  driverId: integer("driver_id")
-    .references(() => driver.id, { onDelete: "cascade" })
-    .notNull(),
-  driverStatus: varchar("driver_status", { length: 20 }),
-  userStatus: varchar("user_status", { length: 20 }),
-  estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
-  explanation: text("estimate_explanation"),
-  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const breakdownAssignment = pgTable(
+  "breakdown_assignment",
+  {
+    id: serial("id").primaryKey().notNull(),
+    requestId: integer("request_id")
+      .references(() => breakdownRequest.id, { onDelete: "cascade" })
+      .notNull(),
+    driverId: integer("driver_id")
+      .references(() => driver.id, { onDelete: "cascade" })
+      .notNull(),
+    driverStatus: varchar("driver_status", { length: 20 }),
+    userStatus: varchar("user_status", { length: 20 }),
+    estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
+    explanation: text("estimate_explanation"),
+    assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  table => ({
+    // Adding the unique constraint
+    requestDriverUnique: unique().on(table.requestId, table.driverId),
+  })
+);
 
 // New vehicles table
 export const vehicles = pgTable("vehicles", {
@@ -190,7 +198,7 @@ export const serviceRatings = pgTable("service_ratings", {
   customerFeedback: text("customer_feedback"),
   driverRating: integer("driver_rating"),
   driverFeedback: text("driver_feedback"),
-  serviceProvided: boolean('serviceProvided').default(false),
+  serviceProvided: boolean("serviceProvided").default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

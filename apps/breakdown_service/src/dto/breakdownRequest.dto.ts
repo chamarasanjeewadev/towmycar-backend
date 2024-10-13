@@ -22,6 +22,7 @@ export type BreakdownRequestInput = {
   regNo: string;
   weight: number;
   address: string;
+  email?:string;
   userLocation: {
     longitude: number;
     latitude: number;

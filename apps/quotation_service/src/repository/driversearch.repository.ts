@@ -8,6 +8,7 @@ import {
 } from "@breakdownrescue/database";
 import { sql, eq, and } from "drizzle-orm";
 import { DriverStatus, UserStatus } from "../enums";
+import { PostgresError } from "postgres";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
@@ -92,27 +93,25 @@ const updateDriverRequests = async (
   try {
     console.log("nearbyDrivers, before transaction", nearbyDrivers);
     await DB.transaction(async tx => {
-      // Insert breakdown assignments
-      await tx.insert(breakdownAssignment).values(
-        nearbyDrivers.map(driver => ({
-          requestId,
-          driverId: driver.id,
-          driverStatus: DriverStatus.PENDING,
-          userStatus: UserStatus.PENDING,
-          assignedAt: now,
-          createdAt: now,
-          updatedAt: now,
-        }))
-      );
-
-      // Update breakdownRequests table
-      // await tx
-      //   .update(breakdownRequest)
-      //   .set({
-      //     status: BreakdownRequestStatus.Quoting, // Updated to use enum
-      //     updatedAt: now,
-      //   })
-      //   .where(eq(breakdownRequest.id, requestId));
+      await tx
+        .insert(breakdownAssignment)
+        .values(
+          nearbyDrivers.map(driver => ({
+            requestId,
+            driverId: driver.id,
+            driverStatus: DriverStatus.PENDING,
+            userStatus: UserStatus.PENDING,
+            assignedAt: now,
+            createdAt: now,
+            updatedAt: now,
+          }))
+        )
+        .onConflictDoUpdate({
+          target: [breakdownAssignment.requestId, breakdownAssignment.driverId],
+          set: {
+            updatedAt: now,
+          },
+        });
     });
     console.log("nearbyDrivers, after transaction", nearbyDrivers);
   } catch (error) {
