@@ -1,6 +1,8 @@
 import AWS from "aws-sdk";
 import { DriverSearchService } from "../service/driversearch.service";
 import { logger } from "./index";
+import { SQSEvent, Callback } from "aws-lambda";
+import { Context } from "vm";
 
 // Configure the region and credentials (if not already configured globally)
 AWS.config.update({ region: "us-east-1" });
@@ -104,6 +106,35 @@ export const pollMessagesFromSQS = async () => {
 
   logger.info("Scheduling next poll in 5 seconds");
   setTimeout(pollMessagesFromSQS, 5000);
+};
+
+export const handler = async (event: SQSEvent, context: Context, callback: Callback) => {
+  logger.info("Lambda function triggered. Received SQS event:", JSON.stringify(event));
+
+  try {
+    logger.info(`Processing ${event.Records.length} messages`);
+    for (const record of event.Records) {
+      logger.info(`Processing message with ID: ${record.messageId}`);
+      const message = {
+        Body: record.body,
+        ReceiptHandle: record.receiptHandle,
+        MessageId: record.messageId,
+      };
+
+      await processMessage(message);
+      logger.info(`Finished processing message with ID: ${record.messageId}`);
+    }
+
+    logger.info("Successfully processed all messages in the SQS event");
+    callback(null, {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Success", processedMessages: event.Records.length })
+    });
+  } catch (error:any) {
+    logger.error("Error processing SQS event in Lambda function:", error);
+    logger.error("Error stack:", error.stack);
+    callback(error);
+  }
 };
 
 
