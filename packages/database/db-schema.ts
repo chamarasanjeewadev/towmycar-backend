@@ -178,15 +178,6 @@ export const chats = pgTable("chats", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export type User = typeof user.$inferSelect;
-export type Customer = typeof customer.$inferSelect;
-export type Driver = typeof driver.$inferSelect;
-export type BreakdownRequest = typeof breakdownRequest.$inferSelect;
-export type BreakdownAssignment = typeof breakdownAssignment.$inferSelect;
-export type FcmToken = typeof fcmTokens.$inferSelect;
-export type Vehicle = typeof vehicles.$inferSelect;
-export type Chat = typeof chats.$inferSelect;
-
 // New table for ratings and feedback
 export const serviceRatings = pgTable("service_ratings", {
   id: serial("id").primaryKey().notNull(),
@@ -211,6 +202,3 @@ export const serviceRatings = pgTable("service_ratings", {
     .defaultNow()
     .notNull(),
 });
-
-// Add the new type at the end of the file
-export type ServiceRating = typeof serviceRatings.$inferSelect;

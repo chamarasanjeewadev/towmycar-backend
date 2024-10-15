@@ -25,7 +25,7 @@ COPY . .
 ENV PATH /var/task/node_modules/.bin:$PATH
 
 # Build all packages and the towmycar_api
-RUN corepack yarn turbo run build --filter=@towmycar/towmycar_api...
+RUN corepack yarn turbo run build --filter=@towmycar/api...
 
 # Stage 2: Create a minimal image for running the application
 FROM public.ecr.aws/lambda/nodejs:20

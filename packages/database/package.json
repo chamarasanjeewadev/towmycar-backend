@@ -1,17 +1,20 @@
 {
   "name": "@towmycar/database",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.ts",
+  "types": "types.ts",
   "files": [
-    "dist/**/*"
+    "index.ts",
+    "types.ts",
+    "db-schema.ts"
   ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx ./migration.ts",
     "db:studio": "drizzle-kit studio --port 6000",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "yarn build"
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.669.0",

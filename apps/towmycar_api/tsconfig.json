@@ -1,28 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2017",
     "module": "commonjs",
-    "rootDir": "src",
-    "baseUrl": "src",
     "outDir": "./dist",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src",
     "strict": false,
-    "skipLibCheck": true,
-    "ignoreDeprecations": "5.0",
+    "esModuleInterop": true,
+    "baseUrl": ".",
     "paths": {
-      "@towmycar/database": ["../../database/index.ts"]
-    },
-    "typeRoots": ["./src/types", "./node_modules/@types"],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "noEmitOnError": false, // Allow emitting output files even if there are errors
-    "allowJs": true, // Allow JavaScript files
-    "checkJs": false // Disable checking JavaScript files
+      "@towmycar/database": ["../../packages/database/dist"]
+    }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "../../packages/database"]
 }
