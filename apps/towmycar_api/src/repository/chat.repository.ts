@@ -1,11 +1,14 @@
 //@ts-nocheck
-import { DB, chats, Chat } from "@breakdownrescue/database";
+import { DB, chats, Chat } from "@towmycar/database";
 import { eq, and } from "drizzle-orm";
 
 type ChatRepositoryType = {
   getChatsForRequest: (requestId: number) => Promise<Chat[]>;
   upsertChat: (chatData: Partial<Chat>) => Promise<Chat>;
-  getChatsForDriverAndRequest: (driverId: number, requestId: number) => Promise<Chat[]>;
+  getChatsForDriverAndRequest: (
+    driverId: number,
+    requestId: number
+  ) => Promise<Chat[]>;
 };
 
 export const ChatRepository: ChatRepositoryType = {
@@ -24,28 +27,26 @@ export const ChatRepository: ChatRepositoryType = {
     if (id) {
       // Update existing chat
       const [updatedChat] = await DB.update(chats)
-        .set(data as Omit<Chat, 'id'>)
+        .set(data as Omit<Chat, "id">)
         .where(eq(chats.id, id))
         .returning();
       return updatedChat;
     } else {
       // Insert new chat
       const [newChat] = await DB.insert(chats)
-        .values(data as Omit<Chat, 'id'>)
+        .values(data as Omit<Chat, "id">)
         .returning();
       return newChat;
     }
   },
 
-  async getChatsForDriverAndRequest(driverId: number, requestId: number): Promise<Chat[]> {
+  async getChatsForDriverAndRequest(
+    driverId: number,
+    requestId: number
+  ): Promise<Chat[]> {
     const result = await DB.select()
       .from(chats)
-      .where(
-        and(
-          eq(chats.driverId, driverId),
-          eq(chats.requestId, requestId)
-        )
-      )
+      .where(and(eq(chats.driverId, driverId), eq(chats.requestId, requestId)))
       .orderBy(chats.sentAt);
 
     return result;

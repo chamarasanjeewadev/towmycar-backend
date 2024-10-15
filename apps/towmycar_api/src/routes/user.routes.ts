@@ -9,11 +9,10 @@ import bodyParser from "body-parser";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import axios from "axios";
 import Stripe from "stripe";
-import { Driver } from "@breakdownrescue/database";
+import { Driver } from "@towmycar/database";
 import { DriverRepository } from "../repository/driver.repository";
 import { CustomError, ERROR_CODES } from "../utils";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -75,12 +74,16 @@ function validateSvixHeaders(headers: any) {
 async function handleUserCreated(evt: any, res: Response) {
   const userData = evt.data;
   const userInfo = await service.createUserFromWebhook(userData, repo);
-  const stripeCustomerId = await createStripeCustomerIfDriver(userInfo, userData);
+  const stripeCustomerId = await createStripeCustomerIfDriver(
+    userInfo,
+    userData
+  );
   await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
 
   return res.status(200).json({
     success: true,
-    message: "User created, processed, and Stripe customer created successfully",
+    message:
+      "User created, processed, and Stripe customer created successfully",
   });
 }
 
@@ -98,7 +101,11 @@ async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
   return undefined;
 }
 
-async function updateClerkUser(clerkUserId: string, userInfo: any, stripeCustomerId: string | undefined) {
+async function updateClerkUser(
+  clerkUserId: string,
+  userInfo: any,
+  stripeCustomerId: string | undefined
+) {
   const params = {
     userInfo: {
       ...userInfo,

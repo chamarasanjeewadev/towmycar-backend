@@ -16,7 +16,7 @@ import {
   driver,
   customer,
   User,
-} from "@breakdownrescue/database";
+} from "@towmycar/database";
 
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
@@ -173,7 +173,7 @@ const saveFcmToken = async (
       },
     });
   // if (result.length === 0) {
-    return result[0];
+  return result[0];
   // }
 };
 

@@ -12,7 +12,7 @@ import {
   Driver,
   BreakdownAssignment,
   User,
-} from "@breakdownrescue/database";
+} from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { aliasedTable, sql } from "drizzle-orm";
 import { UserStatus, BreakdownRequestStatus } from "../enums";

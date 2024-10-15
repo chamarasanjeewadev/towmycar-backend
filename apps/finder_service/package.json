@@ -1,5 +1,5 @@
 {
-  "name": "@breakdownrescue/quotation_service",
+  "name": "@towmycar/finder_service",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -17,7 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.645.0",
-    "@breakdownrescue/database": "*",
+    "@towmycar/database": "*",
     "@sinclair/typebox": "^0.32.30",
     "ajv": "^8.13.0",
     "aws-sdk": "^2.1690.0",

@@ -7,7 +7,7 @@ import {
   customer,
   user,
   Customer,
-} from "@breakdownrescue/database";
+} from "@towmycar/database";
 import { sql, eq, and } from "drizzle-orm";
 import { DriverStatus, UserStatus } from "../enums";
 import { DatabaseError } from "pg";

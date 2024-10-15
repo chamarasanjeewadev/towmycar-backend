@@ -8,7 +8,7 @@ import {
   Driver,
   Customer,
   User,
-} from "@breakdownrescue/database";
+} from "@towmycar/database";
 import * as ChatService from "../service/chat/chat.service";
 
 // Add this enum at the top of the file
@@ -61,11 +61,15 @@ router.post("/send-message", async (req: Request, res: Response) => {
         : "driver-chat-message";
 
     // Trigger Pusher event
-    await pusher.trigger(`breakdown-${requestId}-${driverId}`, pusherEventName, {
-      username,
-      message,
-      sender,
-    });
+    await pusher.trigger(
+      `breakdown-${requestId}-${driverId}`,
+      pusherEventName,
+      {
+        username,
+        message,
+        sender,
+      }
+    );
     console.log(
       `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${pusherEventName}`
     );
@@ -146,7 +150,7 @@ router.get(
       //       lastName: assignment.driver?.lastName,
       //       email: assignment.driver?.email,
       //     },
-          
+
       //   })
       // );
 

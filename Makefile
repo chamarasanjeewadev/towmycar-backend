@@ -24,7 +24,7 @@ up:
 # Restart the Docker containers with clean data
 restart: down clear-data up
 
-q-up: cd packages/breakdown_service && yarn dev2
+q-up: cd packages/towmycar_api && yarn dev2
 
 # Ensure the Makefile is not executed as a shell script
 SHELL := /bin/bash
@@ -36,12 +36,12 @@ deploy-all: deploy-tow-api deploy-finder-service deploy-notification-service
 
 # Individual service deployment targets
 deploy-tow-api:
-	docker build -t tow-api -f apps/breakdown_service/Dockerfile .
+	docker build -t tow-api -f apps/towmycar_api/Dockerfile .
 	docker tag tow-api:latest 418272783904.dkr.ecr.eu-north-1.amazonaws.com/tow-api:latest
 	docker push 418272783904.dkr.ecr.eu-north-1.amazonaws.com/tow-api:latest
 
 deploy-finder-service:
-	docker build -t finder-service -f apps/quotation_service/Dockerfile .
+	docker build -t finder-service -f apps/finder_service/Dockerfile .
 	docker tag finder-service:latest 418272783904.dkr.ecr.eu-north-1.amazonaws.com/finder-service:latest
 	docker push 418272783904.dkr.ecr.eu-north-1.amazonaws.com/finder-service:latest
 

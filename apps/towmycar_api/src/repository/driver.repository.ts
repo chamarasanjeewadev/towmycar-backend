@@ -9,7 +9,7 @@ import {
   Driver,
   Customer,
   BreakdownAssignment,
-} from "@breakdownrescue/database";
+} from "@towmycar/database";
 import { eq, and, desc, not, or, aliasedTable } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError } from "../utils/error/errors";
@@ -88,7 +88,10 @@ export interface IDriverRepository {
     paymentMethodId: string
   ): Promise<Driver | null>;
   getDriverWithPaymentMethod(driverId: number): Promise<Driver | null>;
-  updateBreakdownRequestStatus(requestId: number, status: BreakdownRequestStatus): Promise<boolean>;
+  updateBreakdownRequestStatus(
+    requestId: number,
+    status: BreakdownRequestStatus
+  ): Promise<boolean>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -119,8 +122,8 @@ export const DriverRepository: IDriverRepository = {
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
         email: driverUser.email,
-        imageUrl:driverUser.imageUrl
-        
+        imageUrl: driverUser.imageUrl,
+
         // phoneNumber: driverUser.phoneNumber,
         // vehicleType: driverUser.vehicleType,
         // vehicleRegistration: driverUser.vehicleRegistration,
@@ -266,7 +269,10 @@ export const DriverRepository: IDriverRepository = {
 
       // If the update was successful and the status is QUOTED, update the breakdownRequest status
       if (updatedRows.length > 0 && data.status === DriverStatus.QUOTED) {
-        await this.updateBreakdownRequestStatus(requestId, UserStatus.INPROGRESS);
+        await this.updateBreakdownRequestStatus(
+          requestId,
+          UserStatus.INPROGRESS
+        );
       }
 
       // If no rows were updated, it means the assignment doesn't exist or is not in pending state
@@ -468,7 +474,10 @@ export const DriverRepository: IDriverRepository = {
 
     return result || null;
   },
-  async updateBreakdownRequestStatus(requestId: number, status: BreakdownRequestStatus): Promise<boolean> {
+  async updateBreakdownRequestStatus(
+    requestId: number,
+    status: BreakdownRequestStatus
+  ): Promise<boolean> {
     const result = await DB.update(breakdownRequest)
       .set({ status })
       .where(

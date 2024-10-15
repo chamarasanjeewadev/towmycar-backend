@@ -23,7 +23,7 @@ RUN yarn install
 ENV PATH /app/node_modules/.bin:$PATH
 
 # Build all packages and the notification_service
-RUN yarn turbo run build --filter=@breakdownrescue/notification_service...
+RUN yarn turbo run build --filter=@towmycar/notification_service...
 
 # Stage 2: Create a minimal image for running the application
 FROM public.ecr.aws/lambda/nodejs:20
@@ -38,7 +38,7 @@ COPY --from=builder /app/apps/notification_service/dist ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the built database package (if used by notification_service)
-COPY --from=builder /app/packages/database/dist ./node_modules/@breakdownrescue/database
+COPY --from=builder /app/packages/database/dist ./node_modules/@towmycar/database
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production

@@ -11,8 +11,8 @@ import {
   Driver,
   BreakdownAssignment,
   User,
-  fcmTokens
-} from "@breakdownrescue/database";
+  fcmTokens,
+} from "@towmycar/database";
 import { eq } from "drizzle-orm";
 
 export type FcmToken = {
@@ -33,8 +33,8 @@ const getFcmTokensByUserId = async (userId: number): Promise<FcmToken[]> => {
   try {
     const tokens = await DB.select()
       .from(fcmTokens)
-      .where(eq(fcmTokens.userId, userId))
-      // .where(eq(fcmTokens.isActive, true));
+      .where(eq(fcmTokens.userId, userId));
+    // .where(eq(fcmTokens.isActive, true));
 
     return tokens as FcmToken[];
   } catch (error) {

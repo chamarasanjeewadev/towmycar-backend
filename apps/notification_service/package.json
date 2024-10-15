@@ -1,5 +1,5 @@
 {
-  "name": "@breakdownrescue/notification_service",
+  "name": "@towmycar/notification_service",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,6 @@
     "build": "tsc --noEmitOnError false --skipLibCheck",
     "test": "jest",
     "db:generate": "drizzle-kit generate:pg",
-    
     "db:push": "drizzle-kit push:pg",
     "db:migrate": "tsx ./migration.ts",
     "db:studio": "drizzle-kit studio --port 6000"

@@ -24,20 +24,20 @@ COPY . .
 # Ensure Turbo is in the PATH
 ENV PATH /var/task/node_modules/.bin:$PATH
 
-# Build all packages and the breakdown_service
-RUN corepack yarn turbo run build --filter=@breakdownrescue/breakdown_service...
+# Build all packages and the towmycar_api
+RUN corepack yarn turbo run build --filter=@towmycar/towmycar_api...
 
 # Stage 2: Create a minimal image for running the application
 FROM public.ecr.aws/lambda/nodejs:20
 
 # Copy built assets from the builder stage
-COPY --from=builder /var/task/apps/breakdown_service/dist ${LAMBDA_TASK_ROOT}/
+COPY --from=builder /var/task/apps/towmycar_api/dist ${LAMBDA_TASK_ROOT}/
 
 # Copy the entire node_modules directory
 COPY --from=builder /var/task/node_modules ${LAMBDA_TASK_ROOT}/node_modules
 
 # Copy the built database package
-COPY --from=builder /var/task/packages/database/dist ${LAMBDA_TASK_ROOT}/node_modules/@breakdownrescue/database
+COPY --from=builder /var/task/packages/database/dist ${LAMBDA_TASK_ROOT}/node_modules/@towmycar/database
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production

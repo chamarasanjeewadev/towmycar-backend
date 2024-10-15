@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "5.0",
     "paths": {
-      "@breakdownrescue/database": ["../../database/index.ts"]
+      "@towmycar/database": ["../../database/index.ts"]
     },
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "experimentalDecorators": true,

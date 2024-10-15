@@ -46,19 +46,19 @@ To manage your Docker containers and clear persisted data, you can use the provi
         make restart
         ```
 
-  docker build -t breakdown-service -f apps/breakdown_service/Dockerfile .
-  docker tag breakdown-service:latest 211125761584.dkr.ecr.us-east-1.amazonaws.com/breakdown_service:latest
-  docker push 211125761584.dkr.ecr.us-east-1.amazonaws.com/breakdown_service:latest
+  docker build -t breakdown-service -f apps/towmycar_api/Dockerfile .
+  docker tag breakdown-service:latest 211125761584.dkr.ecr.us-east-1.amazonaws.com/towmycar_api:latest
+  docker push 211125761584.dkr.ecr.us-east-1.amazonaws.com/towmycar_api:latest
 
-  docker build -t quotation-service -f apps/quotation_service/Dockerfile .
-  docker tag quotation-service:latest 211125761584.dkr.ecr.us-east-1.amazonaws.com/quotation_service:latest
-  docker push 211125761584.dkr.ecr.us-east-1.amazonaws.com/quotation_service:latest
+  docker build -t quotation-service -f apps/finder_service/Dockerfile .
+  docker tag quotation-service:latest 211125761584.dkr.ecr.us-east-1.amazonaws.com/finder_service:latest
+  docker push 211125761584.dkr.ecr.us-east-1.amazonaws.com/finder_service:latest
   ##-------
-  docker build -t tow-api -f apps/quotation_service/Dockerfile .
+  docker build -t tow-api -f apps/finder_service/Dockerfile .
   docker tag tow-api:latest 418272783904.dkr.ecr.eu-north-1.amazonaws.com/tow-api:latest
   docker push 418272783904.dkr.ecr.eu-north-1.amazonaws.com/tow-api:latest
 
-  docker build -t finder-service -f apps/quotation_service/Dockerfile .
+  docker build -t finder-service -f apps/finder_service/Dockerfile .
   docker tag finder-service:latest 418272783904.dkr.ecr.eu-north-1.amazonaws.com/finder-service:latest
   docker push 418272783904.dkr.ecr.eu-north-1.amazonaws.com/finder-service:latest
 

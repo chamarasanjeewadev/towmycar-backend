@@ -22,8 +22,8 @@ RUN yarn install
 # Ensure Turbo is in the PATH
 ENV PATH /app/node_modules/.bin:$PATH
 
-# Build all packages and the quotation_service
-RUN yarn turbo run build --filter=@breakdownrescue/quotation_service...
+# Build all packages and the finder_service
+RUN yarn turbo run build --filter=@towmycar/finder_service...
 
 # Stage 2: Create a minimal image for running the application
 FROM public.ecr.aws/lambda/nodejs:20
@@ -32,13 +32,13 @@ FROM public.ecr.aws/lambda/nodejs:20
 WORKDIR ${LAMBDA_TASK_ROOT}
 
 # Copy built assets from the builder stage
-COPY --from=builder /app/apps/quotation_service/dist ./
+COPY --from=builder /app/apps/finder_service/dist ./
 
 # Copy the entire node_modules directory
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy the built database package (if used by quotation_service)
-COPY --from=builder /app/packages/database/dist ./node_modules/@breakdownrescue/database
+# Copy the built database package (if used by finder_service)
+COPY --from=builder /app/packages/database/dist ./node_modules/@towmycar/database
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production

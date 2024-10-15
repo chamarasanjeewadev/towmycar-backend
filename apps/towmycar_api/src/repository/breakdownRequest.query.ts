@@ -10,7 +10,7 @@ import {
   driver,
   Driver,
   BreakdownAssignment,
-} from "@breakdownrescue/database";
+} from "@towmycar/database";
 import { eq, sql, desc } from "drizzle-orm";
 
 // Add this type definition
@@ -43,7 +43,9 @@ export type BreakdownRequestQueryType = {
     userId: number,
     requestId?: number
   ) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
-  getBreakdownAssignmentsByRequestId: (requestId: number) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
+  getBreakdownAssignmentsByRequestId: (
+    requestId: number
+  ) => Promise<(BreakdownAssignment & { driver: Driver; user: User })[]>;
 };
 
 const getAllBreakdownRequestsWithUserDetails = async (): Promise<
@@ -214,7 +216,7 @@ const getBreakdownAssignmentsByRequestId = async (
       eq(breakdownAssignment.requestId, breakdownRequest.id)
     )
     .innerJoin(user, eq(breakdownRequest.customerId, user.id))
-    .where(eq(breakdownRequest.id, requestId))
+    .where(eq(breakdownRequest.id, requestId));
 
   const result = await query.orderBy(desc(breakdownAssignment.updatedAt));
 
