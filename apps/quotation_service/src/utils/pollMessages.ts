@@ -75,6 +75,7 @@ async function deleteMessage(message: AWS.SQS.Message) {
   }
 }
 
+
 export const pollMessagesFromSQS = async () => {
   logger.info("Starting to poll messages inside quotation service");
   const params = {
@@ -105,5 +106,4 @@ export const pollMessagesFromSQS = async () => {
   setTimeout(pollMessagesFromSQS, 5000);
 };
 
-// Start polling
-// pollMessagesFromSQS();
+

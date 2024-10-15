@@ -109,7 +109,12 @@ export const fcmTokens = pgTable("fcm_tokens", {
     .defaultNow()
     .notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-});
+  
+},
+table => ({
+  // Adding the unique constraint
+  requestDriverUnique: unique().on(table.userId, table.token),
+}));
 
 // Updated breakdownAssignment table
 export const breakdownAssignment = pgTable(
