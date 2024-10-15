@@ -1,22 +1,25 @@
 import expressApp from "./express-app";
 import { logger } from "./utils";
-import { pollMessagesFromSQS } from "./utils/pollMessages";
-import express from 'express';
-import { startKafkaConsumer, stopKafkaConsumer } from './utils/kafkaConsumer';
+import { pollMessagesFromSQS, handler } from "./utils/pollMessages";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const PORT = process.env.APP_PORT || 9005;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 export const StartServer = async () => {
   expressApp.listen(PORT, () => {
-    logger.info(`App is listening to ${PORT}`);
-    pollMessagesFromSQS();
-    // startKafkaConsumer(); // Add this line to start the Kafka consumer
+    logger.info(`App is listening on port ${PORT}`);
+    if (!IS_PRODUCTION) {
+      logger.info("Initiating SQS message polling...");
+      pollMessagesFromSQS();
+    }
   });
 
   // Add graceful shutdown handling
   const shutdown = async () => {
     logger.info('Shutting down server...');
-    await stopKafkaConsumer();
     process.exit(0);
   };
 
@@ -24,11 +27,16 @@ export const StartServer = async () => {
   process.on('SIGTERM', shutdown);
 
   process.on("uncaughtException", async err => {
-    logger.error(err);
+    logger.error("Uncaught exception:", err);
     process.exit(1);
   });
 };
 
-StartServer().then(() => {
-  logger.info("server is up");
-});
+if (IS_PRODUCTION) {
+  logger.info("Running in production mode. Lambda handler is available.");
+  module.exports.handler = handler;
+} else {
+  StartServer().then(() => {
+    logger.info("Server startup complete");
+  });
+}

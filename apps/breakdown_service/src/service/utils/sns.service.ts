@@ -2,17 +2,19 @@ import { SNS } from "aws-sdk";
 import { EmailNotificationType } from "../../enums";
 // Configure AWS SDK to use credentials from the local AWS config file
 const sns = new SNS({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.REGION || "us-east-1",
 });
 
-export const sendNotification = async (topicArn: string, message: any) => {
+export const sendSNS = async (topicArn: string, message: any) => {
   const snsParams = {
     Message: JSON.stringify(message),
     TopicArn: topicArn,
   };
   try {
     const result = await sns.publish(snsParams).promise();
-    console.log(`SNS notification sent for breakdown request ${message} ${topicArn}`);
+    console.log(
+      `SNS notification sent for breakdown request ${message} ${topicArn}`
+    );
     return {
       MessageId: result.MessageId,
       PublishTime: new Date().toISOString(),

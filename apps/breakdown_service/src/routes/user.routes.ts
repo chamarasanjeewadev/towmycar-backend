@@ -6,14 +6,14 @@ import { UserRepository } from "../repository/user.repository";
 import { saveFcmToken } from "../service/user/user.service";
 import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
-import { Webhook } from "svix";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import axios from "axios";
 import Stripe from "stripe";
 import { Driver } from "@breakdownrescue/database";
 import { DriverRepository } from "../repository/driver.repository";
 import { CustomError, ERROR_CODES } from "../utils";
-import { clerkAuthMiddleware } from "middleware/clerkAuth";
+import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+
 
 const router = express.Router();
 const repo = repository.UserRepository;

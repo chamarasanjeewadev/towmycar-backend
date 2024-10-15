@@ -20,25 +20,26 @@ export async function processMessage(message: AWS.SQS.Message) {
   try {
     const snsNotification = JSON.parse(message?.Body || "{}");
     const requestData = JSON.parse(snsNotification?.Message || "{}");
-    const { requestId, userId, userLocation } = requestData;
+    const { requestId, customerId, userLocation } = requestData;
     const { latitude, longitude } = userLocation || {};
 
     logger.info("Parsed requestData in quotation service:", {
       requestId,
-      userId,
+      customerId,
       latitude,
       longitude,
     });
 
     if (latitude && longitude && requestId) {
       logger.info(
-        `Calling driver search service for request: ${requestId}, lat: ${latitude}, lon: ${longitude}, userId: ${userId}`
+        `Calling driver search service for request: ${requestId}, lat: ${latitude}, lon: ${longitude}, customerId: ${customerId}`
       );
       const nearbyDrivers =
         await DriverSearchService.findAndNotifyNearbyDrivers(
           latitude,
           longitude,
           requestId,
+          customerId
         );
       logger.info(
         `Found ${nearbyDrivers.length} nearby drivers for request ${requestId}`
@@ -53,7 +54,7 @@ export async function processMessage(message: AWS.SQS.Message) {
     );
     logger.error("Error stack:", (error as Error).stack);
   } finally {
-    //await deleteMessage(message);
+    await deleteMessage(message);
   }
 }
 

@@ -9,7 +9,7 @@ import {
   DriverStatus,
   BreakdownRequestStatus,
 } from "../../enums";
-import { sendNotification } from "../utils/sns.service";
+import { sendSNS } from "../utils/sns.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
 
@@ -75,7 +75,10 @@ export class DriverService {
 
     if (data.status === DriverStatus.QUOTED) {
       // set request in progress mode since driver quoted....
-      await  DriverRepository.updateBreakdownRequestStatus(requestId,  BreakdownRequestStatus.QUOTED);
+      await DriverRepository.updateBreakdownRequestStatus(
+        requestId,
+        BreakdownRequestStatus.QUOTED
+      );
 
       notificationType = EmailNotificationType.DRIVER_QUOTATION_UPDATED_EMAIL;
       payload = {
@@ -104,9 +107,7 @@ export class DriverService {
         vehiclePlateNumber: driverDetails.vehicleRegistration,
         estimation: data.estimation,
       };
-    }
-    else if (data.status === DriverStatus.REJECTED) {
-
+    } else if (data.status === DriverStatus.REJECTED) {
       notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
       payload = {
         requestId,
@@ -115,9 +116,7 @@ export class DriverService {
         status: data.status,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
-    }
-    else if (data.status === DriverStatus.CLOSED) {
-
+    } else if (data.status === DriverStatus.CLOSED) {
       return breakdownRequestUpdated;
       // notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
       // payload = {
@@ -127,12 +126,11 @@ export class DriverService {
       //   status: data.status,
       //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       // };
-    }
-    else {
+    } else {
       throw new Error("Invalid status or estimation amount");
     }
 
-    const emailSnsResult = await sendNotification(
+    const emailSnsResult = await sendSNS(
       process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
       {
         type: notificationType,

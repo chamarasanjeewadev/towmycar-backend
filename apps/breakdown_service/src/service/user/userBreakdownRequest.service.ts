@@ -1,16 +1,14 @@
 import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import { UserRepository } from "../../repository/user.repository";
 import { BreakdownRequestWithUserDetails } from "../../dto/breakdownRequest.dto";
-import { sendNotification } from "../utils/sns.service";
-import { sendPushNotificationAndEmail } from "../utils/sns.service";
 import { EmailNotificationType, UserStatus } from "../../enums";
 import { BreakdownRequestInput } from "../../dto/breakdownRequest.dto";
 import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
-  NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { CustomError } from "utils";
+import { sendSNS, sendPushNotificationAndEmail } from "./../utils/sns.service";
+import { CustomError } from "../../utils/error/errors";
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -36,14 +34,13 @@ const CreateBreakdownRequest = async (
     };
     console.log("breakdownRequestData", breakdownRequestData);
 
-    const requestId =
-      await BreakdownRequestRepository.saveBreakdownRequest(
-        breakdownRequestData
-      );
-      console.log("breakdownRequestId", requestId);
+    const requestId = await BreakdownRequestRepository.saveBreakdownRequest(
+      breakdownRequestData
+    );
+    console.log("breakdownRequestId", requestId);
 
     // Send request to breakdown service to find near by drivers
-    const combinedSnsResult = await sendNotification(
+    const combinedSnsResult = await sendSNS(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
       { requestId, ...breakdownRequestData }
     );
@@ -78,7 +75,10 @@ const CreateBreakdownRequest = async (
     };
   } catch (error) {
     console.error("Error in CreateCombinedBreakdownRequest:", error);
-    throw new CustomError("Failed to process combined breakdown request",error);
+    throw new CustomError(
+      "Failed to process combined breakdown request",
+      error
+    );
   }
 };
 

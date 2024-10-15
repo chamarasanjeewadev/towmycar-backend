@@ -8,7 +8,8 @@ export const sendDriverAcceptanceBreakdownPushNotification = async (
   payload: EmailPayload
 ) => {
   // Get the user ID from the payload
-  const userId = payload.userId;
+  //@ts-nocheck
+  const userId = payload?.user?.id;
 
   if (!userId) {
     console.error("User ID is missing in the payload");

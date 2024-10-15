@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { DB, chats, Chat } from "@breakdownrescue/database";
 import { eq, and } from "drizzle-orm";
 

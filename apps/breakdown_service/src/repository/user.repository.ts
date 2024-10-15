@@ -165,14 +165,16 @@ const saveFcmToken = async (
       token: token,
       browserInfo: browserInfo,
     })
-    .onConflict(["userId", "token"])
-    .merge({
-      browserInfo: browserInfo,
-      updatedAt: new Date(), // Assuming you have an updatedAt column
-    })
-    .returning();
-
-  return result[0].id;
+    .onConflictDoUpdate({
+      target: [fcmTokens.userId, fcmTokens.token],
+      set: {
+        browserInfo: browserInfo,
+        updatedAt: new Date(),
+      },
+    });
+  // if (result.length === 0) {
+    return result[0].id;
+  // }
 };
 
 const getUserById = async (userId: number): Promise<any | null> => {
@@ -276,7 +278,10 @@ const createAnonymousCustomer = async (userInput: {
 
     return result;
   } catch (error) {
-    console.log("error occured.................................................", error);
+    console.log(
+      "error occured.................................................",
+      error
+    );
     console.error("Error creating or retrieving anonymous customer:", error);
     throw new DataBaseError(ERROR_CODES.DATABASE_ERROR, error);
     throw error;

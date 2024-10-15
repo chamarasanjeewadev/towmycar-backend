@@ -1,4 +1,3 @@
-import express from "express";
 import serverless from "serverless-http";
 import dotenv from "dotenv";
 import app from "./express-app";

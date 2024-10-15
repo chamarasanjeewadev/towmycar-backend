@@ -36,6 +36,7 @@ export type EmailPayload = {
   estimation?: string;
   description?: string;
   user?: {
+    id:string;
     firstName: string;
     lastName: string;
     email: string;
@@ -54,9 +55,9 @@ export const sendEmail = async (
     const emailContent = getEmailContent(type, payload);
 
     const params = {
-      Source: "chamara.sanjeewa@gmail.com",
+      Source: "towmycar.uk@gmail.com",
       Destination: {
-        ToAddresses: [payload.recipientEmail ?? "chamara.sanjeewa@gmail.com"],
+        ToAddresses: [payload.recipientEmail ?? "towmycar.uk@gmail.com"],
       },
       Message: {
         Subject: {

@@ -1,14 +1,16 @@
-// @ts-nocheck
+//@ts-nocheck
 import {
   DB,
   driver,
   breakdownAssignment,
-  breakdownRequests,
-  userProfile,
+  breakdownRequest,
+  customer,
+  user,
+  Customer,
 } from "@breakdownrescue/database";
 import { sql, eq, and } from "drizzle-orm";
 import { DriverStatus, UserStatus } from "../enums";
-import { PostgresError } from "postgres";
+import { DatabaseError } from "pg";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
@@ -33,7 +35,7 @@ export type DriverSearchRepositoryType = {
   getUserIdByRequestId: (
     requestId: number
   ) => Promise<{ userId: number; requestId: number }>;
-  getUserById: (userId: number) => Promise<User | null>;
+  getUserByCustomerId: (customerId: number) => Promise<UserWithCustomer | null>;
 };
 
 // Add this import
@@ -140,13 +142,45 @@ const getUserIdByRequestId = async (
 };
 
 // Add this function to your repository implementation
-const getUserById = async (userId: number): Promise<any | null> => {
-  const result = await DB.select()
-    .from(userProfile)
-    .where(eq(userProfile.id, userId))
-    .limit(1);
+const getUserByCustomerId = async (customerId: number) => {
+  try {
+    console.log("Getting customer info for customerId:", customerId);
+    const result = await DB.select({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      mobileNumber: customer.mobileNumber,
+      postcode: customer.postcode,
+    })
+      .from(customer)
 
-  return result.length > 0 ? result[0] : null;
+      .innerJoin(user, eq(customer.userId, user.id))
+      .where(eq(customer.id, customerId))
+      .limit(1);
+
+    console.log("Query result:", result);
+
+    if (result.length === 0) {
+      console.log("No user found for customerId:", customerId);
+      return null;
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("Error in getUserByCustomerId:", error);
+    if (error instanceof DatabaseError) {
+      throw error;
+    } else {
+      throw new DatabaseError(
+        `Failed to get user for customerId ${customerId}: ${
+          (error as Error).message
+        }`,
+        (error as any).statusCode || 500,
+        (error as Error).stack
+      );
+    }
+  }
 };
 
 // Add this to your exported DriverSearchRepository object
@@ -154,5 +188,5 @@ export const DriverSearchRepository: DriverSearchRepositoryType = {
   findNearbyDrivers,
   updateDriverRequests,
   getUserIdByRequestId,
-  getUserById, // Add this line
+  getUserByCustomerId,
 };

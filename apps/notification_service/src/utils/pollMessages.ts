@@ -1,87 +1,102 @@
-import { UserNotificationService } from '../service/notification.service';
+import { UserNotificationService } from "../service/notification.service";
 import AWS from "aws-sdk";
 import { logger } from "./index";
 import { SQS_QUEUE_URL } from "../config";
-import { sendDriverAcceptanceBreakdownPushNotification } from "../service/notification.service";
 import { sendEmail } from "../service/email.service";
-console.log("SQS_QUEUE_URL", SQS_QUEUE_URL);
+import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
+
 AWS.config.update({ region: "us-east-1" });
-
-// Create an SQS service object
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
-
-// The URL of the SQS queue to poll from
 const queueURL = SQS_QUEUE_URL;
-console.log("queueURL", queueURL);
-export const pollMessagesFromSQS = async () => {
-  const params = {
-    QueueUrl: queueURL,
-    MaxNumberOfMessages: 10, // Adjust to poll multiple messages at once
-    WaitTimeSeconds: 20, // Long polling
-  };
-  logger.info("polling messages");
+
+async function processMessage(message: AWS.SQS.Message) {
   try {
-    // Poll messages from the queue
-    const data = await sqs.receiveMessage(params as any).promise();
+    const snsNotification = JSON.parse(message.Body || "{}");
+    if (snsNotification.Message) {
+      const messageData = JSON.parse(snsNotification.Message);
+      if (messageData.type && messageData.payload) {
+        // check idempotency before sending email
+        await sendEmail(messageData.type, messageData.payload);
+        await UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(
+          messageData.type,
+          messageData.payload
+        );
+      } else {
+        logger.warn("Invalid message format: missing type or payload");
+      }
+    } else {
+      logger.warn("Invalid SNS notification: missing Message field");
+    }
 
+    // await sqs
+    //   .deleteMessage({
+    //     QueueUrl: queueURL!,
+    //     ReceiptHandle: message.ReceiptHandle ?? "",
+    //   })
+      // .promise();
+  } catch (error) {
+    logger.error("Error processing message:", error);
+    throw error;
+  }
+}
+
+export const pollMessagesFromSQS = async () => {
+  logger.info("Polling messages");
+  try {
+    const data = await sqs
+      .receiveMessage({
+        QueueUrl: queueURL!,
+        MaxNumberOfMessages: 10,
+        WaitTimeSeconds: 20,
+      })
+      .promise();
+    console.log("poll triggered....");
     if (data.Messages) {
-      // Process each message
       for (const message of data.Messages) {
-        try {
-          const snsNotification = JSON.parse(message.Body || "{}");
-          console.log("snsNotification", snsNotification);
-
-          if (snsNotification.Message) {
-            const messageData = JSON.parse(snsNotification.Message);
-
-            if (messageData.type && messageData.payload) {
-              
-              sendEmail(messageData.type, messageData.payload);
-              // send push notification
-              UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(messageData.type, messageData.payload);
-              const deleteParams = {
-                QueueUrl: queueURL,
-                ReceiptHandle: message.ReceiptHandle ?? "",
-              };
-
-              await sqs.deleteMessage(deleteParams as any).promise();
-            } else {
-              logger.warn("Invalid message format: missing type or payload");
-            }
-          } else {
-            logger.warn("Invalid SNS notification: missing Message field");
-            const deleteParams = {
-              QueueUrl: queueURL,
-              ReceiptHandle: message.ReceiptHandle ?? "",
-            };
-
-            await sqs.deleteMessage(deleteParams as any).promise();
-          }
-
-          // ... existing code for deleting the message ...
-        } catch (error) {
-          const deleteParams = {
-            QueueUrl: queueURL,
-            ReceiptHandle: message.ReceiptHandle ?? "",
-          };
-
-          await sqs.deleteMessage(deleteParams as any).promise();
-          logger.error(
-            "Error processing message inside notification service poll messages:",
-            error
-          );
-        }
-
-        // Delete the message after processing
+        await processMessage(message);
       }
     } else {
       logger.info("No messages to process");
     }
   } catch (err) {
-    logger.error("Error receiving messages in notification service", err);
+    logger.error("Error receiving messages", err);
   }
 
-  // Poll again after a short delay
-  setTimeout(pollMessagesFromSQS, 5000);
+  setTimeout(pollMessagesFromSQS, 1000);
 };
 
+export const handler: SQSHandler = async (
+  event: SQSEvent,
+  context: Context,
+  callback: Callback
+) => {
+  logger.info(
+    "Lambda function triggered. Received SQS event:",
+    JSON.stringify(event)
+  );
+
+  try {
+    logger.info(`Processing ${event.Records.length} messages`);
+    for (const record of event.Records) {
+      logger.info(`Processing message with ID: ${record.messageId}`);
+      await processMessage({
+        Body: record.body,
+        ReceiptHandle: record.receiptHandle,
+        MessageId: record.messageId,
+      });
+      logger.info(`Finished processing message with ID: ${record.messageId}`);
+    }
+
+    logger.info("Successfully processed all messages in the SQS event");
+    callback(null, {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "Success",
+        processedMessages: event.Records.length,
+      }),
+    });
+  } catch (error) {
+    logger.error("Error processing SQS event in Lambda function:", error);
+    callback(error as Error);
+  }
+};
