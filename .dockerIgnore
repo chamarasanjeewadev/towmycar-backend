@@ -1,6 +1,50 @@
+# Ignore node_modules, except when building with yarn
 node_modules
-npm-debug.log
-Dockerfile
-.dockerignore
+**/node_modules
+
+# Ignore build artifacts
+dist
+build
+**/dist
+**/build
+
+# Ignore logs
+*.log
+**/*.log
+logs
+**/logs
+
+# Ignore temporary files and caches
+.tmp
+.cache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+.DS_Store
+.vscode
+.env
+.env.local
+
+# Ignore git files
 .git
 .gitignore
+
+# Ignore local Yarn configuration files
+.yarnrc
+.yarnrc.yml
+
+# Ignore IDE/editor folders
+.idea/
+.vscode/
+
+# Ignore Docker-related files except Dockerfile
+.dockerignore
+
+# Ignore test files and coverage reports
+__tests__/
+__mocks__/
+coverage/
+**/*.spec.*
+**/*.test.*

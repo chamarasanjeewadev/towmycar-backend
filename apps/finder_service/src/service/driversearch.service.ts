@@ -1,3 +1,4 @@
+//@ts-nocheck
 import {
   DriverSearchRepository,
   NearbyDriver,
@@ -31,6 +32,7 @@ const findAndNotifyNearbyDrivers = async (
   customerId: number
 ): Promise<NearbyDriver[]> => {
   try {
+    console.log("finding nearby drivers for requestId:", requestId);
     // Find nearby drivers
     const nearbyDrivers = await DriverSearchRepository.findNearbyDrivers(
       latitude,

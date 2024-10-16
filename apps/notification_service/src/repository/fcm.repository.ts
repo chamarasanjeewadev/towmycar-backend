@@ -35,7 +35,7 @@ const getFcmTokensByUserId = async (userId: number): Promise<FcmToken[]> => {
       .from(fcmTokens)
       .where(eq(fcmTokens.userId, userId));
     // .where(eq(fcmTokens.isActive, true));
-
+    console.log("fcm tokens", tokens);
     return tokens as FcmToken[];
   } catch (error) {
     console.error("Error in getFcmTokensByUserId:", error);

@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  TowApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: ./apps/tow-api
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /tow-api
+            Method: ANY
+
+  NotificationServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: ./apps/notification-service
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /notification
+            Method: ANY
+
+  FinderServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: ./apps/finder-service
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /finder
+            Method: ANY

@@ -1,5 +1,4 @@
-// @ts-nocheck
-
+//@ts-nocheck
 import {
   DB,
   breakdownRequest,
@@ -100,7 +99,7 @@ const saveBreakdownRequest = async (
       .returning({ id: breakdownRequest.id });
 
     return breakdownResult[0].id;
-  } catch (error: Error) {
+  } catch (error) {
     console.log("error occured at breakdown repo", error);
     throw error;
   }

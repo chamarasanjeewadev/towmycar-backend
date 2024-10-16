@@ -7,10 +7,10 @@
     "strict": false,
     "esModuleInterop": true,
     "baseUrl": ".",
-    "paths": {
-      "@towmycar/database": ["../../packages/database/dist"]
-    }
+    // "paths": {
+    //   "@towmycar/database": ["../../packages/database"]
+    // }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "../../packages/database"]
+  "exclude": ["node_modules"]
 }

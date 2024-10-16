@@ -17,10 +17,13 @@ async function processMessage(message: AWS.SQS.Message) {
       if (messageData.type && messageData.payload) {
         // check idempotency before sending email
         await sendEmail(messageData.type, messageData.payload);
+        console.log("email sent");
+        console.log("sending noficition to fcms")
         await UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(
           messageData.type,
           messageData.payload
         );
+        console.log("notification sent");
       } else {
         logger.warn("Invalid message format: missing type or payload");
       }

@@ -51,7 +51,7 @@ export async function processMessage(message: AWS.SQS.Message) {
     }
   } catch (error) {
     logger.error(
-      "Error processing message inside quotation service pollMessages:",
+      "Error processing message inside quotation service :",
       error
     );
     logger.error("Error stack:", (error as Error).stack);
@@ -105,7 +105,7 @@ export const pollMessagesFromSQS = async () => {
   }
 
   logger.info("Scheduling next poll in 5 seconds");
-  setTimeout(pollMessagesFromSQS, 5000);
+  setTimeout(pollMessagesFromSQS, 15000);
 };
 
 export const handler = async (event: SQSEvent, context: Context, callback: Callback) => {
