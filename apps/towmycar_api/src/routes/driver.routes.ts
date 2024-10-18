@@ -306,4 +306,62 @@ router.post(
   }
 );
 
+router.post(
+  "/close-and-rate/:requestId",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { driverId, driverRating, driverFeedback } = req.body;
+      const requestId = parseInt(req.params.requestId, 10);
+
+      if (isNaN(requestId)) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid request ID"
+        );
+      }
+
+      if (!driverId || isNaN(Number(driverId))) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid driver ID"
+        );
+      }
+
+      if (
+        typeof driverRating !== "number" ||
+        driverRating < 1 ||
+        driverRating > 5
+      ) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid rating. Must be a number between 1 and 5."
+        );
+      }
+
+      if (typeof driverFeedback !== "string") {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid feedback. Must be a string."
+        );
+      }
+
+      await driverService.closeBreakdownRequestAndUpdateRating(
+        Number(driverId),
+        requestId,
+        driverRating,
+        driverFeedback
+      );
+
+      res.status(200).json({ message: "Breakdown request closed successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

@@ -147,6 +147,21 @@ export class DriverService {
   async getDriverWithPaymentMethod(driverId: number) {
     return DriverRepository.getDriverWithPaymentMethod(driverId);
   }
+
+  async closeBreakdownRequestAndUpdateRating(
+    driverId: number,
+    requestId: number,
+    driverRating: number,
+    driverFeedback: string
+  ): Promise<void> {
+    await DriverRepository.closeBreakdownRequestAndUpdateRating({
+      driverId,
+      requestId,
+      driverRating,
+      driverFeedback,
+    });
+    // TODO: Send notifications to customers
+  }
 }
 
 export const getDriverById = async (
