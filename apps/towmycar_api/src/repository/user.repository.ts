@@ -54,6 +54,8 @@ export type UserRepositoryType = {
   deleteVehicle: (id: number) => Promise<boolean>;
   createAnonymousCustomer: (userInput: {
     email: string;
+    firstName: string;
+    lastName: string;
   }) => Promise<{ customer: any; user: any; isNewUser: boolean }>;
 };
 
@@ -217,6 +219,8 @@ const deleteVehicle = async (id: number): Promise<boolean> => {
 
 const createAnonymousCustomer = async (userInput: {
   email: string;
+  firstNme: string;
+  lastNme: string;
 }): Promise<{ customer: any; user: any; isNewUser: boolean }> => {
   try {
     const result = await DB.transaction(async trx => {
@@ -251,6 +255,8 @@ const createAnonymousCustomer = async (userInput: {
         .values({
           role: "customer",
           email: userInput.email,
+          firstName:userInput.firstName,
+          lastName:userInput.lastName,
           isActive: false,
           createdAt: new Date(),
           updatedAt: new Date(),

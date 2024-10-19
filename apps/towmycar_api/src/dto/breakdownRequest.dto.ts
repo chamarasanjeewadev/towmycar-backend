@@ -2,8 +2,7 @@ import { z } from "zod";
 
 // Define the schema using Zod for validation
 export const BreakdownRequestSchema = z.object({
-  // User profile fields
-  userId: z.number(), // Change this from string to number
+  customerId: z.number().optional(),
   requestType: z.string(),
   address: z.string(),
   regNo: z.string(),
@@ -13,22 +12,32 @@ export const BreakdownRequestSchema = z.object({
     longitude: z.number(),
   }),
   description: z.string(),
+  color: z.string(),
+  email: z.string().email(),
+  firstName: z.string(),
+  lastName: z.string(),
 });
 
 // Define the TypeScript type for form data
-export type BreakdownRequestInput = {
-  customerId: number;
+export interface BreakdownRequestInput {
+  customerId?: number;
   requestType: string;
+  address: string;
+  make:string;
+  makeModel:string;
   regNo: string;
   weight: number;
-  address: string;
-  email?:string;
+  mobileNumber: string;
   userLocation: {
-    longitude: number;
     latitude: number;
+    longitude: number;
   };
-  description?: string | null;
-};
+  description: string;
+  color: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
 
 export interface BreakdownRequestWithUserDetails {
   id: number;
@@ -42,4 +51,9 @@ export interface BreakdownRequestWithUserDetails {
   firstName: string | null;
   lastName: string | null;
   userEmail: string | null;
+  color: string | null;
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  };
 }

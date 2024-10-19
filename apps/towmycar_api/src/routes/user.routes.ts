@@ -281,7 +281,6 @@ router.post(
 
 router.post(
   "/verify-vehicle-registration",
-  // clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { registrationNumber } = req.body;
@@ -294,30 +293,54 @@ router.post(
         );
       }
 
-      const response = await axios.post(
-        process.env.VEHICLE_REGISTRATION_API_URL!,
-        { registrationNumber },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.VEHICLE_REGISTRATION_API_KEY!,
-          },
-        }
-      );
+      const apiUrl = `${process.env.VEHICLE_REGISTRATION_API_URL}`;
+      const apiKey = process.env.VEHICLE_REGISTRATION_API_KEY;
 
-      res.json(response.data);
+      const response = await axios.get(apiUrl, {
+        params: {
+          apikey: apiKey,
+          vrm: registrationNumber,
+        },
+      });
+
+      // Extract the required fields with optional chaining
+      const filteredData = {
+        weight: response.data?.Dimensions?.KerbWeight ?? null,
+        Make: response.data?.VehicleRegistration?.Make ?? null,
+        MakeModel: response.data?.VehicleRegistration?.MakeModel ?? null,
+        color: response.data?.VehicleRegistration?.Colour ?? null,
+      };
+
+      // Check if any of the required fields are null
+      if (Object.values(filteredData).some(value => value === null)) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_RESPONSE,
+          400,
+          "Incomplete vehicle data received from the API"
+        );
+      }
+
+      res.json(filteredData);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         next(
           new CustomError(
-            ERROR_CODES.DATABASE_ERROR,
+            ERROR_CODES.EXTERNAL_API_ERROR,
             error.response?.status || 500,
             error.response?.data?.message ||
               "Error verifying vehicle registration"
           )
         );
-      } else {
+      } else if (error instanceof CustomError) {
         next(error);
+      } else {
+        next(
+          new CustomError(
+            ERROR_CODES.INTERNAL_SERVER_ERROR,
+            500,
+            "An unexpected error occurred"
+          )
+        );
       }
     }
   }

@@ -15,7 +15,7 @@ import {
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { aliasedTable, sql } from "drizzle-orm";
 import { UserStatus, BreakdownRequestStatus } from "../enums";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, isNotNull } from "drizzle-orm";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -105,32 +105,6 @@ const saveBreakdownRequest = async (
   }
 };
 
-const getAllBreakdownRequestsWithUserDetails = async (): Promise<
-  BreakdownRequestWithUserDetails[]
-> => {
-  const results = await DB.select({
-    id: breakdownRequest.id,
-    requestType: breakdownRequest.requestType,
-    location: breakdownRequest.address,
-    description: breakdownRequest.description,
-    status: breakdownRequest.status,
-    regNo: breakdownRequest.regNo,
-    weight: breakdownRequest.weight,
-    userId: breakdownRequest.customerId,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    userEmail: user.email,
-  })
-    .from(breakdownRequest)
-    .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
-    .leftJoin(user, eq(user.id, customer.userId));
-
-  return results.map(result => ({
-    ...result,
-    weight: result.weight ? Number(result.weight) : null,
-  }));
-};
-
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
   pageSize: number,
@@ -140,18 +114,19 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
   requests: BreakdownRequestWithUserDetails[];
   totalCount: number;
 }> => {
-  console.log("hit repo..", customerId, requestId);
   const offset = (page - 1) * pageSize;
-
   try {
     const baseQuery = DB.select({
       id: breakdownRequest.id,
       requestType: breakdownRequest.requestType,
-      location: breakdownRequest.address,
+      location: breakdownRequest.userLocation,
       description: breakdownRequest.description,
+      make: breakdownRequest.make,
+      makeModel: breakdownRequest.model,
+      regNo: breakdownRequest.regNo,
+      mobilNumber: breakdownRequest.mobileNumber,
+      weight: breakdownRequest.weight,
       status: breakdownRequest.status,
-      regNo: breakdownRequest.regNo ?? null, // Provide null as default
-      weight: breakdownRequest.weight ?? null, // Provide null as default
       createdAt: breakdownRequest.createdAt,
       userId: breakdownRequest.customerId,
       firstName: user.firstName,
@@ -165,14 +140,12 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     let filteredQuery = baseQuery.orderBy(desc(breakdownRequest.updatedAt));
 
     if (customerId) {
-      // @ts-ignore
       filteredQuery = filteredQuery.where(
         eq(breakdownRequest.customerId, customerId)
       );
     }
 
     if (requestId) {
-      // @ts-ignore
       filteredQuery = filteredQuery.where(eq(breakdownRequest.id, requestId));
     }
 
@@ -185,14 +158,12 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     let filteredCountQuery = countQuery;
 
     if (customerId) {
-      // @ts-ignore
       filteredCountQuery = filteredCountQuery.where(
         eq(breakdownRequest.customerId, customerId)
       );
     }
 
     if (requestId) {
-      // @ts-ignore
       filteredCountQuery = filteredCountQuery.where(
         eq(breakdownRequest.id, requestId)
       );
@@ -204,6 +175,12 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
       requests: requests.map(request => ({
         ...request,
         weight: request.weight ? Number(request.weight) : null,
+        location: request.location
+          ? {
+              latitude: request.location.x,
+              longitude: request.location.y,
+            }
+          : null,
       })),
       totalCount: count,
     };
@@ -402,7 +379,6 @@ const closeBreakdownAndUpdateRating = async (
 
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
-  getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   updateUserStatusInBreakdownAssignment,
   getBreakdownAssignmentsByRequestId,

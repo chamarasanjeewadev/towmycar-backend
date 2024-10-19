@@ -158,7 +158,7 @@ x-api-key: {{$dotenv VEHICLE_REGISTRATION_API_KEY}}
 }
 
 ### Verify Vehicle Registration (CheckCarDetails API)
-GET https://api.checkcardetails.co.uk/vehicledata/vehicleregistration?apikey={{$dotenv CHECK_CAR_DETAILS_API_KEY}}&vrm=S600ANU
+GET https://api.checkcardetails.co.uk/vehicledata/ukvehicledata?apikey={{$dotenv VEHICLE_REGISTRATION_API_KEY}}&vrm=S600ANU
 Content-Type: application/json
 
 

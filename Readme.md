@@ -45,3 +45,15 @@ To manage your Docker containers and clear persisted data, you can use the provi
         ```sh
         make restart
         ```
+
+
+CREATE EXTENSION IF EXISTS postgis CASCADE;
+
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+LJ06YXB- NO WEIGHT 
+LY57HXU- NO WEIGHT 1075
+
+S600ANU 2500
+AD19LZN 1950
+BD07XAA 1180

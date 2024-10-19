@@ -21,16 +21,12 @@ const CreateBreakdownRequest = async (
 ) => {
   try {
     const breakdownRequestData: BreakdownRequestInput = {
+      ...combinedInput,
       customerId: userInfo.customerId,
-      requestType: combinedInput.requestType,
-      address: combinedInput.address,
-      regNo: combinedInput.regNo,
-      weight: combinedInput.weight,
       userLocation: {
         latitude: combinedInput.userLocation.latitude,
         longitude: combinedInput.userLocation.longitude,
       },
-      description: combinedInput.description,
     };
     console.log("breakdownRequestData", breakdownRequestData);
 
@@ -82,28 +78,25 @@ const CreateBreakdownRequest = async (
   }
 };
 
-const getAllBreakdownRequestsWithUserDetails = async (): Promise<
-  BreakdownRequestWithUserDetails[]
-> => {
-  const requests =
-    await BreakdownRequestRepository.getAllBreakdownRequestsWithUserDetails();
-  return requests.map(request => ({
-    ...request,
-    userName:
-      `${request.firstName || ""} ${request.lastName || ""}`.trim() ||
-      "Unknown",
-  }));
-};
+// const getAllBreakdownRequestsWithUserDetails = async (): Promise<
+//   BreakdownRequestWithUserDetails[]
+// > => {
+//   const requests =
+//     await BreakdownRequestRepository.getAllBreakdownRequestsWithUserDetails();
+//   return requests.map(request => ({
+//     ...request,
+//     userName:
+//       `${request.firstName || ""} ${request.lastName || ""}`.trim() ||
+//       "Unknown",
+//   }));
+// };
 
 const getPaginatedBreakdownRequestsWithUserDetails = async (
   page: number,
   pageSize: number,
   customerId?: number,
   requestId?: number
-): Promise<{
-  breakdownRequests: BreakdownRequestWithUserDetails[];
-  totalCount: number;
-}> => {
+) => {
   const { requests, totalCount } =
     await BreakdownRequestRepository.getPaginatedBreakdownRequestsWithUserDetails(
       page,
@@ -113,12 +106,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     );
 
   return {
-    breakdownRequests: requests.map(request => ({
-      ...request,
-      userName:
-        `${request.firstName || ""} ${request.lastName || ""}`.trim() ||
-        "Unknown",
-    })),
+    requests,
     totalCount,
   };
 };
@@ -174,6 +162,8 @@ const createAnonymousCustomerAndBreakdownRequest = async (
     // Create anonymous customer
     const anonymousUser = await UserRepository.createAnonymousCustomer({
       email: breakdownRequestInput.email,
+      firstName: breakdownRequestInput.firstName,
+      lastName: breakdownRequestInput.lastName,
     });
     if (!anonymousUser) {
       throw new Error("Failed to create anonymous customer");
@@ -226,7 +216,6 @@ const closeBreakdownAndUpdateRating = async (
 };
 
 export const BreakdownRequestService = {
-  getAllBreakdownRequestsWithUserDetails,
   getPaginatedBreakdownRequestsWithUserDetails,
   getBreakdownAssignmentsByRequestId,
   updateUserStatusInBreakdownAssignment,

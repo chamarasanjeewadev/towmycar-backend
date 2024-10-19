@@ -78,7 +78,11 @@ export const breakdownRequest = pgTable("breakdown_request", {
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
   regNo: varchar("reg_no", { length: 20 }),
+  mobileNumber: varchar("mobile_number", { length: 20 }),
+  make: varchar("make", { length: 200 }),
+  model: varchar("model", { length: 200 }),
   weight: numeric("weight", { precision: 10, scale: 2 }),
+
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
   userLocation: geometry("user_location", {
@@ -95,26 +99,28 @@ export const breakdownRequest = pgTable("breakdown_request", {
 });
 
 // New FCM tokens table
-export const fcmTokens = pgTable("fcm_tokens", {
-  id: serial("id").primaryKey().notNull(),
-  userId: integer("user_id")
-    .references(() => user.id, { onDelete: "cascade" })
-    .notNull(),
-  token: text("token").notNull(),
-  browserInfo: text("browser_info"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  
-},
-table => ({
-  // Adding the unique constraint
-  requestDriverUnique: unique().on(table.userId, table.token),
-}));
+export const fcmTokens = pgTable(
+  "fcm_tokens",
+  {
+    id: serial("id").primaryKey().notNull(),
+    userId: integer("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
+      .notNull(),
+    token: text("token").notNull(),
+    browserInfo: text("browser_info"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  table => ({
+    // Adding the unique constraint
+    requestDriverUnique: unique().on(table.userId, table.token),
+  })
+);
 
 // Updated breakdownAssignment table
 export const breakdownAssignment = pgTable(

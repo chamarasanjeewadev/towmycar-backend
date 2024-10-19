@@ -49,7 +49,7 @@ router.get(
       const { userId, customerId } = req.userInfo;
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
-      const { breakdownRequests, totalCount } =
+      const { requests, totalCount } =
         await service.BreakdownRequestService.getPaginatedBreakdownRequestsWithUserDetails(
           page,
           pageSize,
@@ -57,7 +57,7 @@ router.get(
         );
 
       res.status(200).json({
-        data: breakdownRequests,
+        data: requests,
         pagination: {
           currentPage: page,
           pageSize: pageSize,

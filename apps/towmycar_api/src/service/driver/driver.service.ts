@@ -19,7 +19,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 });
 
 interface UpdateAssignmentData {
-  status: string;
+  driverStatus: string;
   estimation?: string;
   description?: string;
 }
@@ -73,7 +73,7 @@ export class DriverService {
     let notificationType: EmailNotificationType;
     let payload: any;
 
-    if (data.status === DriverStatus.QUOTED) {
+    if (data.driverStatus === DriverStatus.QUOTED) {
       // set request in progress mode since driver quoted....
       await DriverRepository.updateBreakdownRequestStatus(
         requestId,
@@ -92,13 +92,13 @@ export class DriverService {
       };
 
       // Update the breakdown request status to IN_PROGRESS when a driver quotes
-    } else if (data.status === DriverStatus.ACCEPTED) {
+    } else if (data.driverStatus === DriverStatus.ACCEPTED) {
       notificationType = EmailNotificationType.DRIVER_ACCEPT_EMAIL;
       payload = {
         requestId,
         driverId,
         user: userDetails,
-        status: data.status,
+        status: data.driverStatus,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
         driverName: `${""}`,
         driverPhone: driverDetails.phoneNumber,
@@ -107,16 +107,16 @@ export class DriverService {
         vehiclePlateNumber: driverDetails.vehicleRegistration,
         estimation: data.estimation,
       };
-    } else if (data.status === DriverStatus.REJECTED) {
+    } else if (data.driverStatus === DriverStatus.REJECTED) {
       notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
       payload = {
         requestId,
         driverId,
         user: userDetails,
-        status: data.status,
+        driverStatus: data.driverStatus,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
-    } else if (data.status === DriverStatus.CLOSED) {
+    } else if (data.driverStatus === DriverStatus.CLOSED) {
       return breakdownRequestUpdated;
       // notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
       // payload = {

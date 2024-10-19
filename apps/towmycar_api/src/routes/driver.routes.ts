@@ -83,9 +83,9 @@ router.patch(
     try {
       const driverId = req.userInfo.driverId;
       const requestId = parseInt(req.params.requestId);
-      let { status, estimation, explanation } = req.body;
+      let { driverStatus, estimation, explanation } = req.body;
 
-      if (!driverId || !status) {
+      if (!driverId || !driverStatus) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
@@ -94,10 +94,10 @@ router.patch(
       }
 
       if (
-        status !== DriverStatus.ACCEPTED &&
-        status !== DriverStatus.REJECTED &&
-        status !== DriverStatus.QUOTED &&
-        status !== DriverStatus.CLOSED
+        driverStatus !== DriverStatus.ACCEPTED &&
+        driverStatus !== DriverStatus.REJECTED &&
+        driverStatus !== DriverStatus.QUOTED &&
+        driverStatus !== DriverStatus.CLOSED
       ) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -119,14 +119,14 @@ router.patch(
       }
 
       const dataToUpdate = {
-        status,
+        driverStatus: driverStatus,
         ...(parsedEstimation !== undefined && {
           estimation: parsedEstimation.toString(),
         }),
         ...(explanation && { explanation }),
       };
 
-      if (status === DriverStatus.ACCEPTED) {
+      if (driverStatus === DriverStatus.ACCEPTED) {
         // Retrieve the driver's payment method ID
         const driver = await driverService.getDriverWithPaymentMethod(
           Number(driverId)
@@ -186,7 +186,9 @@ router.patch(
       );
 
       if (updated) {
-        res.json({ message: `Driver request status updated to ${status}` });
+        res.json({
+          message: `Driver request status updated to ${driverStatus}`,
+        });
       } else {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
@@ -277,23 +279,22 @@ router.post(
         );
       }
 
-      const response = await axios.post(
-        process.env.VEHICLE_REGISTRATION_API_URL!,
-        { registrationNumber },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.VEHICLE_REGISTRATION_API_KEY!,
-          },
-        }
-      );
+      const apiUrl = `${process.env.VEHICLE_REGISTRATION_API_URL}`;
+      const apiKey = process.env.VEHICLE_REGISTRATION_API_KEY;
+
+      const response = await axios.get(apiUrl, {
+        params: {
+          apikey: apiKey,
+          vrm: registrationNumber,
+        },
+      });
 
       res.json(response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         next(
           new CustomError(
-            ERROR_CODES.DATABASE_ERROR,
+            ERROR_CODES.RESOURCE_NOT_FOUND,
             error.response?.status || 500,
             error.response?.data?.message ||
               "Error verifying vehicle registration"
@@ -357,7 +358,9 @@ router.post(
         driverFeedback
       );
 
-      res.status(200).json({ message: "Breakdown request closed successfully" });
+      res
+        .status(200)
+        .json({ message: "Breakdown request closed successfully" });
     } catch (error) {
       next(error);
     }

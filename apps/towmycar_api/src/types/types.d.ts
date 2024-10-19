@@ -32,3 +32,25 @@ interface PaginatedResult<T> {
   page: number;
   limit: number;
 }
+
+type BreakdownRequestWithUserDetails = {
+  id: number;
+  requestType: string;
+  location: string;
+  description: string | null;
+  status: string;
+  regNo: string | null; // Add this line
+  weight: number | null; // Add this line
+  userId: number;
+  firstName: string | null;
+  lastName: string | null;
+  userEmail: string | null;
+  mobileNumber: string | null;
+  make: string | null;
+  makeModel: string | null;
+  color: string | null;
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  };
+};

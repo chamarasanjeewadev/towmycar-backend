@@ -18,7 +18,7 @@ import crypto from "crypto"; // Added import for crypto
 import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
 
 interface UpdateAssignmentData {
-  status: string;
+  driverStatus: string;
   estimation?: string; // Change to string
   explanation?: string; // Rename to explanation
 }
@@ -124,6 +124,17 @@ export const DriverRepository: IDriverRepository = {
       updatedAt: breakdownAssignment.updatedAt,
       userLocation: breakdownRequest.userLocation,
       createdAt: breakdownAssignment.assignedAt,
+      userRequest: {
+        id: breakdownRequest.id,
+        customerId: breakdownRequest.customerId,
+        status: breakdownRequest.status,
+        description: breakdownRequest.description,
+        regNo: breakdownRequest.regNo,
+        weight: breakdownRequest.weight,
+        address: breakdownRequest.address,
+        createdAt:breakdownRequest.createdAt,
+        updatedAt: breakdownRequest.updatedAt,
+      },
       driver: {
         id: driver.id,
         firstName: driverUser.firstName,
@@ -170,7 +181,7 @@ export const DriverRepository: IDriverRepository = {
       breakdownRequest: {
         id: breakdownAssignment.id,
         requestId: breakdownAssignment.requestId,
-        status: breakdownAssignment.driverStatus,
+        driverStatus: breakdownAssignment.driverStatus,
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
@@ -235,7 +246,7 @@ export const DriverRepository: IDriverRepository = {
   ): Promise<boolean> {
     const updateData: Partial<typeof breakdownAssignment.$inferInsert> = {
       //@ts-ignore
-      driverStatus: data.status,
+      driverStatus: data.driverStatus,
       ...(data.estimation !== undefined && { estimation: data.estimation }),
       ...(data.explanation !== undefined && { explanation: data.explanation }),
     };
@@ -275,7 +286,7 @@ export const DriverRepository: IDriverRepository = {
         .returning({ id: breakdownAssignment.id });
 
       // If the update was successful and the status is QUOTED, update the breakdownRequest status
-      if (updatedRows.length > 0 && data.status === DriverStatus.QUOTED) {
+      if (updatedRows.length > 0 && data.driverStatus === DriverStatus.QUOTED) {
         await this.updateBreakdownRequestStatus(
           requestId,
           UserStatus.INPROGRESS
@@ -487,7 +498,7 @@ export const DriverRepository: IDriverRepository = {
   ): Promise<boolean> {
     try {
       const result = await DB.update(breakdownRequest)
-        .set({status, updatedAt: new Date() })
+        .set({ status, updatedAt: new Date() })
         .where(
           and(
             eq(breakdownRequest.id, requestId),
@@ -511,7 +522,7 @@ export const DriverRepository: IDriverRepository = {
     const { driverId, requestId, driverRating, driverFeedback } = params;
 
     try {
-      await DB.transaction(async (tx) => {
+      await DB.transaction(async tx => {
         // Update breakdown assignment status
         await tx
           .update(breakdownAssignment)
@@ -529,7 +540,7 @@ export const DriverRepository: IDriverRepository = {
         // Update breakdown request status
         await tx
           .update(breakdownRequest)
-          .set({ 
+          .set({
             status: BreakdownRequestStatus.CLOSED,
             updatedAt: new Date(),
           })
@@ -548,29 +559,27 @@ export const DriverRepository: IDriverRepository = {
         }
 
         // Update or insert service rating
-        await tx
-          .insert(serviceRatings)
-          .values({
-            requestId,
-            customerId: assignment.customerId,
-            driverId,
-            driverRating,
-            driverFeedback,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
-          // .onConflictDoUpdate({
-          //   target: [serviceRatings.requestId, serviceRatings.driverId],
-          //   set: {
-          //     driverRating,
-          //     driverFeedback,
-          //     updatedAt: new Date(),
-          //   },
-          // });
+        await tx.insert(serviceRatings).values({
+          requestId,
+          customerId: assignment.customerId,
+          driverId,
+          driverRating,
+          driverFeedback,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        // .onConflictDoUpdate({
+        //   target: [serviceRatings.requestId, serviceRatings.driverId],
+        //   set: {
+        //     driverRating,
+        //     driverFeedback,
+        //     updatedAt: new Date(),
+        //   },
+        // });
       });
     } catch (error) {
       console.error("Error in closeBreakdownRequestAndUpdateRating:", error);
-      throw new DatabaseError("Failed to close breakdown request",error);
+      throw new DatabaseError("Failed to close breakdown request", error);
     }
   },
 };
