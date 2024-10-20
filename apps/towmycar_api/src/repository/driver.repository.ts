@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   DB,
   customer,
@@ -112,9 +111,83 @@ export const DriverRepository: IDriverRepository = {
   },
   async getDriverRequestsWithInfo(
     driverId: number
-  ): Promise<BreakdownRequestType[]> {
+  ): Promise<BreakdownAssignmentDetails[]> {
+    try {
+      const driverUser = aliasedTable(user, "driver_user");
+      const result = await DB.select({
+        id: breakdownAssignment.id,
+        requestId: breakdownAssignment.requestId,
+        driverStatus: breakdownAssignment.driverStatus,
+        userStatus: breakdownAssignment.userStatus,
+        estimation: breakdownAssignment.estimation,
+        explanation: breakdownAssignment.explanation,
+        updatedAt: breakdownAssignment.updatedAt,
+        userLocation: breakdownRequest.userLocation,
+        createdAt: breakdownAssignment.assignedAt,
+        userRequest: {
+          id: breakdownRequest.id,
+          customerId: breakdownRequest.customerId,
+          status: breakdownRequest.status,
+          description: breakdownRequest.description,
+          regNo: breakdownRequest.regNo,
+          weight: breakdownRequest.weight,
+          address: breakdownRequest.address,
+          createdAt: breakdownRequest.createdAt,
+          updatedAt: breakdownRequest.updatedAt,
+          make: breakdownRequest.make,
+          makeModel: breakdownRequest.model,
+          mobileNumber: breakdownRequest.mobileNumber,
+          requestType: breakdownRequest.requestType,
+        },
+        driver: {
+          id: driver.id,
+          firstName: driverUser.firstName,
+          lastName: driverUser.lastName,
+          email: driverUser.email,
+          imageUrl: driverUser.imageUrl,
+          vehicleType: driver.vehicleType,
+          regNo: driver.vehicleRegistration,
+          vehicleRegistration: driver.vehicleRegistration,
+          licenseNumber: driver.licenseNumber,
+          serviceRadius: driver.serviceRadius,
+          workingHours: driver.workingHours,
+          experienceYears: driver.experienceYears,
+          insuranceDetails: driver.insuranceDetails,
+          primaryLocation: driver.primaryLocation,
+        },
+        customer: {
+          id: customer.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          // authId: user.authId,
+          imageUrl: user.imageUrl,
+        },
+      })
+        .from(breakdownAssignment)
+        .innerJoin(
+          breakdownRequest,
+          eq(breakdownAssignment.requestId, breakdownRequest.id)
+        )
+        .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+        .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
+        .leftJoin(driverUser, eq(driverUser.id, driver.userId))
+        .leftJoin(user, eq(customer.userId, user.id))
+        .where(eq(breakdownAssignment.driverId, driverId))
+        .orderBy(desc(breakdownAssignment.updatedAt));
+
+      return result;
+    } catch (error) {
+      throw new DatabaseError(error);
+    }
+  },
+
+  async getSpecificDriverRequestWithInfo(
+    driverId: number,
+    requestId: number
+  ): Promise<BreakdownAssignmentDetails | null> {
     const driverUser = aliasedTable(user, "driver_user");
-    const result = await DB.select({
+    const [result] = await DB.select({
       id: breakdownAssignment.id,
       requestId: breakdownAssignment.requestId,
       driverStatus: breakdownAssignment.driverStatus,
@@ -124,6 +197,7 @@ export const DriverRepository: IDriverRepository = {
       updatedAt: breakdownAssignment.updatedAt,
       userLocation: breakdownRequest.userLocation,
       createdAt: breakdownAssignment.assignedAt,
+
       userRequest: {
         id: breakdownRequest.id,
         customerId: breakdownRequest.customerId,
@@ -132,8 +206,12 @@ export const DriverRepository: IDriverRepository = {
         regNo: breakdownRequest.regNo,
         weight: breakdownRequest.weight,
         address: breakdownRequest.address,
-        createdAt:breakdownRequest.createdAt,
+        createdAt: breakdownRequest.createdAt,
         updatedAt: breakdownRequest.updatedAt,
+        make: breakdownRequest.make,
+        makeModel: breakdownRequest.model,
+        mobileNumber: breakdownRequest.mobileNumber,
+        requestType: breakdownRequest.requestType,
       },
       driver: {
         id: driver.id,
@@ -141,11 +219,15 @@ export const DriverRepository: IDriverRepository = {
         lastName: driverUser.lastName,
         email: driverUser.email,
         imageUrl: driverUser.imageUrl,
-
-        // phoneNumber: driverUser.phoneNumber,
-        // vehicleType: driverUser.vehicleType,
-        // vehicleRegistration: driverUser.vehicleRegistration,
-        // licenseNumber: driverUser.licenseNumber,
+        vehicleType: driver.vehicleType,
+        regNo: driver.vehicleRegistration,
+        vehicleRegistration: driver.vehicleRegistration,
+        licenseNumber: driver.licenseNumber,
+        serviceRadius: driver.serviceRadius,
+        workingHours: driver.workingHours,
+        experienceYears: driver.experienceYears,
+        insuranceDetails: driver.insuranceDetails,
+        primaryLocation: driver.primaryLocation,
       },
       customer: {
         id: customer.id,
@@ -157,72 +239,14 @@ export const DriverRepository: IDriverRepository = {
       },
     })
       .from(breakdownAssignment)
-      .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .innerJoin(
         breakdownRequest,
         eq(breakdownAssignment.requestId, breakdownRequest.id)
       )
+      .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
+      .leftJoin(user, eq(user.id, customer.userId))
       .leftJoin(driverUser, eq(driverUser.id, driver.userId))
-      .leftJoin(user, eq(customer.userId, user.id))
-      .where(eq(breakdownAssignment.driverId, driverId))
-      .orderBy(desc(breakdownAssignment.updatedAt));
-
-    return result;
-  },
-
-  async getSpecificDriverRequestWithInfo(
-    driverId: number,
-    requestId: number
-  ): Promise<
-    (BreakdownAssignment & { driver: Driver; user: Customer }) | null
-  > {
-    const [result] = await DB.select({
-      breakdownRequest: {
-        id: breakdownAssignment.id,
-        requestId: breakdownAssignment.requestId,
-        driverStatus: breakdownAssignment.driverStatus,
-        estimation: breakdownAssignment.estimation,
-        explanation: breakdownAssignment.explanation,
-        updatedAt: breakdownAssignment.updatedAt,
-        driverId: breakdownAssignment.driverId,
-        assignedAt: breakdownAssignment.assignedAt,
-        userLocation: breakdownRequest.userLocation,
-        userStatus: breakdownAssignment.userStatus,
-      },
-      driver: {
-        id: driver.id,
-        fullName: user.firstName,
-        email: user.email,
-        phoneNumber: driver.phoneNumber,
-        vehicleType: driver.vehicleType,
-        vehicleRegistration: driver.vehicleRegistration,
-        licenseNumber: driver.licenseNumber,
-        serviceRadius: driver.serviceRadius,
-        workingHours: driver.workingHours,
-        experienceYears: driver.experienceYears,
-        insuranceDetails: driver.insuranceDetails,
-        createdAt: driver.createdAt,
-        updatedAt: driver.updatedAt,
-      },
-      user: {
-        id: customer.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        postcode: customer.postcode,
-        vehicleRegistration: customer.mobileNumber,
-        mobileNumber: customer.mobileNumber,
-      },
-    })
-      .from(breakdownAssignment)
-      .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
-      .innerJoin(
-        breakdownRequest,
-        eq(breakdownAssignment.requestId, breakdownRequest.id)
-      )
-      .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-      .innerJoin(user, eq(user.id, customer.userId))
       .where(
         and(
           eq(breakdownAssignment.driverId, driverId),
@@ -231,12 +255,7 @@ export const DriverRepository: IDriverRepository = {
       );
 
     if (!result) return null;
-    // @ts-ignore
-    return {
-      ...result.breakdownRequest,
-      driver: result.driver,
-      user: result.user,
-    } as BreakdownAssignment & { driver: Driver; user: Customer };
+    return result;
   },
 
   async updatebreakdownAssignment(

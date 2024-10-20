@@ -83,6 +83,10 @@ const saveBreakdownRequest = async (
       customerId: data.customerId,
       requestType: data.requestType,
       address: data.address,
+      make:data.make,
+      model: data.makeModel,
+      mobileNumber: data.mobileNumber,
+      address:data.address,
       userLocation: {
         x: data.userLocation.longitude,
         y: data.userLocation.latitude,

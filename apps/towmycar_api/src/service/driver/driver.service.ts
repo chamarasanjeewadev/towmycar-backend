@@ -12,6 +12,7 @@ import {
 import { sendSNS } from "../utils/sns.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
+import { GeoLocation } from "../../types/geoLocation"; // Add this import
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -29,19 +30,44 @@ export class DriverService {
     return repository.findByEmail(email);
   }
 
-  async getDriverRequestWithInfo(driverId: number, requestId: number) {
-    return DriverRepository.getSpecificDriverRequestWithInfo(
+  async getDriverRequestWithInfo(
+    driverId: number,
+    requestId: number
+  ): Promise<any> {
+    const request = await DriverRepository.getSpecificDriverRequestWithInfo(
       driverId,
       requestId
     );
+
+    if (request && request.userLocation) {
+      return {
+        ...request,
+        userLocation: {
+          latitude: request.userLocation.y,
+          longitude: request.userLocation.x,
+        } as GeoLocation,
+      };
+    }
+
+    return request;
   }
 
   async getDriverRequestsWithInfo(driverId: number) {
-    const driverRequests = await DriverRepository.getDriverRequestsWithInfo(
-      driverId
-    );
-
-    return driverRequests;
+    const requests = await DriverRepository.getDriverRequestsWithInfo(driverId);
+    
+    if (Array.isArray(requests)) {
+      return requests.map(request => {
+        if (request.userLocation) {
+          return {
+            ...request,
+            userLocation: this.convertToGeoLocation(request.userLocation),
+          };
+        }
+        return request;
+      });
+    }
+    
+    return requests;
   }
 
   async updateBreakdownAssignment(
@@ -161,6 +187,16 @@ export class DriverService {
       driverFeedback,
     });
     // TODO: Send notifications to customers
+  }
+
+  private convertToGeoLocation(location: {
+    x: number;
+    y: number;
+  }): GeoLocation {
+    return {
+      latitude: location.y,
+      longitude: location.x,
+    };
   }
 }
 

@@ -144,7 +144,7 @@ router.patch(
           throw new CustomError(
             ERROR_CODES.STRIPE_CARD_NOT_ADDED,
             400,
-            "Driver's payment method not found"
+            "Unable to process payment. Please add a valid payment method in your profile settings before accepting requests."
           );
         }
         try {
