@@ -50,7 +50,7 @@ router.get(
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
       const { requests, totalCount } =
-        await service.BreakdownRequestService.getPaginatedBreakdownRequestsWithUserDetails(
+        await service.BreakdownRequestService.getPaginatedBreakdownRequestsByCustomerId(
           page,
           pageSize,
           customerId
@@ -71,30 +71,33 @@ router.get(
   }
 );
 
-router.get("/assignments/:requestId?", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = null;
-    const requestId = req.params.requestId
-      ? parseInt(req.params.requestId, 10)
-      : undefined;
+router.get(
+  "/assignments/:requestId?",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = null;
+      const requestId = req.params.requestId
+        ? parseInt(req.params.requestId, 10)
+        : undefined;
 
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      if (requestId !== undefined && isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+
+      const assignments =
+        await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
+          requestId
+        );
+      res.status(200).json(assignments);
+    } catch (error) {
+      next(error);
     }
-
-    if (requestId !== undefined && isNaN(requestId)) {
-      return res.status(400).json({ error: "Invalid request ID" });
-    }
-
-    const assignments =
-      await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
-        requestId
-      );
-    res.status(200).json(assignments);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.patch(
   "/assignment/:assignmentId/status",
@@ -165,6 +168,27 @@ router.post(
       res
         .status(200)
         .json({ message: "Breakdown request closed and rated successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Add this new route
+router.get(
+  "/breakdown-request/:requestId",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const requestId = parseInt(req.params.requestId, 10);
+
+      if (isNaN(requestId)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+
+      const breakdownRequest = await service.BreakdownRequestService.getBreakdownRequestById(requestId);
+
+      res.status(200).json(breakdownRequest);
     } catch (error) {
       next(error);
     }

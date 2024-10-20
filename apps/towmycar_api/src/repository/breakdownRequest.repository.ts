@@ -21,15 +21,16 @@ import { eq, desc, isNotNull } from "drizzle-orm";
 type BreakdownRequestWithUserDetails = {
   id: number;
   requestType: string;
-  location: string;
+  location: { latitude: number; longitude: number } | null;
   description: string | null;
+  make: string | null;
+  makeModel: string | null;
+  regNo: string | null;
+  mobileNumber: string | null;
+  weight: number | null;
   status: string;
-  regNo: string | null; // Add this line
-  weight: number | null; // Add this line
+  createdAt: Date;
   userId: number;
-  firstName: string | null;
-  lastName: string | null;
-  userEmail: string | null;
 };
 
 type CloseBreakdownParams = {
@@ -44,11 +45,10 @@ export type BreakdownRequestRepositoryType = {
   getAllBreakdownRequestsWithUserDetails: () => Promise<
     BreakdownRequestWithUserDetails[]
   >;
-  getPaginatedBreakdownRequestsWithUserDetails: (
+  getPaginatedBreakdownRequestsByCustomerId: (
     page: number,
     pageSize: number,
-    customerId?: number,
-    requestId?: number
+    customerId?: number
   ) => Promise<{
     requests: BreakdownRequestWithUserDetails[];
     totalCount: number;
@@ -71,6 +71,9 @@ export type BreakdownRequestRepositoryType = {
   closeBreakdownAndUpdateRating: (
     params: CloseBreakdownParams
   ) => Promise<void>;
+  getBreakdownRequestById: (
+    requestId: number
+  ) => Promise<BreakdownRequestWithUserDetails | null>;
 };
 
 const saveBreakdownRequest = async (
@@ -83,10 +86,10 @@ const saveBreakdownRequest = async (
       customerId: data.customerId,
       requestType: data.requestType,
       address: data.address,
-      make:data.make,
+      make: data.make,
       model: data.makeModel,
       mobileNumber: data.mobileNumber,
-      address:data.address,
+      address: data.address,
       userLocation: {
         x: data.userLocation.longitude,
         y: data.userLocation.latitude,
@@ -109,11 +112,10 @@ const saveBreakdownRequest = async (
   }
 };
 
-const getPaginatedBreakdownRequestsWithUserDetails = async (
+const getPaginatedBreakdownRequestsByCustomerId = async (
   page: number,
   pageSize: number,
-  customerId?: number,
-  requestId?: number
+  customerId?: number
 ): Promise<{
   requests: BreakdownRequestWithUserDetails[];
   totalCount: number;
@@ -149,10 +151,6 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
       );
     }
 
-    if (requestId) {
-      filteredQuery = filteredQuery.where(eq(breakdownRequest.id, requestId));
-    }
-
     const requests = await filteredQuery.limit(pageSize).offset(offset);
 
     const countQuery = DB.select({
@@ -164,12 +162,6 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
     if (customerId) {
       filteredCountQuery = filteredCountQuery.where(
         eq(breakdownRequest.customerId, customerId)
-      );
-    }
-
-    if (requestId) {
-      filteredCountQuery = filteredCountQuery.where(
-        eq(breakdownRequest.id, requestId)
       );
     }
 
@@ -189,10 +181,7 @@ const getPaginatedBreakdownRequestsWithUserDetails = async (
       totalCount: count,
     };
   } catch (error) {
-    console.error(
-      "Error in getPaginatedBreakdownRequestsWithUserDetails:",
-      error
-    );
+    console.error("Error in getPaginatedBreakdownRequestsByCustomerId:", error);
     throw new Error(
       "Failed to fetch paginated breakdown requests with user details"
     );
@@ -381,11 +370,55 @@ const closeBreakdownAndUpdateRating = async (
   }
 };
 
+const getBreakdownRequestById = async (
+  requestId: number
+): Promise<BreakdownRequestWithUserDetails | null> => {
+  try {
+    const result = await DB.select({
+      id: breakdownRequest.id,
+      requestType: breakdownRequest.requestType,
+      location: breakdownRequest.userLocation,
+      description: breakdownRequest.description,
+      make: breakdownRequest.make,
+      makeModel: breakdownRequest.model,
+      regNo: breakdownRequest.regNo,
+      mobileNumber: breakdownRequest.mobileNumber,
+      weight: breakdownRequest.weight,
+      status: breakdownRequest.status,
+      createdAt: breakdownRequest.createdAt,
+      userId: breakdownRequest.customerId,
+    })
+      .from(breakdownRequest)
+      .where(eq(breakdownRequest.id, requestId))
+      .limit(1);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    const request = result[0];
+    return {
+      ...request,
+      weight: request.weight ? Number(request.weight) : null,
+      location: request.location
+        ? {
+            latitude: request.location.y, // Note: y is latitude
+            longitude: request.location.x, // Note: x is longitude
+          }
+        : null,
+    };
+  } catch (error) {
+    console.error("Error in getBreakdownRequestById:", error);
+    throw new Error("Failed to fetch breakdown request by ID");
+  }
+};
+
 export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   saveBreakdownRequest,
-  getPaginatedBreakdownRequestsWithUserDetails,
+  getPaginatedBreakdownRequestsByCustomerId,
   updateUserStatusInBreakdownAssignment,
   getBreakdownAssignmentsByRequestId,
   getBreakdownAssignmentsByDriverIdAndRequestId,
   closeBreakdownAndUpdateRating,
+  getBreakdownRequestById,
 };

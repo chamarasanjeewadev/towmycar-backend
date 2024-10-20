@@ -1,6 +1,5 @@
 import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import { UserRepository } from "../../repository/user.repository";
-import { BreakdownRequestWithUserDetails } from "../../dto/breakdownRequest.dto";
 import { EmailNotificationType, UserStatus } from "../../enums";
 import { BreakdownRequestInput } from "../../dto/breakdownRequest.dto";
 import {
@@ -41,29 +40,6 @@ const CreateBreakdownRequest = async (
       { requestId, ...breakdownRequestData }
     );
 
-    // send request to notification service to send email to the user
-    // const emailSnsResult = await sendNotification(
-    //   NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
-    //   {
-    //     type: EmailNotificationType.USER_REQUEST_EMAIL,
-    //     payload: {
-    //       breakdownRequestId: breakdownRequestId,
-    //       userId: userInfo.userId,
-    //       firstName: combinedInput.firstName,
-    //       lastName: combinedInput.lastName,
-    //       email: combinedInput.email,
-    //       userLocation: breakdownRequestData.userLocation,
-    //       viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${breakdownRequestId}`,
-    //     },
-    //   }
-    // );
-    // console.log("Sending Kafka message");
-    // await sendKafkaMessage("breakdown-requests", {
-    //   breakdownRequestId,
-    //   userId: userId,
-    //   location: breakdownRequestData.userLocation,
-    // });
-
     return {
       requestId,
       status: "Breakdown reported successfully.",
@@ -78,31 +54,16 @@ const CreateBreakdownRequest = async (
   }
 };
 
-// const getAllBreakdownRequestsWithUserDetails = async (): Promise<
-//   BreakdownRequestWithUserDetails[]
-// > => {
-//   const requests =
-//     await BreakdownRequestRepository.getAllBreakdownRequestsWithUserDetails();
-//   return requests.map(request => ({
-//     ...request,
-//     userName:
-//       `${request.firstName || ""} ${request.lastName || ""}`.trim() ||
-//       "Unknown",
-//   }));
-// };
-
-const getPaginatedBreakdownRequestsWithUserDetails = async (
+const getPaginatedBreakdownRequestsByCustomerId = async (
   page: number,
   pageSize: number,
-  customerId?: number,
-  requestId?: number
+  customerId?: number
 ) => {
   const { requests, totalCount } =
-    await BreakdownRequestRepository.getPaginatedBreakdownRequestsWithUserDetails(
+    await BreakdownRequestRepository.getPaginatedBreakdownRequestsByCustomerId(
       page,
       pageSize,
-      customerId,
-      requestId
+      customerId
     );
 
   return {
@@ -202,6 +163,16 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   );
 };
 
+const getBreakdownRequestById = async (requestId: number) => {
+  const request = await BreakdownRequestRepository.getBreakdownRequestById(
+    requestId
+  );
+  if (!request) {
+    throw new Error("Breakdown request not found");
+  }
+  return request;
+};
+
 const closeBreakdownAndUpdateRating = async (
   requestId: number,
   customerRating: number,
@@ -216,76 +187,12 @@ const closeBreakdownAndUpdateRating = async (
 };
 
 export const BreakdownRequestService = {
-  getPaginatedBreakdownRequestsWithUserDetails,
+  getPaginatedBreakdownRequestsByCustomerId,
   getBreakdownAssignmentsByRequestId,
   updateUserStatusInBreakdownAssignment,
   createAnonymousCustomerAndBreakdownRequest,
   CreateBreakdownRequest,
   getBreakdownAssignmentsByDriverIdAndRequestId,
   closeBreakdownAndUpdateRating, // Add this new method
+  getBreakdownRequestById, // Add this new method
 };
-
-// export const CreateAnonymousBreakdownRequest = async (
-//   combinedInput: BreakdownRequestInput
-// ) => {
-//   try {
-//     const result = await createAnonymousCustomerAndBreakdownRequest(combinedInput, UserRepository);
-
-//     return {
-//       anonymousCustomerId: result.anonymousCustomerId,
-//       breakdownRequestId: result.breakdownRequestResult.breakdownRequestId,
-//       status: result.breakdownRequestResult.status,
-//     };
-//   } catch (error) {
-//     console.error("Error in CreateAnonymousBreakdownRequest:", error);
-//     throw new Error("Failed to process anonymous breakdown request");
-//   }
-// };
-
-// export const CreateAnonymousBreakdownRequest = async (
-//   combinedInput: BreakdownRequestInput
-// ) => {
-//   try {
-//     const result = await BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(combinedInput, repo);
-
-//     return {
-//       anonymousCustomerId: result.anonymousCustomerId,
-//       breakdownRequestId: result.breakdownRequestResult.breakdownRequestId,
-//       status: result.breakdownRequestResult.status,
-//     };
-//   } catch (error) {
-//     console.error("Error in CreateAnonymousBreakdownRequest:", error);
-//     throw new Error("Failed to process anonymous breakdown request");
-//   }
-// };
-// export const createAndNotifyBreakdownRequest = async (
-//   input: BreakdownRequestInput,
-//   repo: BreakdownRequestRepositoryType
-// ) => {
-//   console.log("Creating breakdown request", input);
-//   const breakdownRequestId = await repo.saveBreakdownRequest(input);
-
-//   console.log("Sending SNS notification", BREAKDOWN_REQUEST_SNS_TOPIC_ARN);
-//   const snsResult = await sendNotification(
-//     BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-//     {
-//       breakdownRequestId,
-//       userId: input.userId,
-//       location: input.userLocation,
-//     }
-//   );
-
-//   // Send Kafka message
-//   console.log("Sending Kafka message");
-//   await sendKafkaMessage("breakdown-requests", {
-//     breakdownRequestId,
-//     userId: input.userId,
-//     location: input.userLocation,
-//   });
-
-//   return {
-//     breakdownRequestId,
-//     status: "Breakdown reported successfully.",
-//     snsNotification: snsResult,
-//   };
-// };
