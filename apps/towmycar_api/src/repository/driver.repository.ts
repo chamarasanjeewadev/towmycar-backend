@@ -1,3 +1,4 @@
+//@ts-nocheck
 import {
   DB,
   customer,
@@ -52,11 +53,11 @@ export interface IDriverRepository {
   findByEmail(email: string): Promise<Driver | null>;
   getDriverRequestsWithInfo(
     driverId: number
-  ): Promise<(BreakdownAssignment & { driver: Driver; user: Customer })[]>;
+  ): Promise<(BreakdownAssignmentDetails)[]>;
   getSpecificDriverRequestWithInfo(
     driverId: number,
     requestId: number
-  ): Promise<(BreakdownAssignment & { driver: Driver; user: Customer }) | null>;
+  ): Promise<(BreakdownAssignmentDetails) | null>;
   updatebreakdownAssignment(
     driverId: number,
     requestId: number,

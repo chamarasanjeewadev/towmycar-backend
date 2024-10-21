@@ -284,13 +284,7 @@ const createAnonymousCustomer = async (userInput: {
 
     return result;
   } catch (error) {
-    console.log(
-      "error occured.................................................",
-      error
-    );
-    console.error("Error creating or retrieving anonymous customer:", error);
     throw new DataBaseError(ERROR_CODES.DATABASE_ERROR, error);
-    throw error;
   }
 };
 

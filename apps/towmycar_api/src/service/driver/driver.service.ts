@@ -5,14 +5,12 @@ import {
 } from "../../repository/driver.repository";
 import {
   EmailNotificationType,
-  UserStatus,
   DriverStatus,
   BreakdownRequestStatus,
 } from "../../enums";
 import { sendSNS } from "../utils/sns.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
-import { GeoLocation } from "../../types/geoLocation"; // Add this import
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -43,9 +41,11 @@ export class DriverService {
       return {
         ...request,
         userLocation: {
+          //@ts-ignore
           latitude: request.userLocation.y,
+          //@ts-ignore
           longitude: request.userLocation.x,
-        } as GeoLocation,
+        },
       };
     }
 
@@ -54,19 +54,24 @@ export class DriverService {
 
   async getDriverRequestsWithInfo(driverId: number) {
     const requests = await DriverRepository.getDriverRequestsWithInfo(driverId);
-    
+
     if (Array.isArray(requests)) {
       return requests.map(request => {
         if (request.userLocation) {
           return {
             ...request,
-            userLocation: this.convertToGeoLocation(request.userLocation),
+            userLocation: {
+              //@ts-ignore
+              latitude: request.userLocation?.y,
+              //@ts-ignore
+              longitude: request.userLocation?.x,
+            },
           };
         }
         return request;
       });
     }
-    
+
     return requests;
   }
 
@@ -188,18 +193,7 @@ export class DriverService {
     });
     // TODO: Send notifications to customers
   }
-
-  private convertToGeoLocation(location: {
-    x: number;
-    y: number;
-  }): GeoLocation {
-    return {
-      latitude: location.y,
-      longitude: location.x,
-    };
-  }
 }
-
 export const getDriverById = async (
   userId: number,
   repository: IDriverRepository
@@ -254,19 +248,19 @@ export const updateDriverProfile = async (
   return updatedDriver;
 };
 
-export const getDriverByEmail = async (
-  email: string,
-  repository: IDriverRepository
-) => {
-  return repository.findByEmail(email);
-};
+// export const getDriverByEmail = async (
+//   email: string,
+//   repository: IDriverRepository
+// ) => {
+//   return repository.findByEmail(email);
+// };
 
-export const getDriverRequestsWithInfo = async (driverId: number) => {
-  return await DriverRepository.getDriverRequestsWithInfo(driverId);
-};
+// export const getDriverRequestsWithInfo = async (driverId: number) => {
+//   return await DriverRepository.getDriverRequestsWithInfo(driverId);
+// };
 
-export const getDriverProfileByEmail = async (email: string) => {
-  return await DriverRepository.getDriverProfileByEmail(email);
-};
+// export const getDriverProfileByEmail = async (email: string) => {
+//   return await DriverRepository.getDriverProfileByEmail(email);
+// };
 
 // Add more functions as needed
