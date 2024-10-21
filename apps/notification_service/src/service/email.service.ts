@@ -1,54 +1,23 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { EmailNotificationType } from "../enums";
-import { userRequestEmail } from '../templates/userRequestEmail';
-import { driverAcceptEmail } from '../templates/driverAcceptEmail';
-import { userAcceptEmail } from '../templates/userAcceptEmail';
-import { driverRejectEmail } from '../templates/driverRejectEmail';
-import { driverQuotationUpdatedEmail } from '../templates/driverQuotationUpdatedEmail';
-import { userCreatedEmail } from '../templates/userCreatedEmail';
-import { driverNotificationEmail } from '../templates/driverNotificationEmail';
-import { userNotificationEmail } from '../templates/userNotificationEmail';
+import { userRequestEmail } from "../templates/userRequestEmail";
+import { driverAcceptEmail } from "../templates/driverAcceptEmail";
+import { userAcceptEmail } from "../templates/userAcceptEmail";
+import { driverRejectEmail } from "../templates/driverRejectEmail";
+import { driverQuotationUpdatedEmail } from "../templates/driverQuotationUpdatedEmail";
+import { userCreatedEmail } from "../templates/userCreatedEmail";
+import { driverNotificationEmail } from "../templates/driverNotificationEmail";
+import { userNotificationEmail } from "../templates/userNotificationEmail";
+import {
+  EmailNotificationType,
+} from "@towmycar/database/enums";
+import { EmailPayloadBaseType, EmailPayloadType } from "@towmycar/database/types/types";
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
 
-// Email notification types enum
-
-// Update the EmailPayload type
-export type EmailPayload = {
-  recipientEmail?: string;
-  breakdownRequestId?: number;
-  userId?: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  location?: string;
-  viewRequestLink?: string;
-  driverName?: string;
-  status?: string;
-  message?: string;
-  requestId?: number;
-  newPrice?: number;
-  driverPhone?: string;
-  driverEmail?: string;
-  vehicleModel?: string;
-  vehiclePlateNumber?: string;
-  estimation?: string;
-  description?: string;
-  user?: {
-    id:string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber?: string;
-    // Add other user properties as needed
-  };
-  [key: string]: any; // Allow for additional properties
-};
-
 export const sendEmail = async (
   type: EmailNotificationType,
-  payload: EmailPayload
+  payload: EmailPayloadType & EmailPayloadBaseType
 ) => {
   try {
     console.log("payload in sendEmail", type, payload);
@@ -95,7 +64,7 @@ export const sendEmail = async (
 };
 
 // Update the getEmailContent function
-function getEmailContent(type: EmailNotificationType, payload: EmailPayload) {
+function getEmailContent(type: EmailNotificationType, payload: EmailPayloadBaseType) {
   switch (type) {
     case EmailNotificationType.USER_REQUEST_EMAIL:
       return userRequestEmail(payload);
@@ -109,7 +78,7 @@ function getEmailContent(type: EmailNotificationType, payload: EmailPayload) {
       return driverQuotationUpdatedEmail(payload);
     case EmailNotificationType.USER_CREATED_EMAIL:
       return userCreatedEmail(payload);
-    case EmailNotificationType.DRIVER_NOTIFICATION_EMAIL:
+    case EmailNotificationType.DRIVER_ASSIGNED_EMAIL:
       return driverNotificationEmail(payload);
     case EmailNotificationType.USER_NOTIFICATION_EMAIL:
       return userNotificationEmail(payload);

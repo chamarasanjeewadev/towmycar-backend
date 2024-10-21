@@ -1,6 +1,5 @@
-import { EmailPayload } from '../service/email.service';
 
-export const driverQuotationUpdatedEmail = (payload: EmailPayload) => ({
+export const driverQuotationUpdatedEmail = (payload: any) => ({
   subject: `Great news! Quotation ready for your Request #${payload.requestId}`,
   textBody: `Hello ${payload.user?.firstName || 'Valued Customer'},
 

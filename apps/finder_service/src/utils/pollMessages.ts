@@ -50,10 +50,7 @@ export async function processMessage(message: AWS.SQS.Message) {
       logger.warn("Invalid message format. RequestData:", requestData);
     }
   } catch (error) {
-    logger.error(
-      "Error processing message inside quotation service :",
-      error
-    );
+    logger.error("Error processing message inside quotation service :", error);
     logger.error("Error stack:", (error as Error).stack);
   } finally {
     await deleteMessage(message);
@@ -76,7 +73,6 @@ async function deleteMessage(message: AWS.SQS.Message) {
     logger.error(`Error deleting message ${message.MessageId}:`, error);
   }
 }
-
 
 export const pollMessagesFromSQS = async () => {
   logger.info("Starting to poll messages inside quotation service");
@@ -108,8 +104,15 @@ export const pollMessagesFromSQS = async () => {
   setTimeout(pollMessagesFromSQS, 15000);
 };
 
-export const handler = async (event: SQSEvent, context: Context, callback: Callback) => {
-  logger.info("Lambda function triggered. Received SQS event:", JSON.stringify(event));
+export const handler = async (
+  event: SQSEvent,
+  context: Context,
+  callback: Callback
+) => {
+  logger.info(
+    "Lambda function triggered. Received SQS event:",
+    JSON.stringify(event)
+  );
 
   try {
     logger.info(`Processing ${event.Records.length} messages`);
@@ -128,13 +131,14 @@ export const handler = async (event: SQSEvent, context: Context, callback: Callb
     logger.info("Successfully processed all messages in the SQS event");
     callback(null, {
       statusCode: 200,
-      body: JSON.stringify({ message: "Success", processedMessages: event.Records.length })
+      body: JSON.stringify({
+        message: "Success",
+        processedMessages: event.Records.length,
+      }),
     });
-  } catch (error:any) {
+  } catch (error: any) {
     logger.error("Error processing SQS event in Lambda function:", error);
     logger.error("Error stack:", error.stack);
     callback(error);
   }
 };
-
-

@@ -1,11 +1,13 @@
+import { EmailNotificationType } from "@towmycar/database/enums";
+import { BreakdownNotificationType } from "@towmycar/database/types/types";
 import { SNS } from "aws-sdk";
-import { EmailNotificationType } from "../enums";
+
 // Configure AWS SDK to use credentials from the local AWS config file
 const sns = new SNS({
   region: process.env.REGION || "us-east-1",
 });
 
-export const sendNotification = async (topicArn: string, message: any) => {
+export const sendNotification = async (topicArn: string, message:BreakdownNotificationType ) => {
   const snsParams = {
     Message: JSON.stringify(message),
     TopicArn: topicArn,

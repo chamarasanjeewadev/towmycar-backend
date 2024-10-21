@@ -1,4 +1,4 @@
-//@ts-nocheck
+// @ts-nocheck
 import {
   DB,
   driver,
@@ -8,13 +8,14 @@ import {
   user,
   Customer,
 } from "@towmycar/database";
+import { DriverStatus, UserStatus } from "@towmycar/database/enums";
 import { sql, eq, and } from "drizzle-orm";
-import { DriverStatus, UserStatus } from "../enums";
 import { DatabaseError } from "pg";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phoneNumber: string;
   vehicleType: string;
@@ -57,10 +58,11 @@ const findNearbyDrivers = async (
   try {
     const nearbyDrivers = await DB.select({
       id: driver.id,
-      // fullName: driver.fullName,
-      // email: driver.email,
-      // phoneNumber: driver.phoneNumber,
-      // vehicleType: driver.vehicleType,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: driver.phoneNumber,
+      vehicleType: driver.vehicleType,
       distance: sql`
         ST_Distance(
           ${driver.primaryLocation}::geography,
@@ -68,7 +70,7 @@ const findNearbyDrivers = async (
         ) / 1000
       `.as("distance"),
     })
-      .from(driver)
+      .from(driver).leftJoin(user, eq(driver.userId, user.id))
       .where(
         sql`ST_DWithin(
           ${driver.primaryLocation}::geography,

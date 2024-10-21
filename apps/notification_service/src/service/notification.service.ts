@@ -1,15 +1,23 @@
-import { EmailNotificationType } from "../enums";
-import { sendPushNotification } from "../utils/pushNotificationSender";
-import { EmailPayload } from "./email.service";
-import { DriverSearchRepository } from "../repository/fcm.repository";
+import { sendPushNotification as sendPush } from "../utils/pushNotificationSender";
+import { FcmRepository } from "../repository/fcm.repository";
+import {
+  FcmNotificationPayloadType,
+  PushNotificationPayload,
+} from "@towmycar/database/types/types";
+import { PushNotificationType } from "@towmycar/database/enums";
 
-export const sendDriverAcceptanceBreakdownPushNotification = async (
-  type: EmailNotificationType,
-  payload: EmailPayload
-) => {
-  // Get the user ID from the payload
-  //@ts-nocheck
-  const userId = payload?.user?.id;
+interface NotificationMessage {
+  title: string;
+  body: string;
+  data?: {
+    url?: string;
+  };
+}
+
+async function sendGenericPushNotification(
+  payload: PushNotificationPayload
+): Promise<void> {
+  const { userId, title, message, url } = payload;
 
   if (!userId) {
     console.error("User ID is missing in the payload");
@@ -17,36 +25,77 @@ export const sendDriverAcceptanceBreakdownPushNotification = async (
   }
 
   try {
-    // Get all active FCM tokens for the user
-    const tokens = await DriverSearchRepository.getFcmTokensByUserId(+userId);
+    const tokens = await FcmRepository.getFcmTokensByUserId(userId);
 
     if (tokens.length === 0) {
       console.log(`No active FCM tokens found for user ${userId}`);
       return;
     }
 
-    // Filter out duplicate tokens
     const uniqueTokens = Array.from(new Set(tokens.map(t => t.token)));
 
-    // Prepare the notification message
-    const notificationMessage = {
-      title: "Assignment status updated",
-      body: "The status of the assignment has been updated",
+    const notificationMessage: NotificationMessage = {
+      title,
+      body: message,
+      data: url ? { url } : undefined,
     };
 
-    // Send push notification to all unique tokens
     const notificationPromises = uniqueTokens.map(token =>
-      sendPushNotification(token, notificationMessage)
+      sendPush(token, notificationMessage)
     );
 
     const result = await Promise.allSettled(notificationPromises);
-    console.log("result", result);
-    console.log(`Push notifications sent to ${uniqueTokens.length} unique devices for user ${userId}`);
+    console.log("Push notification results:", result);
+    console.log(
+      `Push notifications sent to ${uniqueTokens.length} unique devices for user ${userId}`
+    );
   } catch (error) {
     console.error("Error sending push notifications:", error);
   }
-};
+}
+
+// async function sendDriverAssignedBreakdownPushNotification(
+//   payload: EmailPayload
+// ): Promise<void> {
+//   const userId = payload?.user?.id;
+
+//   if (!userId) {
+//     console.error("User ID is missing in the payload");
+//     return;
+//   }
+
+//   await sendGenericPushNotification({
+//     userId: Number(userId),
+//     title: "Assignment status updated",
+//     message: "The status of your breakdown assignment has been updated. Tap to view details.",
+//     url: "/breakdown-details", // Replace with the actual URL
+//   });
+// }
+
+function sendDriverAssignedPushNotification(
+  payload: FcmNotificationPayloadType
+): void {
+  console.log("Payload in sendDriverAssignedPushNotification:", payload);
+
+  sendGenericPushNotification({
+    userId: payload.userId,
+    title: payload.title,
+    message: payload.message,
+    url: payload.url, // Replace with the actual URL
+  });
+}
+
+async function sendPushNotification(
+  type: PushNotificationType,
+  payload: FcmNotificationPayloadType
+): Promise<void> {
+  if (type === PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION) {
+    sendDriverAssignedPushNotification(payload);
+  }
+  // Add more conditions for other notification types as needed
+  console.log("Payload in sendPushNotification:", payload);
+}
 
 export const UserNotificationService = {
-  sendDriverAcceptanceBreakdownPushNotification,
+  sendPushNotification,
 };

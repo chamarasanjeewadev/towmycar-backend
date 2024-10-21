@@ -27,12 +27,10 @@ const CreateBreakdownRequest = async (
         longitude: combinedInput.userLocation.longitude,
       },
     };
-    console.log("breakdownRequestData", breakdownRequestData);
 
     const requestId = await BreakdownRequestRepository.saveBreakdownRequest(
       breakdownRequestData
     );
-    console.log("breakdownRequestId", requestId);
 
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendSNS(

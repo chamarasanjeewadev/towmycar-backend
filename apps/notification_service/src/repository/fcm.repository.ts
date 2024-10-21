@@ -43,6 +43,6 @@ const getFcmTokensByUserId = async (userId: number): Promise<FcmToken[]> => {
   }
 };
 
-export const DriverSearchRepository: DriverSearchRepositoryType = {
+export const FcmRepository: DriverSearchRepositoryType = {
   getFcmTokensByUserId,
 };

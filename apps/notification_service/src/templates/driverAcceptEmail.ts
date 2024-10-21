@@ -1,6 +1,5 @@
-import { EmailPayload } from '../service/email.service';
 
-export const driverAcceptEmail = (payload: EmailPayload) => ({
+export const driverAcceptEmail = (payload: any) => ({
   subject: `Great news! A driver is willing to assist you - Request #${payload.requestId}`,
   textBody: `Hello ${payload.firstName},
 

@@ -2,8 +2,19 @@ import { UserNotificationService } from "../service/notification.service";
 import AWS from "aws-sdk";
 import { logger } from "./index";
 import { SQS_QUEUE_URL } from "../config";
-import { sendEmail } from "../service/email.service";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
+import {
+  BaseNotificationType,
+  EmailNotificationType,
+  PushNotificationType,
+} from "@towmycar/database/enums";
+import {
+  BreakdownNotificationType,
+  EmailPayloadBaseType,
+  EmailPayloadType,
+  FcmNotificationPayloadType,
+} from "@towmycar/database/types/types";
+import { sendEmail } from "./../service/email.service";
 
 AWS.config.update({ region: "us-east-1" });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
@@ -13,16 +24,33 @@ async function processMessage(message: AWS.SQS.Message) {
   try {
     const snsNotification = JSON.parse(message.Body || "{}");
     if (snsNotification.Message) {
-      const messageData = JSON.parse(snsNotification.Message);
+      const messageData: BreakdownNotificationType = JSON.parse(
+        snsNotification.Message
+      );
+
       if (messageData.type && messageData.payload) {
+        switch (messageData.type) {
+          case BaseNotificationType.EMAIL:
+            await sendEmail(
+              messageData.subType as EmailNotificationType,
+              messageData.payload as EmailPayloadType & EmailPayloadBaseType
+            );
+            break;
+          case BaseNotificationType.PUSH:
+            await UserNotificationService.sendPushNotification(
+              messageData.subType as PushNotificationType,
+              messageData.payload as FcmNotificationPayloadType
+            );
+            break;
+        }
         // check idempotency before sending email
-        await sendEmail(messageData.type, messageData.payload);
-        console.log("email sent");
-        console.log("sending noficition to fcms")
-        await UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(
-          messageData.type,
-          messageData.payload
-        );
+        // await sendEmail(messageData.type, messageData.payload);
+        // console.log("email sent");
+        // console.log("sending noficition to fcms")
+        // await UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(
+        //   messageData.type,
+        //   messageData.payload
+        // );
         console.log("notification sent");
       } else {
         logger.warn("Invalid message format: missing type or payload");

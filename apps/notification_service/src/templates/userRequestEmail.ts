@@ -1,6 +1,5 @@
-import { EmailPayload } from '../service/email.service';
 
-export const userRequestEmail = (payload: EmailPayload) => ({
+export const userRequestEmail = (payload: any) => ({
   subject: `We're here to help with your breakdown - Request #${payload.breakdownRequestId ?? 'N/A'}`,
   textBody: `Dear ${payload.firstName ?? 'Valued Customer'},
 

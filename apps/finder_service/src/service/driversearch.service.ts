@@ -1,18 +1,31 @@
-//@ts-nocheck
 import {
   DriverSearchRepository,
   NearbyDriver,
 } from "../repository/driversearch.repository";
 import { sendNotification } from "../utils/sns.service";
-import { EmailNotificationType } from "../enums";
+
 import {
   VIEW_REQUEST_BASE_URL,
   NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
 } from "../config";
+import {
+  EmailPayloadBaseType,
+  EmailPayloadType,
+  PushNotificationPayload,
+} from "@towmycar/database/types/types";
+import {
+  BaseNotificationType,
+  EmailNotificationType,
+  PushNotificationType,
+} from "@towmycar/database/enums";
 
 // Add User interface (you might want to import this from a shared types file)
 interface User {
   id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
   // Add other user properties as needed
 }
 
@@ -93,45 +106,72 @@ const sendNotifications = async (
   longitude: number,
   customerId: number
 ) => {
-  console.log(
-    "calling sendNotifications, sending email or fcm notifications",
+  console.log("Sending notifications to nearby drivers", {
     nearbyDrivers,
     requestId,
     latitude,
     longitude,
-    customerId
-  );
+    customerId,
+  });
+
   try {
     const user = await DriverSearchRepository.getUserByCustomerId(customerId);
-    for (const driver of nearbyDrivers) {
-      try {
-        console.log(
-          "Attempting to send notification to driver",
-          driver,
-          EmailNotificationType.DRIVER_NOTIFICATION_EMAIL
-        );
-        await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-          type: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
-          payload: {
-            breakdownRequestId: requestId,
-            driver,
-            user,
-            location: `${latitude}, ${longitude}`,
-            viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${requestId}`,
-          },
-        });
-        console.log(`Notification sent successfully to driver ${driver.id}`);
-      } catch (error) {
-        console.error(
-          `Error sending notification to driver ${driver.id}:`,
-          error
-        );
-      }
-    }
+    const notificationPromises = nearbyDrivers.map(driver =>
+      sendDriverNotifications(driver, user, requestId, latitude, longitude)
+    );
+    // send push notification to user stating request has been assigned to few drivers
+
+    await Promise.allSettled(notificationPromises);
   } catch (error) {
     console.error("Error in sendNotifications:", error);
   }
 };
+
+async function sendDriverNotifications(
+  driver: NearbyDriver,
+  user: User,
+  requestId: number,
+  latitude: number,
+  longitude: number
+) {
+  const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${requestId}`;
+
+  const emailPayload: EmailPayloadBaseType & Partial<EmailPayloadType> = {
+    breakdownRequestId: requestId,
+    location: `Latitude: ${latitude}, Longitude: ${longitude}`,
+    driver,
+    user,
+    viewRequestLink,
+    recipientEmail:"towmycar.uk@gmail.com"//TODO change to  driver.email,
+  };
+
+  const pushNotificationPayload: PushNotificationPayload = {
+    title: "New Request Assignment",
+    userId: driver.id,
+    url: viewRequestLink,
+    message:
+      "You have been assigned to a new request. Please check your requests in the TowMyCar app.",
+  };
+
+  try {
+    await Promise.all([
+      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+        type: BaseNotificationType.EMAIL,
+        subType: EmailNotificationType.DRIVER_ASSIGNED_EMAIL,
+        payload: emailPayload,
+      }),
+      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+        type: BaseNotificationType.PUSH,
+        subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
+        payload: pushNotificationPayload,
+      }),
+    ]);
+
+    console.log(`Notifications sent successfully to driver ${driver.id}`);
+  } catch (error) {
+    console.error(`Error sending notifications to driver ${driver.id}:`, error);
+  }
+}
 
 export const DriverSearchService: DriverSearchServiceType = {
   findAndNotifyNearbyDrivers,

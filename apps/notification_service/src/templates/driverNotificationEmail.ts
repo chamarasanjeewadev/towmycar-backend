@@ -1,8 +1,9 @@
-import { EmailPayload } from '../service/email.service';
+import { DriverNotificationEmailPayload } from "@towmycar/database/types/types";
 
-export const driverNotificationEmail = (payload: EmailPayload) => ({
-  subject: `New Breakdown Request: Your Assistance Needed! - Request #${payload.breakdownRequestId}`,
-  textBody: `Hello ${payload.driver?.firstName},
+export function driverNotificationEmail(payload: DriverNotificationEmailPayload) {
+  return {
+    subject: `New Breakdown Request: Your Assistance Needed! - Request #${payload.breakdownRequestId}`,
+    textBody: `Hello ${payload.driver.firstName},
 
 We have an urgent breakdown request in your area that needs your expertise!
 
@@ -12,8 +13,8 @@ Request Details:
 - Time Submitted: ${new Date().toLocaleString()}
 
 User Details:
-- Name: ${payload.user?.firstName} ${payload.user?.lastName}
-- Phone: ${payload.user?.phoneNumber || 'Not provided'}
+- Name: ${payload.user.firstName} ${payload.user.lastName}
+- Phone: ${payload.user.phoneNumber || "Not provided"}
 
 A driver in distress is counting on professionals like you. Your quick response can make a significant difference in their day.
 
@@ -28,9 +29,9 @@ Thank you for your dedication to helping drivers in need.
 
 Best regards,
 Your Breakdown Assistance Team`,
-  htmlBody: `
+    htmlBody: `
     <h1>New Breakdown Request: Your Assistance Needed!</h1>
-    <p>Hello ${payload.driver?.fullName},</p>
+    <p>Hello ${payload.driver.firstName},</p>
     <p>We have an <strong>urgent breakdown request</strong> in your area that needs your expertise!</p>
     
     <h2>Request Details:</h2>
@@ -42,14 +43,20 @@ Your Breakdown Assistance Team`,
     
     <h2>User Details:</h2>
     <ul>
-      <li><strong>Name:</strong> ${payload.user?.firstName} ${payload.user?.lastName}</li>
-      <li><strong>Phone:</strong> ${payload.user?.phoneNumber || 'Not provided'}</li>
+      <li><strong>Name:</strong> ${payload.user.firstName} ${
+      payload.user.lastName
+    }</li>
+      <li><strong>Phone:</strong> ${
+        payload.user.phoneNumber || "Not provided"
+      }</li>
     </ul>
     
     <p>A driver in distress is counting on professionals like you. Your quick response can make a significant difference in their day.</p>
     
     <p>To view full details and accept this request, please click the button below:</p>
-    <p><a href="${payload.viewRequestLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">View and Accept Request</a></p>
+    <p><a href="${
+      payload.viewRequestLink
+    }" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">View and Accept Request</a></p>
     
     <p><em>Remember, fast response times lead to higher ratings and more business opportunities!</em></p>
     
@@ -59,4 +66,5 @@ Your Breakdown Assistance Team`,
     
     <p>Best regards,<br>Your Breakdown Assistance Team</p>
   `,
-});
+  };
+}
