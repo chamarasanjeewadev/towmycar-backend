@@ -27,6 +27,7 @@ async function processMessage(message: AWS.SQS.Message) {
       const messageData: BreakdownNotificationType = JSON.parse(
         snsNotification.Message
       );
+      console.log("parsed sns msg",JSON.stringify(messageData));
 
       if (messageData.type && messageData.payload) {
         switch (messageData.type) {
@@ -43,14 +44,7 @@ async function processMessage(message: AWS.SQS.Message) {
             );
             break;
         }
-        // check idempotency before sending email
-        // await sendEmail(messageData.type, messageData.payload);
-        // console.log("email sent");
-        // console.log("sending noficition to fcms")
-        // await UserNotificationService.sendDriverAcceptanceBreakdownPushNotification(
-        //   messageData.type,
-        //   messageData.payload
-        // );
+       
         console.log("notification sent");
       } else {
         logger.warn("Invalid message format: missing type or payload");

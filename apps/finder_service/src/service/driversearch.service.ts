@@ -2,7 +2,7 @@ import {
   DriverSearchRepository,
   NearbyDriver,
 } from "../repository/driversearch.repository";
-import { sendNotification } from "../utils/sns.service";
+import { sendNotification as sendSNSNotification } from "../utils/sns.service";
 
 import {
   VIEW_REQUEST_BASE_URL,
@@ -155,12 +155,12 @@ async function sendDriverNotifications(
 
   try {
     await Promise.all([
-      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      sendSNSNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.EMAIL,
         subType: EmailNotificationType.DRIVER_ASSIGNED_EMAIL,
         payload: emailPayload,
       }),
-      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      sendSNSNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.PUSH,
         subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
         payload: pushNotificationPayload,
