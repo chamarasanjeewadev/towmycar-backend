@@ -10,15 +10,15 @@ import { errorMiddleware } from "./middleware/errorHandlingMiddleware";
 
 const app = express();
 
-// Configure CORS properly
+// Updated CORS configuration
 const corsOptions = {
   origin: "*", // Allow all origins, or specify your frontend domain
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"], // Allow specific headers
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(cors(corsOptions)); // Apply CORS middleware
-app.options("*", cors(corsOptions)); // Handle preflight requests
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(httpLogger);

@@ -1,4 +1,3 @@
-//@ts-nocheck
 import {
   DB,
   breakdownRequest,
@@ -196,8 +195,8 @@ const updateUserStatusInBreakdownAssignment = async (
   const result = await DB.update(breakdownAssignment)
     // @ts-ignore
     .set({ userStatus: userStatus })
-    .where(eq(breakdownAssignment.id, assignmentId))
-    .returning();
+        .where(eq(breakdownAssignment.id, assignmentId))
+        .returning();
 
   return result.length > 0 ? result[0] : null;
 };
@@ -240,10 +239,15 @@ const getBreakdownAssignmentsByRequestId = async (
     .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
     .leftJoin(user, eq(customer.userId, user.id))
     .leftJoin(driverUser, eq(driverUser.id, driver.userId))
-    .where(eq(breakdownAssignment.requestId, requestId))
+    .where(
+      and(
+        eq(breakdownAssignment.requestId, requestId),
+        ne(breakdownAssignment.driverStatus, DriverStatus.PENDING)
+      )
+    )
     .orderBy(desc(breakdownAssignment.updatedAt));
 
-  return result as unknown as (BreakdownAssignment & {
+  return result as (BreakdownAssignment & {
     driver: Driver;
     user: User;
   })[];

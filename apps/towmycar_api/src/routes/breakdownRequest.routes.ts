@@ -23,6 +23,24 @@ router.post(
   }
 );
 
+router.get("/assignments/:requestId", async (req: Request, res: Response) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (isNaN(requestId)) {
+      return res.status(400).json({ error: "Invalid request ID" });
+    }
+
+    const assignments =
+      await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
+        requestId
+      );
+    res.status(200).json(assignments);
+  } catch (error) {
+    console.error("Error fetching assignments:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post(
   "/breakdown-request",
   clerkAuthMiddleware("customer"),
