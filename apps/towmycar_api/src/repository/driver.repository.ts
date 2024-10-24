@@ -16,6 +16,7 @@ import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError, DatabaseError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
 import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
+import { CloseBreakdownParams } from "../types/@types.d.ts"; // Import the type
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -53,11 +54,11 @@ export interface IDriverRepository {
   findByEmail(email: string): Promise<Driver | null>;
   getDriverRequestsWithInfo(
     driverId: number
-  ): Promise<(BreakdownAssignmentDetails)[]>;
+  ): Promise<BreakdownAssignmentDetails[]>;
   getSpecificDriverRequestWithInfo(
     driverId: number,
     requestId: number
-  ): Promise<(BreakdownAssignmentDetails) | null>;
+  ): Promise<BreakdownAssignmentDetails | null>;
   updatebreakdownAssignment(
     driverId: number,
     requestId: number,
@@ -93,12 +94,7 @@ export interface IDriverRepository {
     requestId: number,
     status: BreakdownRequestStatus
   ): Promise<boolean>;
-  closeBreakdownRequestAndUpdateRating(params: {
-    driverId: number;
-    requestId: number;
-    driverRating: number;
-    driverFeedback: string;
-  }): Promise<void>;
+  closeBreakdownRequestAndRequestRating(params: CloseDriverAssignmentParams): Promise<void>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -471,6 +467,8 @@ export const DriverRepository: IDriverRepository = {
       vehicleType: driver.vehicleType,
       vehicleRegistration: driver.vehicleRegistration,
       licenseNumber: driver.licenseNumber,
+      maxWeight: driver.maxWeight,
+      address: driver.address,
     })
       .from(breakdownAssignment)
       .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
@@ -533,22 +531,32 @@ export const DriverRepository: IDriverRepository = {
       throw new DatabaseError("Failed to update breakdown request status");
     }
   },
-  async closeBreakdownRequestAndUpdateRating(params: {
-    driverId: number;
-    requestId: number;
-    driverRating: number;
-    driverFeedback: string;
-  }): Promise<void> {
-    const { driverId, requestId, driverRating, driverFeedback } = params;
+  async closeBreakdownRequestAndRequestRating(params: CloseBreakdownParams): Promise<void> {
+    const { driverId, requestId, markAsCompleted, reason } = params;
 
     try {
       await DB.transaction(async tx => {
-        // Update breakdown assignment status
+        // Check if the assignment is accepted by both user and driver
+        const [assignment] = await tx
+          .select({
+            userStatus: breakdownAssignment.userStatus,
+            driverStatus: breakdownAssignment.driverStatus,
+          })
+          .from(breakdownAssignment)
+          .where(
+            and(
+              eq(breakdownAssignment.driverId, driverId),
+              eq(breakdownAssignment.requestId, requestId)
+            )
+          )
+          .limit(1);
         await tx
           .update(breakdownAssignment)
           .set({
             driverStatus: DriverStatus.CLOSED,
             updatedAt: new Date(),
+            reason: reason,
+            iscompleted: markAsCompleted,
           })
           .where(
             and(
@@ -557,45 +565,23 @@ export const DriverRepository: IDriverRepository = {
             )
           );
 
-        // Update breakdown request status
-        await tx
-          .update(breakdownRequest)
-          .set({
-            status: BreakdownRequestStatus.CLOSED,
-            updatedAt: new Date(),
-          })
-          .where(eq(breakdownRequest.id, requestId));
+        if (
+          assignment &&
+          assignment.userStatus === UserStatus.ACCEPTED &&
+          assignment.driverStatus === DriverStatus.ACCEPTED &&
+          markAsCompleted
+        ) {
+          // Update breakdown assignment status
 
-        // Get the customer ID associated with this request
-        const [assignment] = await tx
-          .select({
-            customerId: breakdownRequest.customerId,
-          })
-          .from(breakdownRequest)
-          .where(eq(breakdownRequest.id, requestId));
-
-        if (!assignment) {
-          throw new Error("No breakdown request found for this request ID");
+          // Update breakdown request status
+          await tx
+            .update(breakdownRequest)
+            .set({
+              status: BreakdownRequestStatus.CLOSED,
+              updatedAt: new Date(),
+            })
+            .where(eq(breakdownRequest.id, requestId));
         }
-
-        // Update or insert service rating
-        await tx.insert(serviceRatings).values({
-          requestId,
-          customerId: assignment.customerId,
-          driverId,
-          driverRating,
-          driverFeedback,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-        // .onConflictDoUpdate({
-        //   target: [serviceRatings.requestId, serviceRatings.driverId],
-        //   set: {
-        //     driverRating,
-        //     driverFeedback,
-        //     updatedAt: new Date(),
-        //   },
-        // });
       });
     } catch (error) {
       console.error("Error in closeBreakdownRequestAndUpdateRating:", error);

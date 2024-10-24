@@ -312,7 +312,8 @@ router.post(
   clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { driverId, driverRating, driverFeedback } = req.body;
+      const driverId = req.userInfo.driverId; // Retrieve driverId from userInfo
+      const { markAsCompleted, reason } = req.body; // Extract from req.body
       const requestId = parseInt(req.params.requestId, 10);
 
       if (isNaN(requestId)) {
@@ -323,39 +324,12 @@ router.post(
         );
       }
 
-      if (!driverId || isNaN(Number(driverId))) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Invalid driver ID"
-        );
-      }
-
-      if (
-        typeof driverRating !== "number" ||
-        driverRating < 1 ||
-        driverRating > 5
-      ) {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Invalid rating. Must be a number between 1 and 5."
-        );
-      }
-
-      if (typeof driverFeedback !== "string") {
-        throw new CustomError(
-          ERROR_CODES.INVALID_INPUT,
-          400,
-          "Invalid feedback. Must be a string."
-        );
-      }
-
-      await driverService.closeBreakdownRequestAndUpdateRating(
-        Number(driverId),
+      
+      await driverService.closeBreakdownRequestAndUpdateRating({
+        driverId,
         requestId,
-        driverRating,
-        driverFeedback
+        markAsCompleted,
+       reason }
       );
 
       res

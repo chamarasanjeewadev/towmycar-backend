@@ -50,6 +50,7 @@ export const driver = pgTable("driver", {
     .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
+  address: text("address"),
   stripeId: varchar("stripe_id", { length: 255 }), // Stripe customer ID
   stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }), // New field for Stripe payment method ID
   phoneNumber: varchar("phone_number", { length: 20 }),
@@ -63,6 +64,7 @@ export const driver = pgTable("driver", {
     srid: 4326,
   }),
   workingHours: varchar("working_hours", { length: 100 }),
+  maxWeight: integer("max_weight"),
   experienceYears: integer("experience_years"),
   insuranceDetails: text("insurance_details"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -134,6 +136,8 @@ export const breakdownAssignment = pgTable(
       .references(() => driver.id, { onDelete: "cascade" })
       .notNull(),
     driverStatus: varchar("driver_status", { length: 20 }),
+    reasonToClose:text("reason_to_close"),
+    isCompleted:boolean("is_completed").default(false).notNull(),
     userStatus: varchar("user_status", { length: 20 }),
     estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
     explanation: text("estimate_explanation"),
@@ -193,13 +197,10 @@ export const serviceRatings = pgTable("service_ratings", {
   customerId: integer("customer_id")
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
-  driverId: integer("driver_id").references(() => driver.id, {
-    onDelete: "cascade",
-  }),
   customerRating: integer("customer_rating"),
   customerFeedback: text("customer_feedback"),
-  driverRating: integer("driver_rating"),
-  driverFeedback: text("driver_feedback"),
+  siteRating: integer("site_rating"),
+  siteFeedback: text("site_feedback"),
   serviceProvided: boolean("serviceProvided").default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

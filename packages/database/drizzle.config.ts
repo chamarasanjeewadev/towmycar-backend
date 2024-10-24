@@ -15,5 +15,5 @@ export default defineConfig({
   verbose: true,
   strict: true,
   // Use tablesFilter to include or exclude specific tables
-  tablesFilter: ["!spatial_ref_sys"],
+  tablesFilter: ["!spatial_ref_sys","!geography_columns","!geometry_columns"],
 });

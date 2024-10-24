@@ -1,7 +1,7 @@
-import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import { UserRepository } from "../../repository/user.repository";
 import { EmailNotificationType, UserStatus } from "../../enums";
 import { BreakdownRequestInput } from "../../dto/breakdownRequest.dto";
+import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
@@ -172,16 +172,10 @@ const getBreakdownRequestById = async (requestId: number) => {
 };
 
 const closeBreakdownAndUpdateRating = async (
-  requestId: number,
-  customerRating: number,
-  customerFeedback: string
+  params: CloseBreakdownParams
 ): Promise<void> => {
-  await BreakdownRequestRepository.closeBreakdownAndUpdateRating({
-    requestId,
-    customerRating,
-    customerFeedback,
-  });
-  // TODO send notifications to drivers
+  await BreakdownRequestRepository.closeBreakdownAndUpdateRating(params);
+  // TODO: send notifications to drivers
 };
 
 export const BreakdownRequestService = {
@@ -191,6 +185,6 @@ export const BreakdownRequestService = {
   createAnonymousCustomerAndBreakdownRequest,
   CreateBreakdownRequest,
   getBreakdownAssignmentsByDriverIdAndRequestId,
-  closeBreakdownAndUpdateRating, // Add this new method
-  getBreakdownRequestById, // Add this new method
+  closeBreakdownAndUpdateRating,
+  getBreakdownRequestById,
 };

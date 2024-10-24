@@ -12,9 +12,10 @@ import {
   User,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { aliasedTable, sql } from "drizzle-orm";
+import { aliasedTable, and, ne, sql } from "drizzle-orm";
 import { UserStatus, BreakdownRequestStatus } from "../enums";
 import { eq, desc, isNotNull } from "drizzle-orm";
+import { DriverStatus } from "@towmycar/database/enums";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -34,16 +35,16 @@ type BreakdownRequestWithUserDetails = {
 
 type CloseBreakdownParams = {
   requestId: number;
-  customerRating: number;
-  customerFeedback: string;
+  customerId: number;
+  customerRating: number | null;
+  customerFeedback: string | null;
+  siteRating: number | null;
+  siteFeedback: string | null;
 };
 
 // declare repository type
 export type BreakdownRequestRepositoryType = {
   saveBreakdownRequest: (data: BreakdownRequestInput) => Promise<number>;
-  getAllBreakdownRequestsWithUserDetails: () => Promise<
-    BreakdownRequestWithUserDetails[]
-  >;
   getPaginatedBreakdownRequestsByCustomerId: (
     page: number,
     pageSize: number,
@@ -88,7 +89,6 @@ const saveBreakdownRequest = async (
       make: data.make,
       model: data.makeModel,
       mobileNumber: data.mobileNumber,
-      address: data.address,
       userLocation: {
         x: data.userLocation.longitude,
         y: data.userLocation.latitude,
@@ -195,8 +195,8 @@ const updateUserStatusInBreakdownAssignment = async (
   const result = await DB.update(breakdownAssignment)
     // @ts-ignore
     .set({ userStatus: userStatus })
-        .where(eq(breakdownAssignment.id, assignmentId))
-        .returning();
+    .where(eq(breakdownAssignment.id, assignmentId))
+    .returning();
 
   return result.length > 0 ? result[0] : null;
 };
@@ -309,11 +309,14 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
 };
 
 // Update the method implementation
-const closeBreakdownAndUpdateRating = async (
-  params: CloseBreakdownParams
-): Promise<void> => {
-  const { requestId, customerRating, customerFeedback } = params;
-
+const closeBreakdownAndUpdateRating = async ({
+  requestId,
+  customerId,
+  customerRating,
+  customerFeedback,
+  siteRating,
+  siteFeedback,
+}: CloseBreakdownParams): Promise<void> => {
   try {
     await DB.transaction(async tx => {
       await tx
@@ -329,44 +332,43 @@ const closeBreakdownAndUpdateRating = async (
         .where(eq(breakdownRequest.id, requestId));
 
       // Get the customer ID and all driver IDs associated with this request
-      const assignments = await tx
-        .select({
-          driverId: breakdownAssignment.driverId,
-          customerId: breakdownRequest.customerId,
-        })
-        .from(breakdownAssignment)
-        .innerJoin(
-          breakdownRequest,
-          eq(breakdownAssignment.requestId, breakdownRequest.id)
-        )
-        .where(eq(breakdownAssignment.requestId, requestId));
+      // const assignments = await tx
+      //   .select({
+      //     driverId: breakdownAssignment.driverId,
+      //     customerId: breakdownRequest.customerId,
+      //   })
+      //   .from(breakdownAssignment)
+      //   .innerJoin(
+      //     breakdownRequest,
+      //     eq(breakdownAssignment.requestId, breakdownRequest.id)
+      //   )
+      //   .where(eq(breakdownAssignment.requestId, requestId));
 
-      if (assignments.length === 0) {
-        throw new Error("No assignments found for this request");
-      }
+      // if (assignments.length === 0) {
+      //   throw new Error("No assignments found for this request");
+      // }
 
-      const customerId = assignments[0].customerId;
       console.log("serviceRatings:", serviceRatings);
-      // Update or insert service ratings for all assignments
-      for (const assignment of assignments) {
-        await tx
-          .insert(serviceRatings)
-          .values({
-            requestId,
-            customerId,
-            driverId: assignment?.driverId,
-            customerRating,
-            customerFeedback,
-          })
-          .onConflictDoUpdate({
-            target: serviceRatings.id, // Assuming 'id' is the primary key
-            set: {
-              customerRating,
-              customerFeedback,
-              updatedAt: new Date(),
-            },
-          });
-      }
+      // for (const assignment of assignments) {
+        await tx.insert(serviceRatings).values({
+          requestId,
+          customerId,
+          siteRating,
+          siteFeedback,
+          customerRating,
+          customerFeedback,
+        });
+        // .onConflictDoUpdate({
+        //   target: serviceRatings.id, // Assuming 'id' is the primary key
+        //   set: {
+        //     customerRating,
+        //     customerFeedback,
+        //     siteRating,
+        //     siteFeedback,
+        //     updatedAt: new Date(),
+        //   },
+        // });
+      // }
     });
   } catch (error) {
     console.error("Error in closeBreakdownAndUpdateRating:", error);

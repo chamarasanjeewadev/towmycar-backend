@@ -180,17 +180,11 @@ export class DriverService {
   }
 
   async closeBreakdownRequestAndUpdateRating(
-    driverId: number,
-    requestId: number,
-    driverRating: number,
-    driverFeedback: string
+    closeBreakdownAssignment: CloseDriverAssignmentParams
   ): Promise<void> {
-    await DriverRepository.closeBreakdownRequestAndUpdateRating({
-      driverId,
-      requestId,
-      driverRating,
-      driverFeedback,
-    });
+    await DriverRepository.closeBreakdownRequestAndRequestRating(
+      closeBreakdownAssignment
+    );
     // TODO: Send notifications to customers
   }
 }

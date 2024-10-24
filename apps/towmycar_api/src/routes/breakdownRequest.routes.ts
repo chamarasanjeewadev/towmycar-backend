@@ -155,33 +155,52 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const requestId = parseInt(req.params.requestId, 10);
-      const { customerRating, customerFeedback } = req.body;
+      const { customerRating, customerFeedback, siteRating, siteFeedback } =
+        req.body;
+      const { customerId } = req.userInfo;
 
       if (isNaN(requestId)) {
         return res.status(400).json({ error: "Invalid request ID" });
       }
 
+      // Validate ratings if provided
+      const validateRating = (rating: number | null) => {
+        return (
+          rating === null ||
+          (typeof rating === "number" && rating >= 1 && rating <= 5)
+        );
+      };
+
+      if (!validateRating(customerRating) || !validateRating(siteRating)) {
+        return res
+          .status(400)
+          .json({
+            error: "Invalid rating. Must be null or a number between 1 and 5.",
+          });
+      }
+
+      // Validate feedbacks if provided
+      const validateFeedback = (feedback: string | null) => {
+        return feedback === null || typeof feedback === "string";
+      };
+
       if (
-        typeof customerRating !== "number" ||
-        customerRating < 1 ||
-        customerRating > 5
+        !validateFeedback(customerFeedback) ||
+        !validateFeedback(siteFeedback)
       ) {
         return res
           .status(400)
-          .json({ error: "Invalid rating. Must be a number between 1 and 5." });
+          .json({ error: "Invalid feedback. Must be null or a string." });
       }
 
-      if (typeof customerFeedback !== "string") {
-        return res
-          .status(400)
-          .json({ error: "Invalid feedback. Must be a string." });
-      }
-
-      await service.BreakdownRequestService.closeBreakdownAndUpdateRating(
+      await service.BreakdownRequestService.closeBreakdownAndUpdateRating({
         requestId,
+        customerId,
         customerRating,
-        customerFeedback
-      );
+        customerFeedback,
+        siteRating,
+        siteFeedback,
+      });
 
       res
         .status(200)
@@ -204,7 +223,10 @@ router.get(
         return res.status(400).json({ error: "Invalid request ID" });
       }
 
-      const breakdownRequest = await service.BreakdownRequestService.getBreakdownRequestById(requestId);
+      const breakdownRequest =
+        await service.BreakdownRequestService.getBreakdownRequestById(
+          requestId
+        );
 
       res.status(200).json(breakdownRequest);
     } catch (error) {

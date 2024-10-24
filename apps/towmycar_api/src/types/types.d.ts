@@ -107,3 +107,19 @@ interface BreakdownAssignmentDetails {
     imageUrl: string | null;
   };
 }
+
+type CloseBreakdownParams = {
+  requestId: number;
+  customerId: number;
+  customerRating: number | null;
+  customerFeedback: string | null;
+  siteRating: number | null;
+  siteFeedback: string | null;
+};
+
+type CloseDriverAssignmentParams = {
+  requestId: number;
+  driverId: number;
+  markAsCompleted:boolean:
+  reason:string;
+};
