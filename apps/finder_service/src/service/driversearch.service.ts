@@ -18,16 +18,10 @@ import {
   EmailNotificationType,
   PushNotificationType,
 } from "@towmycar/database/enums";
+import { UserWithCustomer } from "../types/types";
 
 // Add User interface (you might want to import this from a shared types file)
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  // Add other user properties as needed
-}
+
 
 export type DriverSearchServiceType = {
   findAndNotifyNearbyDrivers: (
@@ -129,7 +123,7 @@ const sendNotifications = async (
 
 async function sendDriverNotifications(
   driver: NearbyDriver,
-  user: User,
+  user: UserWithCustomer|null,
   requestId: number,
   latitude: number,
   longitude: number
@@ -140,6 +134,7 @@ async function sendDriverNotifications(
     breakdownRequestId: requestId,
     location: `Latitude: ${latitude}, Longitude: ${longitude}`,
     driver,
+    // @ts-ignore
     user,
     viewRequestLink,
     recipientEmail:"towmycar.uk@gmail.com"//TODO change to  driver.email,

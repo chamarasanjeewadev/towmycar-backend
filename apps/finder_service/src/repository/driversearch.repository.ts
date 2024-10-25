@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   DB,
   driver,
@@ -7,10 +6,11 @@ import {
   customer,
   user,
   Customer,
+  eq,
+  sql,
 } from "@towmycar/database";
 import { DriverStatus, UserStatus } from "@towmycar/database/enums";
-import { sql, eq, and } from "drizzle-orm";
-import { DatabaseError } from "pg";
+import { UserWithCustomer } from "../types/types";
 // Define a type for the nearby driver data
 export type NearbyDriver = {
   id: number;
@@ -18,8 +18,6 @@ export type NearbyDriver = {
   lastName: string;
   email: string;
   phoneNumber: string;
-  vehicleType: string;
-  distance: number;
 };
 
 export type DriverSearchRepositoryType = {
@@ -33,22 +31,13 @@ export type DriverSearchRepositoryType = {
     nearbyDrivers: NearbyDriver[]
   ) => Promise<void>;
 
-  getUserIdByRequestId: (
-    requestId: number
-  ) => Promise<{ userId: number; requestId: number }>;
   getUserByCustomerId: (customerId: number) => Promise<UserWithCustomer | null>;
 };
 
 // Add this import
 
 // Add this type definition
-type User = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-};
+
 
 // @ts-nocheck
 const findNearbyDrivers = async (
@@ -70,7 +59,8 @@ const findNearbyDrivers = async (
         ) / 1000
       `.as("distance"),
     })
-      .from(driver).leftJoin(user, eq(driver.userId, user.id))
+      .from(driver)
+      .leftJoin(user, eq(driver.userId, user.id))
       .where(
         sql`ST_DWithin(
           ${driver.primaryLocation}::geography,
@@ -125,25 +115,6 @@ const updateDriverRequests = async (
 };
 
 // Add this function to your repository implementation
-const getUserIdByRequestId = async (
-  requestId: number
-): Promise<{ userId: number; requestId: number }> => {
-  try {
-    console.log("requestId", requestId);
-    const result = await DB.select({ userId: breakdownRequests.userId })
-      .from(breakdownRequests)
-      .where(eq(breakdownRequests.id, requestId))
-      .limit(1);
-    console.log("result", result);
-
-    return result.length > 0 ? { userId: result[0].userId, requestId } : null;
-  } catch (error) {
-    console.error("Error in getUserIdByRequestId:", error);
-    throw error; // Re-throw the error after logging
-  }
-};
-
-// Add this function to your repository implementation
 const getUserByCustomerId = async (customerId: number) => {
   try {
     console.log("Getting customer info for customerId:", customerId);
@@ -153,7 +124,6 @@ const getUserByCustomerId = async (customerId: number) => {
       lastName: user.lastName,
       email: user.email,
       mobileNumber: customer.mobileNumber,
-      postcode: customer.postcode,
     })
       .from(customer)
 
@@ -171,15 +141,11 @@ const getUserByCustomerId = async (customerId: number) => {
     return result[0];
   } catch (error) {
     console.error("Error in getUserByCustomerId:", error);
-    if (error instanceof DatabaseError) {
+    if (error) {
       throw error;
     } else {
-      throw new DatabaseError(
-        `Failed to get user for customerId ${customerId}: ${
-          (error as Error).message
-        }`,
-        (error as any).statusCode || 500,
-        (error as Error).stack
+      throw new Error(
+        `Failed to get user for customerId ${customerId}{error: ${error}}`
       );
     }
   }
@@ -189,6 +155,5 @@ const getUserByCustomerId = async (customerId: number) => {
 export const DriverSearchRepository: DriverSearchRepositoryType = {
   findNearbyDrivers,
   updateDriverRequests,
-  getUserIdByRequestId,
   getUserByCustomerId,
 };

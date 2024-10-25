@@ -1,4 +1,3 @@
-//@ts-nocheck
 import {
   DB,
   customer,
@@ -8,15 +7,16 @@ import {
   driver,
   Driver,
   Customer,
-  serviceRatings,
-  BreakdownAssignment,
+  eq,
+  and,
+  desc,
+  aliasedTable,
+  sql,
 } from "@towmycar/database";
-import { eq, and, desc, not, or, aliasedTable } from "drizzle-orm";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError, DatabaseError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
 import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
-import { CloseBreakdownParams } from "../types/@types.d.ts"; // Import the type
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -94,7 +94,9 @@ export interface IDriverRepository {
     requestId: number,
     status: BreakdownRequestStatus
   ): Promise<boolean>;
-  closeBreakdownRequestAndRequestRating(params: CloseDriverAssignmentParams): Promise<void>;
+  closeBreakdownRequestAndRequestRating(
+    params: CloseDriverAssignmentParams
+  ): Promise<void>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -119,7 +121,18 @@ export const DriverRepository: IDriverRepository = {
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
-        userLocation: breakdownRequest.userLocation,
+        // userLocation: breakdownRequest.userLocation,
+
+        userLocation: {
+          latitude:
+            sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+              "latitude"
+            ),
+          longitude:
+            sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+              "longitude"
+            ),
+        },
         createdAt: breakdownAssignment.assignedAt,
         userRequest: {
           id: breakdownRequest.id,
@@ -172,7 +185,7 @@ export const DriverRepository: IDriverRepository = {
         .leftJoin(user, eq(customer.userId, user.id))
         .where(eq(breakdownAssignment.driverId, driverId))
         .orderBy(desc(breakdownAssignment.updatedAt));
-
+      //@ts-ignore
       return result;
     } catch (error) {
       throw new DatabaseError(error);
@@ -192,7 +205,18 @@ export const DriverRepository: IDriverRepository = {
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
       updatedAt: breakdownAssignment.updatedAt,
-      userLocation: breakdownRequest.userLocation,
+      
+      userLocation: {
+        latitude:
+          sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "latitude"
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "longitude"
+          ),
+      },
+      // userLocation: breakdownRequest.userLocation,
       createdAt: breakdownAssignment.assignedAt,
 
       userRequest: {
@@ -252,6 +276,7 @@ export const DriverRepository: IDriverRepository = {
       );
 
     if (!result) return null;
+    // @ts-ignore
     return result;
   },
 
@@ -516,6 +541,7 @@ export const DriverRepository: IDriverRepository = {
   ): Promise<boolean> {
     try {
       const result = await DB.update(breakdownRequest)
+      //@ts-ignore
         .set({ status, updatedAt: new Date() })
         .where(
           and(
@@ -531,7 +557,9 @@ export const DriverRepository: IDriverRepository = {
       throw new DatabaseError("Failed to update breakdown request status");
     }
   },
-  async closeBreakdownRequestAndRequestRating(params: CloseBreakdownParams): Promise<void> {
+  async closeBreakdownRequestAndRequestRating(
+    params: CloseDriverAssignmentParams
+  ): Promise<void> {
     const { driverId, requestId, markAsCompleted, reason } = params;
 
     try {
@@ -550,10 +578,13 @@ export const DriverRepository: IDriverRepository = {
             )
           )
           .limit(1);
+
+          
         await tx
           .update(breakdownAssignment)
           .set({
-            driverStatus: DriverStatus.CLOSED,
+            //@ts-ignore
+            driverStatus: DriverStatus.CLOSED.toString(),
             updatedAt: new Date(),
             reason: reason,
             iscompleted: markAsCompleted,
@@ -577,6 +608,7 @@ export const DriverRepository: IDriverRepository = {
           await tx
             .update(breakdownRequest)
             .set({
+              //@ts-ignore
               status: BreakdownRequestStatus.CLOSED,
               updatedAt: new Date(),
             })
@@ -585,7 +617,7 @@ export const DriverRepository: IDriverRepository = {
       });
     } catch (error) {
       console.error("Error in closeBreakdownRequestAndUpdateRating:", error);
-      throw new DatabaseError("Failed to close breakdown request", error);
+      throw new DatabaseError(`Failed to close breakdown request: ${error}`);
     }
   },
 };

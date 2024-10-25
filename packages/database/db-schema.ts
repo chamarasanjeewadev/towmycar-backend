@@ -1,3 +1,4 @@
+import { BreakdownRequestStatus } from './../../apps/towmycar_api/src/enums/index';
 import {
   pgTable,
   text,
@@ -95,7 +96,7 @@ export const breakdownRequest = pgTable("breakdown_request", {
   description: varchar("description", { length: 255 }),
   status: varchar("status", { length: 20 })
     .notNull()
-    .default(UserStatus.PENDING),
+    .default(BreakdownRequestStatus.WAITING),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

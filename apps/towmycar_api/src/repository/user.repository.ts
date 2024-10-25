@@ -6,7 +6,7 @@ import {
   UserRegisterInput,
   UserData,
 } from "../dto/userRequest.dto";
-import { eq, and } from "drizzle-orm";
+import {} from "drizzle-orm";
 import {
   DB,
   user,
@@ -16,6 +16,8 @@ import {
   driver,
   customer,
   User,
+  eq,
+  and,
 } from "@towmycar/database";
 
 export type UserRepositoryType = {
@@ -255,8 +257,8 @@ const createAnonymousCustomer = async (userInput: {
         .values({
           role: "customer",
           email: userInput.email,
-          firstName:userInput.firstName,
-          lastName:userInput.lastName,
+          firstName: userInput.firstName,
+          lastName: userInput.lastName,
           isActive: false,
           createdAt: new Date(),
           updatedAt: new Date(),

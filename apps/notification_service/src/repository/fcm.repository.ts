@@ -1,19 +1,4 @@
-//@ts-nocheck
-import {
-  DB,
-  breakdownRequest,
-  BreakdownRequest,
-  serviceRatings,
-  breakdownAssignment,
-  customer,
-  user,
-  driver,
-  Driver,
-  BreakdownAssignment,
-  User,
-  fcmTokens,
-} from "@towmycar/database";
-import { eq } from "drizzle-orm";
+import { DB, fcmTokens, eq } from "@towmycar/database";
 
 export type FcmToken = {
   id: number;

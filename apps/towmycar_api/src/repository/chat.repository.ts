@@ -1,6 +1,5 @@
 //@ts-nocheck
-import { DB, chats, Chat } from "@towmycar/database";
-import { eq, and } from "drizzle-orm";
+import { DB, chats, Chat ,eq, and} from "@towmycar/database";
 
 type ChatRepositoryType = {
   getChatsForRequest: (requestId: number) => Promise<Chat[]>;

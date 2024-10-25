@@ -62,7 +62,7 @@ interface BreakdownAssignmentDetails {
   userStatus: string;
   estimation: string;
   explanation: string;
-  updatedAt: string;
+  updatedAt: Date;
   userLocation: {
     latitude: number;
     longitude: number;
@@ -120,6 +120,6 @@ type CloseBreakdownParams = {
 type CloseDriverAssignmentParams = {
   requestId: number;
   driverId: number;
-  markAsCompleted:boolean:
+  markAsCompleted:boolean;
   reason:string;
 };
