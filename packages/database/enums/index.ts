@@ -42,4 +42,9 @@ export enum BaseNotificationType {
   PUSH = "PUSH",
 }
 
-
+export enum BreakdownRequestStatus{
+  INPROGRESS = 'INPROGRESS',
+  WAITING='WAITING',
+  CLOSED = 'CLOSED' ,
+  QUOTED='QUOTED'
+}

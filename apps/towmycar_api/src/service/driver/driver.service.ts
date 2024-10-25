@@ -37,18 +37,6 @@ export class DriverService {
       requestId
     );
 
-    if (request && request.userLocation) {
-      return {
-        ...request,
-        userLocation: {
-          //@ts-ignore
-          latitude: request.userLocation.y,
-          //@ts-ignore
-          longitude: request.userLocation.x,
-        },
-      };
-    }
-
     return request;
   }
 
@@ -200,11 +188,11 @@ export const getDriverById = async (
     }
 
     // Check if the driver has a Stripe payment method ID
-    if (driverProfile?.driverProfile?.stripePaymentMethodId) {
+    if (driverProfile?.driver?.stripePaymentMethodId) {
       try {
         // Retrieve payment method details from Stripe
         const paymentMethod = await stripe.paymentMethods.retrieve(
-          driverProfile?.driverProfile?.stripePaymentMethodId
+          driverProfile?.driver?.stripePaymentMethodId
         );
 
         // Attach payment method details to the driver profile

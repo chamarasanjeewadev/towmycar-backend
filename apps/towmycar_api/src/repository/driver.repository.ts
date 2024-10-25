@@ -163,7 +163,17 @@ export const DriverRepository: IDriverRepository = {
           workingHours: driver.workingHours,
           experienceYears: driver.experienceYears,
           insuranceDetails: driver.insuranceDetails,
-          primaryLocation: driver.primaryLocation,
+          primaryLocation: {
+            //@ts-ignore
+            latitude:
+              sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
+                "latitude"
+              ),
+            longitude:
+              sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
+                "longitude"
+              ),
+          },
         },
         customer: {
           id: customer.id,
@@ -205,7 +215,7 @@ export const DriverRepository: IDriverRepository = {
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
       updatedAt: breakdownAssignment.updatedAt,
-      
+
       userLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
@@ -248,8 +258,17 @@ export const DriverRepository: IDriverRepository = {
         workingHours: driver.workingHours,
         experienceYears: driver.experienceYears,
         insuranceDetails: driver.insuranceDetails,
-        primaryLocation: driver.primaryLocation,
-      },
+        primaryLocation: {
+          //@ts-ignore
+          latitude:
+            sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
+              "latitude"
+            ),
+          longitude:
+            sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
+              "longitude"
+            ),
+        },      },
       customer: {
         id: customer.id,
         firstName: user.firstName,
@@ -507,7 +526,20 @@ export const DriverRepository: IDriverRepository = {
     //@ts-ignore
     const result = await DB.select({
       ...user,
-      driverProfile: driver,
+      driver: {
+        ...driver,
+        primaryLocation: {
+          //@ts-ignore
+          latitude:
+            sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
+              "latitude"
+            ),
+          longitude:
+            sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
+              "longitude"
+            ),
+        },
+      },
     })
       .from(user)
       .leftJoin(driver, eq(driver.userId, user.id))
@@ -541,7 +573,7 @@ export const DriverRepository: IDriverRepository = {
   ): Promise<boolean> {
     try {
       const result = await DB.update(breakdownRequest)
-      //@ts-ignore
+        //@ts-ignore
         .set({ status, updatedAt: new Date() })
         .where(
           and(
@@ -579,7 +611,6 @@ export const DriverRepository: IDriverRepository = {
           )
           .limit(1);
 
-          
         await tx
           .update(breakdownAssignment)
           .set({

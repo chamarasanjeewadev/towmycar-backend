@@ -1,4 +1,3 @@
-import { BreakdownRequestStatus } from './../../apps/towmycar_api/src/enums/index';
 import {
   pgTable,
   text,
@@ -12,7 +11,7 @@ import {
   boolean,
   unique,
 } from "drizzle-orm/pg-core";
-import { UserStatus } from "./enums";
+import { BreakdownRequestStatus, UserStatus } from "./enums";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
