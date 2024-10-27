@@ -3,14 +3,16 @@ import {
   IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
-import {
-  EmailNotificationType,
-  DriverStatus,
-  BreakdownRequestStatus,
-} from "../../enums";
-import { sendSNS } from "../utils/sns.service";
+
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
+import {
+  BreakdownRequestStatus,
+  DriverStatus,
+  EmailNotificationType,
+} from "@towmycar/common";
+import { sendNotification } from "@towmycar/common";
+import { BaseNotificationType } from "@towmycar/common/src/enums";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -136,23 +138,25 @@ export class DriverService {
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
     } else if (data.driverStatus === DriverStatus.CLOSED) {
-      return breakdownRequestUpdated;
-      // notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
-      // payload = {
-      //   requestId,
-      //   driverId,
-      //   user: userDetails,
-      //   status: data.status,
-      //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
-      // };
+      notificationType = EmailNotificationType.DRIVER_NOTIFICATION_EMAIL;
+      // return breakdownRequestUpdated;
+      notificationType = EmailNotificationType.RATING_REVIEW_EMAIL;
+      payload = {
+        requestId,
+        driverId,
+        user: userDetails,
+        status: data.driverStatus,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+      };
     } else {
       throw new Error("Invalid status or estimation amount");
     }
 
-    const emailSnsResult = await sendSNS(
+    const emailSnsResult = await sendNotification(
       process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
       {
-        type: notificationType,
+        type: BaseNotificationType.EMAIL,
+        subType: notificationType,
         payload,
       }
     );

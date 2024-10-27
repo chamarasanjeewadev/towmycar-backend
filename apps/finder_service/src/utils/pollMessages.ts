@@ -5,7 +5,7 @@ import { SQSEvent, Callback } from "aws-lambda";
 import { Context } from "vm";
 
 // Configure the region and credentials (if not already configured globally)
-AWS.config.update({ region: "us-east-1" });
+AWS.config.update({ region:process.env.REGION});
 logger.info("AWS SDK configured with region: us-east-1");
 
 // Create an SQS service object

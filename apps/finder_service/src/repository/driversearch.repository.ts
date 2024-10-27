@@ -9,7 +9,7 @@ import {
   eq,
   sql,
 } from "@towmycar/database";
-import { DriverStatus, UserStatus } from "@towmycar/database/enums";
+import { DriverStatus, UserStatus } from "@towmycar/common";
 import { UserWithCustomer } from "../types/types";
 // Define a type for the nearby driver data
 export type NearbyDriver = {

@@ -7,16 +7,16 @@ import {
   BaseNotificationType,
   EmailNotificationType,
   PushNotificationType,
-} from "@towmycar/database/enums";
+} from "@towmycar/common";
 import {
   BreakdownNotificationType,
   EmailPayloadBaseType,
   EmailPayloadType,
   FcmNotificationPayloadType,
-} from "@towmycar/database/types/types";
+} from "@towmycar/common";
 import { sendEmail } from "./../service/email.service";
 
-AWS.config.update({ region: "us-east-1" });
+AWS.config.update({ region:process.env.REGION});
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 const queueURL = SQS_QUEUE_URL;
 

@@ -1,5 +1,4 @@
 import { UserRepository } from "../../repository/user.repository";
-import { EmailNotificationType, UserStatus } from "../../enums";
 import { BreakdownRequestInput } from "../../dto/breakdownRequest.dto";
 import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
 import {
@@ -8,6 +7,7 @@ import {
 } from "../../config";
 import { sendSNS, sendPushNotificationAndEmail } from "./../utils/sns.service";
 import { CustomError } from "../../utils/error/errors";
+import { EmailNotificationType, UserStatus } from "@towmycar/common";
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -178,6 +178,12 @@ const closeBreakdownAndUpdateRating = async (
   // TODO: send notifications to drivers
 };
 
+// Add this new function
+const getDriverRatingCount = async (driverId: number) => {
+  return await BreakdownRequestRepository.getDriverRatingCount(driverId);
+};
+
+// Update the BreakdownRequestService object
 export const BreakdownRequestService = {
   getPaginatedBreakdownRequestsByCustomerId,
   getBreakdownAssignmentsByRequestId,
@@ -187,4 +193,5 @@ export const BreakdownRequestService = {
   getBreakdownAssignmentsByDriverIdAndRequestId,
   closeBreakdownAndUpdateRating,
   getBreakdownRequestById,
+  getDriverRatingCount, // Add this line
 };

@@ -1,6 +1,8 @@
-import { DriverNotificationEmailPayload } from "@towmycar/database/types/types";
+import { DriverNotificationEmailPayload } from "@towmycar/common";
 
-export function driverNotificationEmail(payload: DriverNotificationEmailPayload) {
+export function driverNotificationEmail(
+  payload: DriverNotificationEmailPayload
+) {
   return {
     subject: `New Breakdown Request: Your Assistance Needed! - Request #${payload.breakdownRequestId}`,
     textBody: `Hello ${payload.driver.firstName},

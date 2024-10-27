@@ -1,5 +1,5 @@
-import { EmailNotificationType } from "@towmycar/database/enums";
-import { BreakdownNotificationType } from "@towmycar/database/types/types";
+import { EmailNotificationType } from "@towmycar/common";
+import { BreakdownNotificationType } from "@towmycar/common"
 import { SNS } from "aws-sdk";
 
 // Configure AWS SDK to use credentials from the local AWS config file

@@ -1,0 +1,20 @@
+{
+  "name": "@towmycar/common",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "yarn build"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ssm": "^3.669.0",
+    "@types/node": "^22.5.4",
+    "@types/pg": "^8.11.8",
+    "aws-sdk": "^2.1687.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

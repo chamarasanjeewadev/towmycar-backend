@@ -3,8 +3,8 @@ import { FcmRepository } from "../repository/fcm.repository";
 import {
   FcmNotificationPayloadType,
   PushNotificationPayload,
-} from "@towmycar/database/types/types";
-import { PushNotificationType } from "@towmycar/database/enums";
+} from "@towmycar/common";
+import { PushNotificationType } from "@towmycar/common";
 
 interface NotificationMessage {
   title: string;

@@ -235,4 +235,25 @@ router.get(
   }
 );
 
+// Add this new route
+router.get(
+  "/driver-rating/:driverId",
+  clerkAuthMiddleware("customer"), // You can adjust the middleware as needed
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const driverId = parseInt(req.params.driverId, 10);
+
+      if (isNaN(driverId)) {
+        return res.status(400).json({ error: "Invalid driver ID" });
+      }
+
+      const ratingCount = await service.BreakdownRequestService.getDriverRatingCount(driverId);
+
+      res.status(200).json(ratingCount);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

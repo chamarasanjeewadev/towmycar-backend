@@ -7,10 +7,11 @@ import { driverQuotationUpdatedEmail } from "../templates/driverQuotationUpdated
 import { userCreatedEmail } from "../templates/userCreatedEmail";
 import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
-import {
-  EmailNotificationType,
-} from "@towmycar/database/enums";
-import { EmailPayloadBaseType, EmailPayloadType } from "@towmycar/database/types/types";
+import {EmailNotificationType,
+  EmailPayloadBaseType,
+  EmailPayloadType,
+} from "@towmycar/common";
+import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
@@ -30,7 +31,7 @@ export const sendEmail = async (
       },
       Message: {
         Subject: {
-          Data: emailContent.subject,
+          Data: emailContent.subject as string,
           Charset: "UTF-8",
         },
         Body: {
@@ -64,7 +65,10 @@ export const sendEmail = async (
 };
 
 // Update the getEmailContent function
-function getEmailContent(type: EmailNotificationType, payload: EmailPayloadBaseType) {
+function getEmailContent(
+  type: EmailNotificationType,
+  payload: EmailPayloadBaseType
+) {
   switch (type) {
     case EmailNotificationType.USER_REQUEST_EMAIL:
       return userRequestEmail(payload);
@@ -82,6 +86,11 @@ function getEmailContent(type: EmailNotificationType, payload: EmailPayloadBaseT
       return driverNotificationEmail(payload);
     case EmailNotificationType.USER_NOTIFICATION_EMAIL:
       return userNotificationEmail(payload);
+    case EmailNotificationType.RATING_REVIEW_EMAIL:
+      return RatingRequestEmail({
+        requestId: payload.breakdownRequestId,
+        link: payload.viewRequestLink,
+      });
     default:
       throw new Error(`Invalid email notification type: ${type}`);
   }

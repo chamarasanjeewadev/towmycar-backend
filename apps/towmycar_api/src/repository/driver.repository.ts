@@ -12,6 +12,7 @@ import {
   desc,
   aliasedTable,
   sql,
+  not,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError, DatabaseError } from "../utils/error/errors";
@@ -121,8 +122,6 @@ export const DriverRepository: IDriverRepository = {
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
-        // userLocation: breakdownRequest.userLocation,
-
         userLocation: {
           latitude:
             sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
@@ -146,7 +145,7 @@ export const DriverRepository: IDriverRepository = {
           updatedAt: breakdownRequest.updatedAt,
           make: breakdownRequest.make,
           makeModel: breakdownRequest.model,
-          mobileNumber: breakdownRequest.mobileNumber,
+          mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
           requestType: breakdownRequest.requestType,
         },
         driver: {
@@ -179,8 +178,7 @@ export const DriverRepository: IDriverRepository = {
           id: customer.id,
           firstName: user.firstName,
           lastName: user.lastName,
-          email: user.email,
-          // authId: user.authId,
+          email: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${user.email} ELSE NULL END`,
           imageUrl: user.imageUrl,
         },
       })
@@ -193,7 +191,13 @@ export const DriverRepository: IDriverRepository = {
         .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
         .leftJoin(driverUser, eq(driverUser.id, driver.userId))
         .leftJoin(user, eq(customer.userId, user.id))
-        .where(eq(breakdownAssignment.driverId, driverId))
+        .where(
+          and(
+            eq(breakdownAssignment.driverId, driverId),
+            // Add this condition to exclude CLOSED requests
+            not(eq(breakdownRequest.status, BreakdownRequestStatus.CLOSED))
+          )
+        )
         .orderBy(desc(breakdownAssignment.updatedAt));
       //@ts-ignore
       return result;
@@ -241,7 +245,7 @@ export const DriverRepository: IDriverRepository = {
         updatedAt: breakdownRequest.updatedAt,
         make: breakdownRequest.make,
         makeModel: breakdownRequest.model,
-        mobileNumber: breakdownRequest.mobileNumber,
+        mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
         requestType: breakdownRequest.requestType,
       },
       driver: {
@@ -268,12 +272,13 @@ export const DriverRepository: IDriverRepository = {
             sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
               "longitude"
             ),
-        },      },
+        },
+      },
       customer: {
         id: customer.id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
+        email: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${user.email} ELSE NULL END`,
         // authId: user.authId,
         imageUrl: user.imageUrl,
       },

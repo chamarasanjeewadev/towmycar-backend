@@ -1,14 +1,8 @@
 import express, { Request, Response } from "express";
 import Pusher from "pusher";
-import bodyParser from "body-parser";
 import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 import { DriverService } from "../service/driver/driver.service";
-import {
-  BreakdownAssignment,
-  Driver,
-  Customer,
-  User,
-} from "@towmycar/database";
+
 import * as ChatService from "../service/chat/chat.service";
 
 // Add this enum at the top of the file

@@ -39,6 +39,7 @@ COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the built database package (if used by notification_service)
 COPY --from=builder /app/packages/database/dist ./node_modules/@towmycar/database
+COPY --from=builder /app/packages/common/dist ./node_modules/@towmycar/common
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production

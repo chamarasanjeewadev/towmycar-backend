@@ -10,6 +10,7 @@ export const ERROR_CODES = {
   EXTERNAL_API_ERROR:"EXTERNAL_API_ERROR",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
   INVALID_RESPONSE: "INVALID_RESPONSE",
+  CONFLICT_ERROR: "CONFLICT_ERROR",
 };
 
 export const ERROR_MESSAGES = {
@@ -19,6 +20,7 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.DATABASE_ERROR]: "A database error occurred.",
   [ERROR_CODES.PAYMENT_FAILED]: "The payment process failed.",
   [ERROR_CODES.STRIPE_CARD_NOT_ADDED]: "Failed to add the Stripe card.",
+  [ERROR_CODES.CONFLICT_ERROR]: "Conflict error",
 };
 
 export class BaseError extends Error {
@@ -73,6 +75,18 @@ export class AuthorizeError extends BaseError {
   }
 }
 
+export class ConflictError extends BaseError {
+  constructor(
+    description: string = ERROR_MESSAGES[ERROR_CODES.CONFLICT_ERROR]
+  ) {
+    super(
+      "ConflictError",
+      STATUS_CODES.BAD_REQUEST,
+      ERROR_CODES.CONFLICT_ERROR,
+      description
+    );
+  }
+}
 // 404 Not Found
 export class NotFoundError extends BaseError {
   constructor(

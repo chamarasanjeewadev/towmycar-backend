@@ -11,7 +11,7 @@ import {
   boolean,
   unique,
 } from "drizzle-orm/pg-core";
-import { BreakdownRequestStatus, UserStatus } from "./enums";
+import {BreakdownRequestStatus} from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -197,6 +197,8 @@ export const serviceRatings = pgTable("service_ratings", {
   customerId: integer("customer_id")
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
+    driverId: integer("driver_id")
+    .references(() => driver.id, { onDelete: "cascade" }),
   customerRating: integer("customer_rating"),
   customerFeedback: text("customer_feedback"),
   siteRating: integer("site_rating"),

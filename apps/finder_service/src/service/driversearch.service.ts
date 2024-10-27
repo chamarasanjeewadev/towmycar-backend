@@ -12,12 +12,12 @@ import {
   EmailPayloadBaseType,
   EmailPayloadType,
   PushNotificationPayload,
-} from "@towmycar/database/types/types";
+} from "@towmycar/common";
 import {
   BaseNotificationType,
   EmailNotificationType,
   PushNotificationType,
-} from "@towmycar/database/enums";
+} from "@towmycar/common";
 import { UserWithCustomer } from "../types/types";
 
 // Add User interface (you might want to import this from a shared types file)

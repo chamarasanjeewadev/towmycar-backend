@@ -16,10 +16,13 @@ import {
   sql,
   eq,
   desc,
+  count,
+  or,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { UserStatus, BreakdownRequestStatus } from "../enums";
-import { DriverStatus } from "@towmycar/database/enums";
+import { DriverStatus } from "@towmycar/common";
+import { ConflictError } from "../utils/error";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -31,10 +34,26 @@ type BreakdownRequestWithUserDetails = {
   makeModel: string | null;
   regNo: string | null;
   mobileNumber: string | null;
-  weight: number | null;
+  weight: number | null; // Change this to number | null
   status: string;
   createdAt: Date;
   userId: number;
+  assignments: {
+    id: number;
+    driverStatus: string;
+    userStatus: string;
+    estimation: number | null;
+    explanation: string | null;
+    updatedAt: Date;
+    driver: {
+      id: number;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber: string | null;
+      imageUrl: string | null;
+    };
+  }[];
 };
 
 type CloseBreakdownParams = {
@@ -65,26 +84,27 @@ export type BreakdownRequestRepositoryType = {
   ) => Promise<BreakdownAssignment | null>;
   getBreakdownAssignmentsByRequestId: (
     requestId: number
-  ) => Promise<(BreakdownAssignmentDetails)[]>;
+  ) => Promise<BreakdownAssignmentDetails[]>;
   getBreakdownAssignmentsByDriverIdAndRequestId: (
     driverId: number,
     requestId?: number
-  ) => Promise<
-    (BreakdownAssignmentDetails) | null
-  >;
+  ) => Promise<BreakdownAssignmentDetails | null>;
   closeBreakdownAndUpdateRating: (
     params: CloseBreakdownParams
   ) => Promise<void>;
   getBreakdownRequestById: (
     requestId: number
   ) => Promise<BreakdownRequestWithUserDetails | null>;
+  getDriverRatingCount: (
+    driverId: number
+  ) => Promise<{ count: number; averageRating: number | null }>;
 };
 
 const saveBreakdownRequest = async (
   data: BreakdownRequestInput
 ): Promise<number> => {
   try {
-  //@ts-ignore
+    //@ts-ignore
     const x: BreakdownRequest = {
       // id: 0,
       customerId: data.customerId,
@@ -125,15 +145,16 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
 }> => {
   const offset = (page - 1) * pageSize;
   try {
+    const driverUser = aliasedTable(user, "driver_user");
+
     const baseQuery = DB.select({
       id: breakdownRequest.id,
       requestType: breakdownRequest.requestType,
-      location: breakdownRequest.userLocation,
       description: breakdownRequest.description,
       make: breakdownRequest.make,
       makeModel: breakdownRequest.model,
       regNo: breakdownRequest.regNo,
-      mobilNumber: breakdownRequest.mobileNumber,
+      mobileNumber: breakdownRequest.mobileNumber,
       weight: breakdownRequest.weight,
       status: breakdownRequest.status,
       createdAt: breakdownRequest.createdAt,
@@ -141,10 +162,66 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
       firstName: user.firstName,
       lastName: user.lastName,
       userEmail: user.email,
+      location: {
+        latitude:
+          sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "latitude"
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "longitude"
+          ),
+      },
+      assignments: sql<
+        {
+          id: number;
+          driverStatus: string;
+          userStatus: string;
+          estimation: number | null;
+          explanation: string | null;
+          updatedAt: Date;
+          driver: {
+            id: number;
+            email: string | null;
+            firstName: string;
+            lastName: string;
+            phoneNumber: string | null;
+            imageUrl: string | null;
+          };
+        }[]
+      >`
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', ${breakdownAssignment.id},
+              'driverStatus', ${breakdownAssignment.driverStatus},
+              'userStatus', ${breakdownAssignment.userStatus},
+              'estimation', ${breakdownAssignment.estimation},
+              'explanation', ${breakdownAssignment.explanation},
+              'updatedAt', ${breakdownAssignment.updatedAt},
+              'driver', JSON_BUILD_OBJECT(
+                'id', ${driver.id},
+                'email', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driverUser.email} ELSE NULL END,
+                'firstName', ${driverUser.firstName},
+                'lastName', ${driverUser.lastName},
+                'phoneNumber', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driver.phoneNumber} ELSE NULL END,
+                'imageUrl', ${driverUser.imageUrl}
+              )
+            )
+          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.driverStatus} IN (${DriverStatus.QUOTED}, ${DriverStatus.ACCEPTED})),
+          '[]'::json
+        )
+      `.as("assignments"),
     })
       .from(breakdownRequest)
       .leftJoin(customer, eq(customer.id, breakdownRequest.customerId))
-      .leftJoin(user, eq(user.id, customer.userId));
+      .leftJoin(user, eq(user.id, customer.userId))
+      .leftJoin(
+        breakdownAssignment,
+        eq(breakdownAssignment.requestId, breakdownRequest.id)
+      )
+      .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+      .leftJoin(driverUser, eq(driver.userId, driverUser.id));
 
     let filteredQuery = baseQuery;
 
@@ -154,10 +231,22 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
         eq(breakdownRequest.customerId, customerId)
       );
     }
-    //@ts-ignore
-    filteredQuery = filteredQuery.orderBy(desc(breakdownRequest.updatedAt));
 
-    const requests = await filteredQuery.limit(pageSize).offset(offset);
+    const paginatedQuery = filteredQuery
+      .groupBy(breakdownRequest.id, user.id)
+      .orderBy(desc(breakdownRequest.updatedAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    const requests = await paginatedQuery;
+
+    // Convert weight to number
+    const formattedRequests: BreakdownRequestWithUserDetails[] = requests.map(
+      request => ({
+        ...request,
+        weight: request.weight ? Number(request.weight) : null,
+      })
+    );
 
     const countQuery = DB.select({
       count: sql<number>`cast(count(*) as integer)`,
@@ -175,17 +264,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
     const [{ count }] = await filteredCountQuery;
 
     return {
-      //@ts-ignore
-      requests: requests.map(request => ({
-        ...request,
-        weight: request.weight ? Number(request.weight) : null,
-        location: request.location
-          ? {
-              latitude: request.location.x,
-              longitude: request.location.y,
-            }
-          : null,
-      })),
+      requests: formattedRequests,
       totalCount: count,
     };
   } catch (error) {
@@ -200,14 +279,59 @@ const updateUserStatusInBreakdownAssignment = async (
   assignmentId: number,
   userStatus: UserStatus
 ): Promise<BreakdownAssignment | null> => {
-  // @ts-ignore
-  const result = await DB.update(breakdownAssignment)
-    // @ts-ignore
-    .set({ userStatus: userStatus })
-    .where(eq(breakdownAssignment.id, assignmentId))
-    .returning();
+  try {
+    // First, get the current assignment to check its requestId and driverStatus
+    const currentAssignment = await DB.select({
+      requestId: breakdownAssignment.requestId,
+      driverStatus: breakdownAssignment.driverStatus,
+    })
+      .from(breakdownAssignment)
+      .where(eq(breakdownAssignment.id, assignmentId))
+      .limit(1);
 
-  return result.length > 0 ? result[0] : null;
+    if (!currentAssignment.length) {
+      throw new Error("Assignment not found");
+    }
+
+    const { requestId, driverStatus } = currentAssignment[0];
+
+    // Check if trying to reject an accepted assignment
+    if (userStatus === UserStatus.REJECTED && driverStatus === DriverStatus.ACCEPTED) {
+      throw new ConflictError("Cannot reject an assignment that has already been accepted by the driver");
+    }
+
+    // If the new status is ACCEPTED, check for existing accepted assignments
+    if (userStatus === UserStatus.ACCEPTED) {
+      const existingAcceptedAssignment = await DB.select({
+        id: breakdownAssignment.id,
+      })
+        .from(breakdownAssignment)
+        .where(
+          and(
+            eq(breakdownAssignment.requestId, requestId),
+            eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
+            ne(breakdownAssignment.id, assignmentId)
+          )
+        )
+        .limit(1);
+
+      if (existingAcceptedAssignment.length > 0) {
+        throw new ConflictError("Another assignment for this request has already been accepted");
+      }
+    }
+
+    // If no conflict, proceed with the update
+    const result = await DB.update(breakdownAssignment)
+    // @ts-ignore
+      .set({ userStatus: userStatus })
+      .where(eq(breakdownAssignment.id, assignmentId))
+      .returning();
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error in updateUserStatusInBreakdownAssignment:", error);
+    throw error;
+  }
 };
 
 const getBreakdownAssignmentsByRequestId = async (
@@ -222,13 +346,12 @@ const getBreakdownAssignmentsByRequestId = async (
     estimation: breakdownAssignment.estimation,
     explanation: breakdownAssignment.explanation,
     updatedAt: breakdownAssignment.updatedAt,
-
     driver: {
       id: driver.id,
-      email: driverUser.email,
+      email: sql<string>`CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driverUser.email} ELSE NULL END`,
+      phoneNumber: sql<string>`CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driver.phoneNumber} ELSE NULL END`,
       firstName: driverUser.firstName,
       lastName: driverUser.lastName,
-      phoneNumber: driver.phoneNumber,
       imageUrl: driverUser.imageUrl,
     },
     customer: {
@@ -240,7 +363,7 @@ const getBreakdownAssignmentsByRequestId = async (
     },
   })
     .from(breakdownAssignment)
-    .innerJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+    .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
     .innerJoin(
       breakdownRequest,
       eq(breakdownAssignment.requestId, breakdownRequest.id)
@@ -262,9 +385,7 @@ const getBreakdownAssignmentsByRequestId = async (
 const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   driverId: number,
   requestId?: number
-): Promise<
-  (BreakdownAssignmentDetails) | null
-> => {
+): Promise<BreakdownAssignmentDetails | null> => {
   let query = DB.select({
     id: breakdownAssignment.id,
     requestId: breakdownAssignment.requestId,
@@ -305,7 +426,7 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   const result = await query
     .orderBy(desc(breakdownAssignment.updatedAt))
     .limit(1);
-//@ts-ignore
+  //@ts-ignore
   return result.length > 0
     ? (result?.[0] as unknown as BreakdownAssignment & {
         driver: Driver;
@@ -325,59 +446,53 @@ const closeBreakdownAndUpdateRating = async ({
 }: CloseBreakdownParams): Promise<void> => {
   try {
     await DB.transaction(async tx => {
+      // Update breakdown assignment status
       await tx
         .update(breakdownAssignment)
         .set({
-          // @ts-ignore
-          userStatus: UserStatus.CLOSED as string,
+          //@ts-ignore
+          userStatus: UserStatus.CLOSED,
         })
         .where(eq(breakdownAssignment.requestId, requestId));
 
+      // Update breakdown request status
       await tx
         .update(breakdownRequest)
-        // @ts-ignore
-        .set({ status: UserStatus.CLOSED as string })
+        //@ts-ignore
+        .set({ status: BreakdownRequestStatus.CLOSED })
         .where(eq(breakdownRequest.id, requestId));
 
-      // Get the customer ID and all driver IDs associated with this request
-      // const assignments = await tx
-      //   .select({
-      //     driverId: breakdownAssignment.driverId,
-      //     customerId: breakdownRequest.customerId,
-      //   })
-      //   .from(breakdownAssignment)
-      //   .innerJoin(
-      //     breakdownRequest,
-      //     eq(breakdownAssignment.requestId, breakdownRequest.id)
-      //   )
-      //   .where(eq(breakdownAssignment.requestId, requestId));
+      // Find the accepted driver for this request
+      const acceptedAssignment = await tx
+        .select({
+          driverId: breakdownAssignment.driverId,
+        })
+        .from(breakdownAssignment)
+        .where(
+          and(
+            eq(breakdownAssignment.requestId, requestId),
+            eq(breakdownAssignment.driverStatus, DriverStatus.ACCEPTED),
+            or(
+              eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
+              eq(breakdownAssignment.userStatus, UserStatus.CLOSED)
+            )
+          )
+        )
+        .limit(1);
 
-      // if (assignments.length === 0) {
-      //   throw new Error("No assignments found for this request");
-      // }
+      const driverId = acceptedAssignment[0]?.driverId ?? null;
 
-      console.log("serviceRatings:", serviceRatings);
-      // for (const assignment of assignments) {
+      // Insert service rating
       //@ts-ignore
       await tx.insert(serviceRatings).values({
         requestId,
         customerId,
+        driverId,
         siteRating,
         siteFeedback,
         customerRating,
         customerFeedback,
       });
-      // .onConflictDoUpdate({
-      //   target: serviceRatings.id, // Assuming 'id' is the primary key
-      //   set: {
-      //     customerRating,
-      //     customerFeedback,
-      //     siteRating,
-      //     siteFeedback,
-      //     updatedAt: new Date(),
-      //   },
-      // });
-      // }
     });
   } catch (error) {
     console.error("Error in closeBreakdownAndUpdateRating:", error);
@@ -392,7 +507,6 @@ const getBreakdownRequestById = async (
     const result = await DB.select({
       id: breakdownRequest.id,
       requestType: breakdownRequest.requestType,
-      location: breakdownRequest.userLocation,
       description: breakdownRequest.description,
       make: breakdownRequest.make,
       makeModel: breakdownRequest.model,
@@ -402,29 +516,102 @@ const getBreakdownRequestById = async (
       status: breakdownRequest.status,
       createdAt: breakdownRequest.createdAt,
       userId: breakdownRequest.customerId,
+      location: {
+        latitude:
+          sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "latitude"
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "longitude"
+          ),
+      },
+      assignments: sql<
+        {
+          id: number;
+          driverStatus: string;
+          userStatus: string;
+          estimation: number | null;
+          explanation: string | null;
+          updatedAt: Date;
+          driver: {
+            id: number;
+            email: string;
+            firstName: string;
+            lastName: string;
+            phoneNumber: string | null;
+            imageUrl: string | null;
+          };
+        }[]
+      >`
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', ${breakdownAssignment.id},
+              'driverStatus', ${breakdownAssignment.driverStatus},
+              'userStatus', ${breakdownAssignment.userStatus},
+              'estimation', ${breakdownAssignment.estimation},
+              'explanation', ${breakdownAssignment.explanation},
+              'updatedAt', ${breakdownAssignment.updatedAt},
+              'driver', JSON_BUILD_OBJECT(
+                'id', ${driver.id},
+                'email', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${user.email} ELSE NULL END,
+                'firstName', ${user.firstName},
+                'lastName', ${user.lastName},
+                'phoneNumber', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driver.phoneNumber} ELSE NULL END,
+                'imageUrl', ${user.imageUrl}
+              )
+            )
+          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL),
+          '[]'::json
+        )
+      `.as("assignments"),
     })
       .from(breakdownRequest)
+      .leftJoin(
+        breakdownAssignment,
+        eq(breakdownAssignment.requestId, breakdownRequest.id)
+      )
+      .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+      .leftJoin(user, eq(driver.userId, user.id))
       .where(eq(breakdownRequest.id, requestId))
+      .groupBy(breakdownRequest.id)
       .limit(1);
 
     if (result.length === 0) {
       return null;
     }
 
-    const request = result[0];
-    return {
-      ...request,
-      weight: request.weight ? Number(request.weight) : null,
-      location: request.location
-        ? {
-            latitude: request.location.y, // Note: y is latitude
-            longitude: request.location.x, // Note: x is longitude
-          }
-        : null,
+    const breakdownRequestWithDetails: BreakdownRequestWithUserDetails = {
+      ...result[0],
+      weight: result[0].weight ? Number(result[0].weight) : null,
     };
+
+    return breakdownRequestWithDetails;
   } catch (error) {
     console.error("Error in getBreakdownRequestById:", error);
     throw new Error("Failed to fetch breakdown request by ID");
+  }
+};
+
+const getDriverRatingCount = async (
+  driverId: number
+): Promise<{ count: number; averageRating: number | null }> => {
+  try {
+    const result = await DB.select({
+      count: count(),
+      averageRating: sql<number>`CAST(AVG(${serviceRatings.customerRating}) AS FLOAT)`,
+    })
+      .from(serviceRatings)
+      .where(and(eq(serviceRatings.driverId, driverId)));
+
+    return {
+      count: result[0].count,
+      averageRating: result[0].averageRating,
+    };
+  } catch (error) {
+    console.error("Error in getDriverRatingCount:", error);
+    throw new Error("Failed to fetch driver rating count");
   }
 };
 
@@ -436,4 +623,5 @@ export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   getBreakdownAssignmentsByDriverIdAndRequestId,
   closeBreakdownAndUpdateRating,
   getBreakdownRequestById,
+  getDriverRatingCount,
 };

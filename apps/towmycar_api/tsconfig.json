@@ -8,6 +8,9 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     // "paths": {
+    //   "@towmycar/common": ["common/src"]
+    // }
+    // "paths": {
     //   "@towmycar/database": ["../../packages/database"]
     // }
   },

@@ -11,6 +11,7 @@ RUN corepack enable
 COPY package.json yarn.lock turbo.json ./
 COPY apps/towmycar_api/package.json ./apps/towmycar_api/
 COPY packages/database/package.json ./packages/database/
+COPY packages/database/package.json ./packages/common/
 
 # Install dependencies using Turbo
 RUN yarn install --frozen-lockfile
