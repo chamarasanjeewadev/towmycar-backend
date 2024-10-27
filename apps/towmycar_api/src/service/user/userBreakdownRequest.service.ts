@@ -7,7 +7,11 @@ import {
 } from "../../config";
 import { sendSNS, sendPushNotificationAndEmail } from "./../utils/sns.service";
 import { CustomError } from "../../utils/error/errors";
-import { EmailNotificationType, UserStatus } from "@towmycar/common";
+import {
+  EmailNotificationType,
+  UserStatus,
+  
+} from "@towmycar/common";
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -174,8 +178,21 @@ const getBreakdownRequestById = async (requestId: number) => {
 const closeBreakdownAndUpdateRating = async (
   params: CloseBreakdownParams
 ): Promise<void> => {
-  await BreakdownRequestRepository.closeBreakdownAndUpdateRating(params);
-  // TODO: send notifications to drivers
+  const {
+    requestId,
+    customerRating,
+    customerFeedback,
+    siteRating,
+    siteFeedback,
+  } = params;
+
+  await BreakdownRequestRepository.closeBreakdownAndUpdateRating({
+    requestId,
+    customerRating,
+    customerFeedback,
+    siteRating,
+    siteFeedback,
+  });
 };
 
 // Add this new function
@@ -195,3 +212,11 @@ export const BreakdownRequestService = {
   getBreakdownRequestById,
   getDriverRatingCount, // Add this line
 };
+
+interface CloseBreakdownParams {
+  requestId: number;
+  customerRating: number | null;
+  customerFeedback: string | null;
+  siteRating: number | null;
+  siteFeedback: string | null;
+}

@@ -58,7 +58,6 @@ type BreakdownRequestWithUserDetails = {
 
 type CloseBreakdownParams = {
   requestId: number;
-  customerId: number;
   customerRating: number | null;
   customerFeedback: string | null;
   siteRating: number | null;
@@ -438,7 +437,6 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
 // Update the method implementation
 const closeBreakdownAndUpdateRating = async ({
   requestId,
-  customerId,
   customerRating,
   customerFeedback,
   siteRating,
@@ -455,12 +453,19 @@ const closeBreakdownAndUpdateRating = async ({
         })
         .where(eq(breakdownAssignment.requestId, requestId));
 
-      // Update breakdown request status
-      await tx
+      // Update breakdown request status and return customerId
+      const result = await tx
         .update(breakdownRequest)
         //@ts-ignore
         .set({ status: BreakdownRequestStatus.CLOSED })
-        .where(eq(breakdownRequest.id, requestId));
+        .where(eq(breakdownRequest.id, requestId))
+        .returning({ customerId: breakdownRequest.customerId });
+
+      const customerId = result[0]?.customerId;
+
+      if (!customerId) {
+        throw new Error("Failed to retrieve customerId after updating breakdown request");
+      }
 
       // Find the accepted driver for this request
       const acceptedAssignment = await tx

@@ -10,6 +10,7 @@ import {
   BreakdownRequestStatus,
   DriverStatus,
   EmailNotificationType,
+  TokenService,
 } from "@towmycar/common";
 import { sendNotification } from "@towmycar/common";
 import { BaseNotificationType } from "@towmycar/common/src/enums";
@@ -138,15 +139,14 @@ export class DriverService {
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
     } else if (data.driverStatus === DriverStatus.CLOSED) {
-      notificationType = EmailNotificationType.DRIVER_NOTIFICATION_EMAIL;
-      // return breakdownRequestUpdated;
+      const token = TokenService.generateUrlSafeToken(requestId);
       notificationType = EmailNotificationType.RATING_REVIEW_EMAIL;
       payload = {
         requestId,
         driverId,
         user: userDetails,
         status: data.driverStatus,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}?token=${token}`,
       };
     } else {
       throw new Error("Invalid status or estimation amount");

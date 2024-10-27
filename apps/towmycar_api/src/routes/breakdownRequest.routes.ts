@@ -3,6 +3,10 @@ import * as service from "../service/user/userBreakdownRequest.service";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+import { TokenService } from '@towmycar/common';
+import { verifyTokenMiddleware } from '../middleware/tokenVerification';
+import { combinedAuthMiddleware } from '../middleware/combinedAuth';
+import { UserRepository } from '../repository/user.repository';
 
 const router = express.Router();
 
@@ -151,13 +155,11 @@ router.patch(
 
 router.post(
   "/close-and-rate/:requestId",
-  clerkAuthMiddleware("customer"),
+  combinedAuthMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const requestId = parseInt(req.params.requestId, 10);
-      const { customerRating, customerFeedback, siteRating, siteFeedback } =
-        req.body;
-      const { customerId } = req.userInfo;
+      const { customerRating, customerFeedback, siteRating, siteFeedback } = req.body;
 
       if (isNaN(requestId)) {
         return res.status(400).json({ error: "Invalid request ID" });
@@ -165,18 +167,13 @@ router.post(
 
       // Validate ratings if provided
       const validateRating = (rating: number | null) => {
-        return (
-          rating === null ||
-          (typeof rating === "number" && rating >= 1 && rating <= 5)
-        );
+        return rating === null || (typeof rating === "number" && rating >= 1 && rating <= 5);
       };
 
       if (!validateRating(customerRating) || !validateRating(siteRating)) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid rating. Must be null or a number between 1 and 5.",
-          });
+        return res.status(400).json({
+          error: "Invalid rating. Must be null or a number between 1 and 5.",
+        });
       }
 
       // Validate feedbacks if provided
@@ -184,27 +181,19 @@ router.post(
         return feedback === null || typeof feedback === "string";
       };
 
-      if (
-        !validateFeedback(customerFeedback) ||
-        !validateFeedback(siteFeedback)
-      ) {
-        return res
-          .status(400)
-          .json({ error: "Invalid feedback. Must be null or a string." });
+      if (!validateFeedback(customerFeedback) || !validateFeedback(siteFeedback)) {
+        return res.status(400).json({ error: "Invalid feedback. Must be null or a string." });
       }
 
       await service.BreakdownRequestService.closeBreakdownAndUpdateRating({
         requestId,
-        customerId,
         customerRating,
         customerFeedback,
         siteRating,
         siteFeedback,
       });
 
-      res
-        .status(200)
-        .json({ message: "Breakdown request closed and rated successfully" });
+      res.status(200).json({ message: "Breakdown request closed and rated successfully" });
     } catch (error) {
       next(error);
     }
@@ -255,5 +244,32 @@ router.get(
     }
   }
 );
+
+// router.post(
+//   "/request-rating/:requestId",
+//   clerkAuthMiddleware("customer"),
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//       const requestId = parseInt(req.params.requestId, 10);
+//       const { customerId } = req.userInfo;
+
+//       if (isNaN(requestId)) {
+//         return res.status(400).json({ error: "Invalid request ID" });
+//       }
+
+//       const customerEmail = await UserRepository.getCustomerEmail(customerId);
+
+//       if (!customerEmail) {
+//         return res.status(404).json({ error: "Customer email not found" });
+//       }
+
+//       await service.BreakdownRequestService.generateRatingToken(requestId, customerEmail);
+
+//       res.status(200).json({ message: "Rating request sent successfully" });
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
 export default router;
