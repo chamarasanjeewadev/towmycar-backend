@@ -6,7 +6,7 @@ interface RatingRequestEmailProps {
 }
 
 // Replace this with your actual S3 or CDN URL
-const LOGO_URL = "https://your-s3-bucket.s3.amazonaws.com/towMyCarLogo.svg";
+const LOGO_URL = "https://towmycar.vercel.app/vercel.svg";
 
 export function RatingRequestEmail({
   requestId,

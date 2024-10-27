@@ -179,6 +179,7 @@ export const DriverRepository: IDriverRepository = {
           firstName: user.firstName,
           lastName: user.lastName,
           email: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${user.email} ELSE NULL END`,
+          mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
           imageUrl: user.imageUrl,
         },
       })

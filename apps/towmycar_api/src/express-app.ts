@@ -13,7 +13,7 @@ const app = express();
 
 // Rate limiter configuration
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 10000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -28,7 +28,7 @@ const corsOptions = {
 };
 
 // Apply rate limiter to all requests
-app.use(limiter);
+// app.use(limiter);
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));

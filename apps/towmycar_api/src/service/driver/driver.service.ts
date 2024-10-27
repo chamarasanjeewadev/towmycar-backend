@@ -46,22 +46,7 @@ export class DriverService {
   async getDriverRequestsWithInfo(driverId: number) {
     const requests = await DriverRepository.getDriverRequestsWithInfo(driverId);
 
-    if (Array.isArray(requests)) {
-      return requests.map(request => {
-        if (request.userLocation) {
-          return {
-            ...request,
-            userLocation: {
-              //@ts-ignore
-              latitude: request.userLocation?.y,
-              //@ts-ignore
-              longitude: request.userLocation?.x,
-            },
-          };
-        }
-        return request;
-      });
-    }
+   
 
     return requests;
   }
@@ -146,7 +131,7 @@ export class DriverService {
         driverId,
         user: userDetails,
         status: data.driverStatus,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}?token=${token}`,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${requestId}?token=${token}`,
       };
     } else {
       throw new Error("Invalid status or estimation amount");
