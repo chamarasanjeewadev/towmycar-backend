@@ -1,17 +1,22 @@
 import { pinoHttp } from "pino-http";
 import pino from "pino";
 
+const transport = process.env.NODE_ENV === 'production' 
+  ? undefined 
+  : {
+      target: "pino-pretty",
+      level: "error",
+    };
+
 export const logger = pino({
   level: "info",
   base: {
-    serviceName: "breakdown-service",
+    serviceName: "tow_api",
+    env: process.env.NODE_ENV,
   },
   serializers: pino.stdSerializers,
   timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`,
-  transport: {
-    target: "pino-pretty", // for production we can use sentry
-    level: "error",
-  },
+  transport,
 });
 
 export const httpLogger = pinoHttp({

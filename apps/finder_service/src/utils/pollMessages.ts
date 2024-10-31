@@ -6,7 +6,7 @@ import { Context } from "vm";
 
 // Configure the region and credentials (if not already configured globally)
 AWS.config.update({ region:process.env.REGION});
-logger.info("AWS SDK configured with region: us-east-1");
+logger.info("AWS SDK configured");
 
 // Create an SQS service object
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });

@@ -11,7 +11,7 @@ RUN corepack enable
 COPY package.json yarn.lock turbo.json ./
 COPY apps/towmycar_api/package.json ./apps/towmycar_api/
 COPY packages/database/package.json ./packages/database/
-COPY packages/database/package.json ./packages/common/
+COPY packages/common/package.json ./packages/common/
 
 # Install dependencies using Turbo
 RUN yarn install --frozen-lockfile
@@ -33,6 +33,7 @@ COPY --from=builder ${LAMBDA_TASK_ROOT}/apps/towmycar_api/dist ./
 # Copy only the necessary production dependencies
 COPY --from=builder ${LAMBDA_TASK_ROOT}/node_modules ./node_modules
 COPY --from=builder ${LAMBDA_TASK_ROOT}/packages/database/dist ./node_modules/@towmycar/database
+COPY --from=builder ${LAMBDA_TASK_ROOT}/packages/common/dist ./node_modules/@towmycar/common
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production

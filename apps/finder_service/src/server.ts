@@ -7,6 +7,8 @@ dotenv.config();
 const PORT = process.env.APP_PORT || 9000;
 const isProduction = process.env.NODE_ENV === "production";
 
+export { handler };
+
 export const StartServer = async () => {
   logger.info("Starting the server...");
   expressApp.listen(PORT, () => {
@@ -22,13 +24,13 @@ export const StartServer = async () => {
   });
 };
 
-if (isProduction) {
-  logger.info("Running in production mode. Lambda handler is available.");
-  module.exports.handler = handler;
-} else {
-  StartServer().then(() => {
-    logger.info("Server startup complete");
-  });
-}
+// if (isProduction) {
+//   logger.info("Running in production mode. Lambda handler is available.");
+//   module.exports.handler = handler;
+// } else {
+//   StartServer().then(() => {
+//     logger.info("Server startup complete");
+//   });
+// }
 
 // Lambda function to handle SQS events

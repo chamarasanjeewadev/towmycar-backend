@@ -23,6 +23,7 @@ import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { UserStatus, BreakdownRequestStatus } from "../enums";
 import { DriverStatus } from "@towmycar/common";
 import { ConflictError } from "../utils/error";
+import { BreakdownAssignmentDetails } from "./../types/types";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {

@@ -25,10 +25,17 @@ Resources:
         PackageManager: yarn # Explicitly tell SAM to use yarn
         Variables:
           NODE_ENV: production
+        Commands:
+          - cd ${PROJECT_DIR}/../.. # Navigate to root of monorepo
+          - yarn config set nodeLinker node-modules # Ensure classic node_modules structure
+          - yarn install --frozen-lockfile
+          - yarn turbo run build --filter=@towmycar/api...
+          - cd ${PROJECT_DIR}
+          - cp -r ../../node_modules .
     Properties:
       Handler: server.handler
       Runtime: nodejs18.x
-      CodeUri: ./apps/towmycar_api
+      CodeUri: ../../apps/towmycar_api
       Events:
         ApiEvent:
           Type: Api

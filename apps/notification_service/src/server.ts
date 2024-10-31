@@ -31,12 +31,13 @@ export const StartServer = async () => {
     process.exit(1);
   });
 };
+export { handler };
+// if (IS_PRODUCTION) {
+//   logger.info("Running in production mode. Lambda handler is available.");
+//   module.exports.handler = handler;
+// } else {
+//   StartServer().then(() => {
+//     logger.info("Server startup complete");
+//   });
+// }
 
-if (IS_PRODUCTION) {
-  logger.info("Running in production mode. Lambda handler is available.");
-  module.exports.handler = handler;
-} else {
-  StartServer().then(() => {
-    logger.info("Server startup complete");
-  });
-}

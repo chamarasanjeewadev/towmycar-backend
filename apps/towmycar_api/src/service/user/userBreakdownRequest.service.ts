@@ -5,7 +5,7 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { sendSNS, sendPushNotificationAndEmail } from "./../utils/sns.service";
+import { BaseNotificationType, PushNotificationType, sendNotification, sendPushNotificationAndEmail, sendSNS } from "@towmycar/common";
 import { CustomError } from "../../utils/error/errors";
 import {
   EmailNotificationType,
@@ -41,7 +41,12 @@ const CreateBreakdownRequest = async (
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
       { requestId, ...breakdownRequestData }
     );
-
+    //need to changes this to above
+    // sendNotification(BREAKDOWN_REQUEST_SNS_TOPIC_ARN!, {
+    //   type: BaseNotificationType.PUSH,
+    //   subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
+    //   payload: pushNotificationPayload,
+    // }),
     return {
       requestId,
       status: "Breakdown reported successfully.",

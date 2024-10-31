@@ -1,4 +1,4 @@
-type BreakdownRequestType = {
+export interface BreakdownRequestType {
   id: number;
   requestId: number;
   driverStatus: string; //'ACCEPTED' | 'PENDING' | 'REJECTED' | 'CLOSED';
@@ -24,23 +24,23 @@ type BreakdownRequestType = {
     email: string;
     authId: string;
   };
-};
+}
 
-interface PaginatedResult<T> {
+export interface PaginatedResult<T> {
   data: T[];
   total: number;
   page: number;
   limit: number;
 }
 
-type BreakdownRequestWithUserDetails = {
+export interface BreakdownRequestWithUserDetails {
   id: number;
   requestType: string;
   location: string;
   description: string | null;
   status: string;
-  regNo: string | null; // Add this line
-  weight: number | null; // Add this line
+  regNo: string | null;
+  weight: number | null;
   userId: number;
   firstName: string | null;
   lastName: string | null;
@@ -53,9 +53,9 @@ type BreakdownRequestWithUserDetails = {
     latitude: number;
     longitude: number;
   };
-};
+}
 
-interface BreakdownAssignmentDetails {
+export interface BreakdownAssignmentDetails {
   id: number;
   requestId: number;
   driverStatus: string;
@@ -105,21 +105,23 @@ interface BreakdownAssignmentDetails {
     lastName: string;
     email: string;
     imageUrl: string | null;
+    mobileNumber:string|null
   };
 }
 
-type CloseBreakdownParams = {
-  requestId: number;
-  customerId: number;
-  customerRating: number | null;
-  customerFeedback: string | null;
-  siteRating: number | null;
-  siteFeedback: string | null;
-};
-
-type CloseDriverAssignmentParams = {
+export interface CloseDriverAssignmentParams {
   requestId: number;
   driverId: number;
-  markAsCompleted:boolean;
-  reason:string;
-};
+  markAsCompleted: boolean;
+  reason: string;
+
+} 
+
+export type CloseBreakdownParams = {
+    requestId: number;
+    customerId: number;
+    customerRating: number | null;
+    customerFeedback: string | null;
+    siteRating: number | null;
+    siteFeedback: string | null;
+  };

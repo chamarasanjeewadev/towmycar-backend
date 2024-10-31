@@ -57,3 +57,7 @@ LY57HXU- NO WEIGHT 1075
 S600ANU 2500
 AD19LZN 1950
 BD07XAA 1180
+
+cdk bootstrap --profile tow-my-car-dev-account  
+
+AWS_PROFILE=tow-my-car-dev-account yarn run deploy:dev 

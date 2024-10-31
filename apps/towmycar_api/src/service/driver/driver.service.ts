@@ -14,6 +14,7 @@ import {
 } from "@towmycar/common";
 import { sendNotification } from "@towmycar/common";
 import { BaseNotificationType } from "@towmycar/common/src/enums";
+import { CloseDriverAssignmentParams } from "./../../types/types";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -34,7 +35,7 @@ export class DriverService {
   async getDriverRequestWithInfo(
     driverId: number,
     requestId: number
-  ): Promise<any> {
+  ) {
     const request = await DriverRepository.getSpecificDriverRequestWithInfo(
       driverId,
       requestId

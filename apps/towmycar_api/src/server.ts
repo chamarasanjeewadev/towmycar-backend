@@ -1,31 +1,19 @@
-import serverless from "serverless-http";
 import dotenv from "dotenv";
 import app from "./express-app";
+import serverlessExpress from '@vendia/serverless-express';
 
 // Load environment variables from .env file
 dotenv.config();
 
 const PORT = process.env.APP_PORT || 9000;
 
-// Create an Express app instance
-
-// Your existing Express setup code here
-// ...
-
 // Export the handler for Lambda
-export const handler = serverless(app);
+export const handler = serverlessExpress({ app });
 
-// Only start the server if we're not in a serverless environment
-if (
-  process.env.NODE_ENV !== "production" &&
-  process.env.AWS_LAMBDA_FUNCTION_NAME === undefined
-) {
+// Start local server if not in Lambda environment
+if (process.env.AWS_LAMBDA_FUNCTION_NAME === undefined) {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
   });
-} else {
-  console.log(
-    "Running in production/Lambda environment. app.listen() will not be called."
-  );
 }
-

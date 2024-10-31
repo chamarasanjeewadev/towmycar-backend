@@ -2,7 +2,6 @@ import {
   DriverSearchRepository,
   NearbyDriver,
 } from "../repository/driversearch.repository";
-import { sendNotification as sendSNSNotification } from "../utils/sns.service";
 
 import {
   VIEW_REQUEST_BASE_URL,
@@ -12,6 +11,7 @@ import {
   EmailPayloadBaseType,
   EmailPayloadType,
   PushNotificationPayload,
+  sendNotification,
 } from "@towmycar/common";
 import {
   BaseNotificationType,
@@ -21,7 +21,6 @@ import {
 import { UserWithCustomer } from "../types/types";
 
 // Add User interface (you might want to import this from a shared types file)
-
 
 export type DriverSearchServiceType = {
   findAndNotifyNearbyDrivers: (
@@ -123,7 +122,7 @@ const sendNotifications = async (
 
 async function sendDriverNotifications(
   driver: NearbyDriver,
-  user: UserWithCustomer|null,
+  user: UserWithCustomer | null,
   requestId: number,
   latitude: number,
   longitude: number
@@ -137,7 +136,7 @@ async function sendDriverNotifications(
     // @ts-ignore
     user,
     viewRequestLink,
-    recipientEmail:"towmycar.uk@gmail.com"//TODO change to  driver.email,
+    recipientEmail: "towmycar.uk@gmail.com", //TODO change to  driver.email,
   };
 
   const pushNotificationPayload: PushNotificationPayload = {
@@ -150,12 +149,12 @@ async function sendDriverNotifications(
 
   try {
     await Promise.all([
-      sendSNSNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.EMAIL,
         subType: EmailNotificationType.DRIVER_ASSIGNED_EMAIL,
         payload: emailPayload,
       }),
-      sendSNSNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.PUSH,
         subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
         payload: pushNotificationPayload,

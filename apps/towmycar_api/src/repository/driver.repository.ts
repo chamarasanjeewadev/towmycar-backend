@@ -18,6 +18,7 @@ import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError, DatabaseError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
 import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
+import { BreakdownAssignmentDetails, CloseDriverAssignmentParams } from "./../types/types";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -280,6 +281,7 @@ export const DriverRepository: IDriverRepository = {
         firstName: user.firstName,
         lastName: user.lastName,
         email: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${user.email} ELSE NULL END`,
+        mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
         // authId: user.authId,
         imageUrl: user.imageUrl,
       },
