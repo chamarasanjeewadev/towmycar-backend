@@ -11,7 +11,7 @@ import {
   boolean,
   unique,
 } from "drizzle-orm/pg-core";
-import {BreakdownRequestStatus} from "@towmycar/common";
+import { BreakdownRequestStatus } from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -87,7 +87,13 @@ export const breakdownRequest = pgTable("breakdown_request", {
 
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
+  toAddress: text("to_address"),
   userLocation: geometry("user_location", {
+    type: "point",
+    mode: "xy",
+    srid: 4326,
+  }).notNull(),
+  userToLocation: geometry("user_to_location", {
     type: "point",
     mode: "xy",
     srid: 4326,
@@ -136,8 +142,8 @@ export const breakdownAssignment = pgTable(
       .references(() => driver.id, { onDelete: "cascade" })
       .notNull(),
     driverStatus: varchar("driver_status", { length: 20 }),
-    reasonToClose:text("reason_to_close"),
-    isCompleted:boolean("is_completed").default(false).notNull(),
+    reasonToClose: text("reason_to_close"),
+    isCompleted: boolean("is_completed").default(false).notNull(),
     userStatus: varchar("user_status", { length: 20 }),
     estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
     explanation: text("estimate_explanation"),
@@ -197,8 +203,9 @@ export const serviceRatings = pgTable("service_ratings", {
   customerId: integer("customer_id")
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
-    driverId: integer("driver_id")
-    .references(() => driver.id, { onDelete: "cascade" }),
+  driverId: integer("driver_id").references(() => driver.id, {
+    onDelete: "cascade",
+  }),
   customerRating: integer("customer_rating"),
   customerFeedback: text("customer_feedback"),
   siteRating: integer("site_rating"),

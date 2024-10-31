@@ -30,6 +30,10 @@ const CreateBreakdownRequest = async (
         latitude: combinedInput.userLocation.latitude,
         longitude: combinedInput.userLocation.longitude,
       },
+      userToLocation:{
+        latitude: combinedInput.userToLocation.latitude,
+        longitude: combinedInput.userToLocation.longitude,
+      }
     };
 
     const requestId = await BreakdownRequestRepository.saveBreakdownRequest(

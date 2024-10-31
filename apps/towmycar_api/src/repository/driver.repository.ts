@@ -18,7 +18,10 @@ import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import { NotFoundError, DatabaseError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
 import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
-import { BreakdownAssignmentDetails, CloseDriverAssignmentParams } from "./../types/types";
+import {
+  BreakdownAssignmentDetails,
+  CloseDriverAssignmentParams,
+} from "./../types/types";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -133,6 +136,16 @@ export const DriverRepository: IDriverRepository = {
               "longitude"
             ),
         },
+        userToLocation: {
+          latitude:
+            sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+              "latitude"
+            ),
+          longitude:
+            sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+              "longitude"
+            ),
+        },
         createdAt: breakdownAssignment.assignedAt,
         userRequest: {
           id: breakdownRequest.id,
@@ -142,6 +155,7 @@ export const DriverRepository: IDriverRepository = {
           regNo: breakdownRequest.regNo,
           weight: breakdownRequest.weight,
           address: breakdownRequest.address,
+          toAddress: breakdownRequest.toAddress,
           createdAt: breakdownRequest.createdAt,
           updatedAt: breakdownRequest.updatedAt,
           make: breakdownRequest.make,
@@ -221,7 +235,8 @@ export const DriverRepository: IDriverRepository = {
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
       updatedAt: breakdownAssignment.updatedAt,
-
+      address: breakdownRequest.address,
+      toAddress: breakdownRequest.toAddress,
       userLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
@@ -229,6 +244,16 @@ export const DriverRepository: IDriverRepository = {
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "longitude"
+          ),
+      },
+      userToLocation: {
+        latitude:
+          sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+            "latitude"
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
             "longitude"
           ),
       },

@@ -23,6 +23,7 @@ export interface BreakdownRequestInput {
   customerId?: number;
   requestType: string;
   address: string;
+  toAddress:string;
   make:string;
   makeModel:string;
   regNo: string;
@@ -32,6 +33,10 @@ export interface BreakdownRequestInput {
     latitude: number;
     longitude: number;
   };
+  userToLocation:{
+    latitude: number;
+    longitude: number;
+  }
   description: string;
   color: string;
   email: string;
@@ -56,4 +61,8 @@ export interface BreakdownRequestWithUserDetails {
     latitude: number;
     longitude: number;
   };
+  userToLocation:{
+    latitude: number;
+    longitude: number;
+  }
 }
