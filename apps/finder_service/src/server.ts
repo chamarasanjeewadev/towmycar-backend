@@ -7,7 +7,7 @@ dotenv.config();
 const PORT = process.env.APP_PORT || 9000;
 const isProduction = process.env.NODE_ENV === "production";
 
-export { handler };
+// export { handler };
 
 export const StartServer = async () => {
   logger.info("Starting the server...");
@@ -19,7 +19,7 @@ export const StartServer = async () => {
 
   process.on("uncaughtException", async err => {
     console.log("Caught exception:", err);
-    logger.error("Uncaught exception:", err.message);
+    logger.error("Uncaught exception:", err);
     process.exit(1);
   });
 };

@@ -14,7 +14,8 @@ const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 logger.info("SQS service object created");
 
 // The URL of the SQS queue to poll from
-const queueURL = process.env.SQS_QUEUE_URL;
+const queueURL =
+  "https://sqs.eu-west-2.amazonaws.com/841162667869/breakdown-request-queue";
 logger.info(`SQS Queue URL: ${queueURL}`);
 
 export async function processMessage(message: AWS.SQS.Message) {
@@ -23,22 +24,13 @@ export async function processMessage(message: AWS.SQS.Message) {
   try {
     const snsNotification = JSON.parse(message?.Body || "{}");
     const requestData = JSON.parse(snsNotification?.Message || "{}");
-    const { requestId, customerId, userLocation, userToLocation, createdAt } =
+    const { requestId} =
       requestData;
-    const { latitude, longitude } = userLocation || {};
-    const { latitude: toLatitude, longitude: toLongitude } =
-      userToLocation || {};
+   
 
-    logger.info("Parsed requestData in quotation service:", {
-      requestId,
-      customerId,
-      latitude,
-      longitude,
-    });
-
-    if (latitude && longitude && requestId) {
+    if ( requestId) {
       logger.info(
-        `Calling driver search service for request: ${requestId}, lat: ${latitude}, lon: ${longitude}, customerId: ${customerId}`
+        `Calling driver search service for request: ${requestId} `
       );
       const nearbyDrivers =
         await DriverSearchService.findAndNotifyNearbyDrivers(requestId);
@@ -85,7 +77,7 @@ export const pollMessagesFromSQS = async () => {
     logger.info("Polling for messages...");
     const data = await sqs.receiveMessage(params as any).promise();
 
-    if (data.Messages) {
+    if (!!data?.Messages?.length) {
       logger.info(`Received ${data.Messages.length} messages`);
       for (const message of data.Messages) {
         logger.info(`Processing message: ${message.MessageId}`);

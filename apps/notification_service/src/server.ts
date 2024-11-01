@@ -9,6 +9,7 @@ const PORT = process.env.APP_PORT || 9005;
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 export const StartServer = async () => {
+  console.log("Starting the server...");
   expressApp.listen(PORT, () => {
     logger.info(`App is listening on port ${PORT}`);
     // if (!IS_PRODUCTION) {
@@ -31,7 +32,7 @@ export const StartServer = async () => {
     process.exit(1);
   });
 };
-export { handler };
+// export { handler };
 if (IS_PRODUCTION) {
   logger.info("Running in production mode. Lambda handler is available.");
   module.exports.handler = handler;

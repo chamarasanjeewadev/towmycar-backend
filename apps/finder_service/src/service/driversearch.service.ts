@@ -152,7 +152,7 @@ async function sendDriverNotifications({
   toLocation,
   createdAt,
 }: SingleDriverNotificationType) {
-  const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${requestId}`;
+  const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/requests/${requestId}`;
   const googleMapsLink = createGoogleMapsDirectionsLink(location, toLocation);
   const email: DriverNotificationEmailPayload = {
     breakdownRequestId: requestId,

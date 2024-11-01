@@ -11,7 +11,7 @@ const transport = process.env.NODE_ENV === 'production'
     export const logger = pino({
       level: "info",
       base: {
-        serviceName: "tow_api",
+        serviceName: "finder_service",
         env: process.env.NODE_ENV,
       },
       serializers: pino.stdSerializers,

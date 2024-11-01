@@ -76,7 +76,7 @@ export const pollMessagesFromSQS = async () => {
       })
       .promise();
     console.log("poll triggered....");
-    if (data.Messages) {
+    if (data?.Messages?.length>0) {
       for (const message of data.Messages) {
         await processMessage(message);
       }
@@ -87,7 +87,7 @@ export const pollMessagesFromSQS = async () => {
     logger.error("Error receiving messages", err);
   }
 
-  setTimeout(pollMessagesFromSQS, 1000);
+  setTimeout(pollMessagesFromSQS, 5000);
 };
 
 export const handler: SQSHandler = async (

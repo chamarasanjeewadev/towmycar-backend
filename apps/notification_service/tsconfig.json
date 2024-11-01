@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2016",
-    "module": "commonjs",
+    "module": "CommonJS",
     "rootDir": "src",
     "baseUrl": "src",
     "outDir": "./dist",
@@ -10,9 +10,7 @@
     "strict": false,
     "skipLibCheck": true,
     "ignoreDeprecations": "5.0",
-    "paths": {
-      "@towmycar/database": ["../../database/index.ts"]
-    },
+   
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
