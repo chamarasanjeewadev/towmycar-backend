@@ -46,6 +46,14 @@ To manage your Docker containers and clear persisted data, you can use the provi
         make restart
         ```
 
+## AWS SAM Development
+
+The `.aws-sam` directory is not tracked in git. To build the SAM application:
+
+```bash
+cd infrastructure/sam
+sam build
+```
 
 CREATE EXTENSION IF EXISTS postgis CASCADE;
 
@@ -61,3 +69,21 @@ BD07XAA 1180
 cdk bootstrap --profile tow-my-car-dev-account  
 
 AWS_PROFILE=tow-my-car-dev-account yarn run deploy:dev 
+
+## Environment Setup
+
+1. Copy `.env.example` to `.env.dev`:
+
+## Database Migrations
+
+Migrations are not tracked in git. To set up your local database:
+
+1. Run the initial migration:
+```bash
+yarn workspace @towmycar/database migrate:dev
+```
+
+2. To create new migrations:
+```bash
+yarn workspace @towmycar/database generate
+```

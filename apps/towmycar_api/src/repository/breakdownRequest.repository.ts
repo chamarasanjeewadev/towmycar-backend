@@ -177,6 +177,16 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
             "longitude"
           ),
       },
+      toLocation: {
+        latitude:
+          sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+            "latitude"
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+            "longitude"
+          ),
+      },
       assignments: sql<
         {
           id: number;
@@ -301,8 +311,13 @@ const updateUserStatusInBreakdownAssignment = async (
     const { requestId, driverStatus } = currentAssignment[0];
 
     // Check if trying to reject an accepted assignment
-    if (userStatus === UserStatus.REJECTED && driverStatus === DriverStatus.ACCEPTED) {
-      throw new ConflictError("Cannot reject an assignment that has already been accepted by the driver");
+    if (
+      userStatus === UserStatus.REJECTED &&
+      driverStatus === DriverStatus.ACCEPTED
+    ) {
+      throw new ConflictError(
+        "Cannot reject an assignment that has already been accepted by the driver"
+      );
     }
 
     // If the new status is ACCEPTED, check for existing accepted assignments
@@ -321,13 +336,15 @@ const updateUserStatusInBreakdownAssignment = async (
         .limit(1);
 
       if (existingAcceptedAssignment.length > 0) {
-        throw new ConflictError("Another assignment for this request has already been accepted");
+        throw new ConflictError(
+          "Another assignment for this request has already been accepted"
+        );
       }
     }
 
     // If no conflict, proceed with the update
     const result = await DB.update(breakdownAssignment)
-    // @ts-ignore
+      // @ts-ignore
       .set({ userStatus: userStatus })
       .where(eq(breakdownAssignment.id, assignmentId))
       .returning();
@@ -470,7 +487,9 @@ const closeBreakdownAndUpdateRating = async ({
       const customerId = result[0]?.customerId;
 
       if (!customerId) {
-        throw new Error("Failed to retrieve customerId after updating breakdown request");
+        throw new Error(
+          "Failed to retrieve customerId after updating breakdown request"
+        );
       }
 
       // Find the accepted driver for this request
