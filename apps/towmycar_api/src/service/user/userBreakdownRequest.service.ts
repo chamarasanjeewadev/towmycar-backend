@@ -5,13 +5,16 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { BaseNotificationType, PushNotificationType, sendNotification, sendPushNotificationAndEmail, sendSNS } from "@towmycar/common";
-import { CustomError } from "../../utils/error/errors";
 import {
-  EmailNotificationType,
-  UserStatus,
-  
+  BaseNotificationType,
+  DriverNotificationEmailPayload,
+  PushNotificationType,
+  sendNotification,
+  sendPushNotificationAndEmail,
+  sendSNS,
 } from "@towmycar/common";
+import { CustomError } from "../../utils/error/errors";
+import { EmailNotificationType, UserStatus } from "@towmycar/common";
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -30,20 +33,34 @@ const CreateBreakdownRequest = async (
         latitude: combinedInput.userLocation.latitude,
         longitude: combinedInput.userLocation.longitude,
       },
-      userToLocation:{
+      userToLocation: {
         latitude: combinedInput.userToLocation.latitude,
         longitude: combinedInput.userToLocation.longitude,
-      }
+      },
     };
 
-    const requestId = await BreakdownRequestRepository.saveBreakdownRequest(
+    const createdRequest = await BreakdownRequestRepository.saveBreakdownRequest(
       breakdownRequestData
     );
+const searchDriverPayload = {
+  requestId: createdRequest?.id,
+  customerId: userInfo.customerId,
+  userLocation: {
+    latitude: combinedInput.userLocation.latitude,
+    longitude: combinedInput.userLocation.longitude,
+  },
+  userToLocation: {
+    latitude: combinedInput.userToLocation.latitude,
+    longitude: combinedInput.userToLocation.longitude,
+  },
 
+  viewRequestLink: `${VIEW_REQUEST_BASE_URL}/request/${createdRequest?.id}`,
+  createdAt: createdRequest?.createdAt
+};  
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendSNS(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-      { requestId, ...breakdownRequestData }
+      { requestId: createdRequest?.id, ...breakdownRequestData }
     );
     //need to changes this to above
     // sendNotification(BREAKDOWN_REQUEST_SNS_TOPIC_ARN!, {
@@ -52,7 +69,7 @@ const CreateBreakdownRequest = async (
     //   payload: pushNotificationPayload,
     // }),
     return {
-      requestId,
+      requestId: createdRequest?.id,
       status: "Breakdown reported successfully.",
       userId: userInfo.userId,
     };

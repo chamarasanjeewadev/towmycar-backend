@@ -3,9 +3,10 @@ import { DriverSearchService } from "../service/driversearch.service";
 import { logger } from "./index";
 import { SQSEvent, Callback } from "aws-lambda";
 import { Context } from "vm";
+import { DriverNotificationEmailPayload } from "@towmycar/common";
 
 // Configure the region and credentials (if not already configured globally)
-AWS.config.update({ region:process.env.REGION});
+AWS.config.update({ region: process.env.REGION });
 logger.info("AWS SDK configured");
 
 // Create an SQS service object
@@ -22,8 +23,11 @@ export async function processMessage(message: AWS.SQS.Message) {
   try {
     const snsNotification = JSON.parse(message?.Body || "{}");
     const requestData = JSON.parse(snsNotification?.Message || "{}");
-    const { requestId, customerId, userLocation } = requestData;
+    const { requestId, customerId, userLocation, userToLocation, createdAt } =
+      requestData;
     const { latitude, longitude } = userLocation || {};
+    const { latitude: toLatitude, longitude: toLongitude } =
+      userToLocation || {};
 
     logger.info("Parsed requestData in quotation service:", {
       requestId,
@@ -37,12 +41,7 @@ export async function processMessage(message: AWS.SQS.Message) {
         `Calling driver search service for request: ${requestId}, lat: ${latitude}, lon: ${longitude}, customerId: ${customerId}`
       );
       const nearbyDrivers =
-        await DriverSearchService.findAndNotifyNearbyDrivers(
-          latitude,
-          longitude,
-          requestId,
-          customerId
-        );
+        await DriverSearchService.findAndNotifyNearbyDrivers(requestId);
       logger.info(
         `Found ${nearbyDrivers.length} nearby drivers for request ${requestId}`
       );

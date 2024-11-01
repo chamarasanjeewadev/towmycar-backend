@@ -10,20 +10,20 @@ import {
   sql,
 } from "@towmycar/database";
 import { DriverStatus, UserStatus } from "@towmycar/common";
-import { UserWithCustomer } from "../types/types";
+import {
+  BreakdownRequestWithUserDetails,
+  NearbyDriver,
+  UserWithCustomer,
+} from "../types/types";
 // Define a type for the nearby driver data
-export type NearbyDriver = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-};
+
 
 export type DriverSearchRepositoryType = {
   findNearbyDrivers: (
     latitude: number,
-    longitude: number
+    longitude: number,
+    toLatitude: number|null,
+    toLongitude: number|null
   ) => Promise<NearbyDriver[]>;
 
   updateDriverRequests: (
@@ -32,19 +32,60 @@ export type DriverSearchRepositoryType = {
   ) => Promise<void>;
 
   getUserByCustomerId: (customerId: number) => Promise<UserWithCustomer | null>;
+  getBreakdownRequestById: (
+    requestId: number
+  ) => Promise<BreakdownRequestWithUserDetails | null>;
 };
-
-// Add this import
-
-// Add this type definition
-
 
 // @ts-nocheck
 const findNearbyDrivers = async (
   latitude: number,
-  longitude: number
+  longitude: number,
+  toLatitude: number|null,
+  toLongitude: number|null
 ): Promise<NearbyDriver[]> => {
   try {
+    const distanceCalc = toLatitude && toLongitude 
+      ? sql`
+          LEAST(
+            ST_Distance(
+              ${driver.primaryLocation}::geography,
+              ST_MakePoint(${longitude}, ${latitude})::geography
+            ),
+            ST_Distance(
+              ${driver.primaryLocation}::geography,
+              ST_MakePoint(${toLongitude}, ${toLatitude})::geography
+            )
+          ) / 1000
+        `
+      : sql`
+          ST_Distance(
+            ${driver.primaryLocation}::geography,
+            ST_MakePoint(${longitude}, ${latitude})::geography
+          ) / 1000
+        `;
+
+    const locationFilter = toLatitude && toLongitude
+      ? sql`(
+          ST_DWithin(
+            ${driver.primaryLocation}::geography,
+            ST_MakePoint(${longitude}, ${latitude})::geography,
+            ${driver.serviceRadius} * 1000
+          ) OR
+          ST_DWithin(
+            ${driver.primaryLocation}::geography,
+            ST_MakePoint(${toLongitude}, ${toLatitude})::geography,
+            ${driver.serviceRadius} * 1000
+          )
+        )`
+      : sql`
+          ST_DWithin(
+            ${driver.primaryLocation}::geography,
+            ST_MakePoint(${longitude}, ${latitude})::geography,
+            ${driver.serviceRadius} * 1000
+          )
+        `;
+
     const nearbyDrivers = await DB.select({
       id: driver.id,
       firstName: user.firstName,
@@ -52,29 +93,20 @@ const findNearbyDrivers = async (
       email: user.email,
       phoneNumber: driver.phoneNumber,
       vehicleType: driver.vehicleType,
-      distance: sql`
-        ST_Distance(
-          ${driver.primaryLocation}::geography,
-          ST_MakePoint(${longitude}, ${latitude})::geography
-        ) / 1000
-      `.as("distance"),
+      distance: distanceCalc.as("distance"),
     })
-      .from(driver)
-      .leftJoin(user, eq(driver.userId, user.id))
-      .where(
-        sql`ST_DWithin(
-          ${driver.primaryLocation}::geography,
-          ST_MakePoint(${longitude}, ${latitude})::geography,
-          ${driver.serviceRadius} * 1000
-        )`
-      )
+      .from(sql`(
+        SELECT DISTINCT ON (${driver.id}) *
+        FROM ${driver}
+        WHERE ${locationFilter}
+      ) as unique_drivers`)
+      .leftJoin(user, eq(sql`unique_drivers.user_id`, user.id))
       .orderBy(sql`distance`);
-    console.log("nearbyDrivers", nearbyDrivers);
-    // Use a type assertion here
+
     return nearbyDrivers as unknown as NearbyDriver[];
   } catch (error) {
     console.error("Error in findNearbyDrivers:", error);
-    throw error; // Re-throw the error after logging
+    throw error;
   }
 };
 
@@ -151,9 +183,53 @@ const getUserByCustomerId = async (customerId: number) => {
   }
 };
 
+const getBreakdownRequestById = async (
+  requestId: number
+): Promise<BreakdownRequestWithUserDetails> => {
+  try {
+    const result = await DB.select({
+      id: breakdownRequest.id,
+      requestType: breakdownRequest.requestType,
+      description: breakdownRequest.description,
+      make: breakdownRequest.make,
+      makeModel: breakdownRequest.model,
+      regNo: breakdownRequest.regNo,
+      mobileNumber: breakdownRequest.mobileNumber,
+      weight: breakdownRequest.weight,
+      status: breakdownRequest.status,
+      createdAt: breakdownRequest.createdAt,
+      customerId: breakdownRequest.customerId,
+      location: {
+        latitude: sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as("latitude"),
+        longitude: sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as("longitude"),
+      },
+      toLocation: {
+        latitude: sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as("latitude"),
+        longitude: sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as("longitude"),
+      },
+    })
+      .from(breakdownRequest)
+      .leftJoin(breakdownAssignment, eq(breakdownAssignment.requestId, breakdownRequest.id))
+      .leftJoin(user, eq(driver.userId, user.id))
+      .where(eq(breakdownRequest.id, requestId));
+
+    if (!result?.length) {
+      throw new Error(`Breakdown request not found for ID: ${requestId}`);
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("Error in getBreakdownRequestById:", error);
+    throw error instanceof Error 
+      ? error 
+      : new Error(`Failed to fetch breakdown request by ID: ${requestId}`);
+  }
+};
+
 // Add this to your exported DriverSearchRepository object
 export const DriverSearchRepository: DriverSearchRepositoryType = {
   findNearbyDrivers,
   updateDriverRequests,
   getUserByCustomerId,
+  getBreakdownRequestById,
 };

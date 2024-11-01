@@ -15,12 +15,17 @@ interface User {
   phoneNumber?: string;
 }
 
-export interface DriverNotificationEmailPayload {
+export type DriverNotificationEmailPayload ={
   breakdownRequestId: number;
   location: string;
   driver: Driver;
   user: User;
   viewRequestLink: string;
+  createdAt:Date;
+}
+
+export type BreakdownRequestDriverNotificationPayload = {
+  
 }
 
 export interface PushNotificationPayload {

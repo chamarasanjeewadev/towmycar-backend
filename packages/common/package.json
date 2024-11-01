@@ -14,7 +14,8 @@
     "aws-sdk": "^2.1687.0",
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "date-fns": "^2.30.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.2",

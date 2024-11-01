@@ -67,7 +67,9 @@ type CloseBreakdownParams = {
 
 // declare repository type
 export type BreakdownRequestRepositoryType = {
-  saveBreakdownRequest: (data: BreakdownRequestInput) => Promise<number>;
+  saveBreakdownRequest: (
+    data: BreakdownRequestInput
+  ) => Promise<BreakdownRequest>;
   getPaginatedBreakdownRequestsByCustomerId: (
     page: number,
     pageSize: number,
@@ -100,13 +102,9 @@ export type BreakdownRequestRepositoryType = {
   ) => Promise<{ count: number; averageRating: number | null }>;
 };
 
-const saveBreakdownRequest = async (
-  data: BreakdownRequestInput
-): Promise<number> => {
+const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
   try {
-    //@ts-ignore
-    const x: BreakdownRequest = {
-      // id: 0,
+    const breakdownData: Omit<BreakdownRequest, 'id'> = {
       customerId: data.customerId,
       requestType: data.requestType,
       address: data.address,
@@ -129,11 +127,12 @@ const saveBreakdownRequest = async (
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    const breakdownResult = await DB.insert(breakdownRequest)
-      .values(x)
-      .returning({ id: breakdownRequest.id });
 
-    return breakdownResult[0].id;
+    const breakdownResult = await DB.insert(breakdownRequest)
+      .values(breakdownData)
+      .returning();
+
+    return breakdownResult[0];
   } catch (error) {
     console.log("error occured at breakdown repo", error);
     throw error;
@@ -553,6 +552,16 @@ const getBreakdownRequestById = async (
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+            "longitude"
+          ),
+      },
+      toLocation: {
+        latitude:
+          sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+            "latitude"
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
             "longitude"
           ),
       },

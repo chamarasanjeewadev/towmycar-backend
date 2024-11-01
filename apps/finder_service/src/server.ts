@@ -28,9 +28,9 @@ export const StartServer = async () => {
 //   logger.info("Running in production mode. Lambda handler is available.");
 //   module.exports.handler = handler;
 // } else {
-//   StartServer().then(() => {
-//     logger.info("Server startup complete");
-//   });
+  StartServer().then(() => {
+    logger.info("Server startup complete");
+  });
 // }
 
 // Lambda function to handle SQS events
