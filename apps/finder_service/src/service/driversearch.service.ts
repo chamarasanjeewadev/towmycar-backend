@@ -164,23 +164,13 @@ async function sendDriverNotifications({
     recipientEmail: "towmycar.uk@gmail.com", // driver.email??"towmycar.uk@gmail.com",
     createdAt,
   };
-
-  // const emailPayload: EmailPayloadBaseType & Partial<EmailPayloadType> = {
-  //   breakdownRequestId: requestId,
-  //   location: `Latitude: ${latitude}, Longitude: ${longitude}`,
-  //   driver,
-  //   // @ts-ignore
-  //   user,
-  //   viewRequestLink,
-  //   recipientEmail: "towmycar.uk@gmail.com", //TODO change to  driver.email,
-  // };
-
+  
   const pushNotificationPayload: PushNotificationPayload = {
-    title: "New Request Assignment",
+    title: "New Towing Request #" + requestId,
     userId: driver.id,
     url: viewRequestLink,
     message:
-      "You have been assigned to a new request. Please check your requests in the TowMyCar app.",
+      `New towing request #${requestId} has been assigned to you. Tap to view request details and respond.`,
   };
 
   try {
