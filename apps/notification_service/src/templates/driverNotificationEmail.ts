@@ -18,19 +18,13 @@ export function driverNotificationEmail(
     <h2>Request Details:</h2>
     <ul>
       <li><strong>Request ID:</strong> #${payload.breakdownRequestId}</li>
-      {payload.googleMapsLink && <li><strong>Location:</strong> <a href="${
-        payload.googleMapsLink
-      }" target="_blank">${"View on Google Maps"}</a></li>}
-      <li><strong>Time Submitted:</strong> ${formatDate(
-        payload.createdAt
-      )} </li>
+      ${payload.googleMapsLink ? `<li><strong>Location:</strong> <a href="${payload.googleMapsLink}" target="_blank">View on Google Maps</a></li>` : ''}
+      <li><strong>Time Submitted:</strong> ${formatDate(payload.createdAt)} </li>
     </ul>
     
     <h2>User Details:</h2>
     <ul>
-     {payload.user &&payload.user.firstName &&payload.user.lastName && <li><strong>Name:</strong> ${
-       payload.user.firstName
-     } ${payload.user.lastName}</li>}
+      ${payload.user && payload.user.firstName && payload.user.lastName ? `<li><strong>Name:</strong> ${payload.user.firstName} ${payload.user.lastName}</li>` : ''}
     </ul>
     
     <p>A driver in distress is counting on professionals like you. Your quick response can make a significant difference in their day.</p>

@@ -14,8 +14,9 @@ const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 logger.info("SQS service object created");
 
 // The URL of the SQS queue to poll from
-const queueURL =
-  "https://sqs.eu-west-2.amazonaws.com/841162667869/breakdown-request-queue";
+// const queueURL =
+//   "https://sqs.eu-west-2.amazonaws.com/841162667869/breakdown-request-queue";
+const queueURL = process.env.SQS_QUEUE_URL;
 logger.info(`SQS Queue URL: ${queueURL}`);
 
 export async function processMessage(message: AWS.SQS.Message) {
@@ -24,14 +25,10 @@ export async function processMessage(message: AWS.SQS.Message) {
   try {
     const snsNotification = JSON.parse(message?.Body || "{}");
     const requestData = JSON.parse(snsNotification?.Message || "{}");
-    const { requestId} =
-      requestData;
-   
+    const { requestId } = requestData;
 
-    if ( requestId) {
-      logger.info(
-        `Calling driver search service for request: ${requestId} `
-      );
+    if (requestId) {
+      logger.info(`Calling driver search service for request: ${requestId} `);
       const nearbyDrivers =
         await DriverSearchService.findAndNotifyNearbyDrivers(requestId);
       logger.info(

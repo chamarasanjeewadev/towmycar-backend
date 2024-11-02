@@ -44,23 +44,23 @@ const CreateBreakdownRequest = async (
     );
 const searchDriverPayload = {
   requestId: createdRequest?.id,
-  customerId: userInfo.customerId,
-  userLocation: {
-    latitude: combinedInput.userLocation.latitude,
-    longitude: combinedInput.userLocation.longitude,
-  },
-  userToLocation: {
-    latitude: combinedInput.userToLocation.latitude,
-    longitude: combinedInput.userToLocation.longitude,
-  },
+  // customerId: userInfo.customerId,
+  // userLocation: {
+  //   latitude: combinedInput.userLocation.latitude,
+  //   longitude: combinedInput.userLocation.longitude,
+  // },
+  // userToLocation: {
+  //   latitude: combinedInput.userToLocation.latitude,
+  //   longitude: combinedInput.userToLocation.longitude,
+  // },
 
-  viewRequestLink: `${VIEW_REQUEST_BASE_URL}/request/${createdRequest?.id}`,
-  createdAt: createdRequest?.createdAt
+  // viewRequestLink: `${VIEW_REQUEST_BASE_URL}/request/${createdRequest?.id}`,
+  // createdAt: createdRequest?.createdAt
 };  
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendSNS(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-      { requestId: createdRequest?.id, ...breakdownRequestData }
+      { requestId: createdRequest?.id }
     );
     //need to changes this to above
     // sendNotification(BREAKDOWN_REQUEST_SNS_TOPIC_ARN!, {
