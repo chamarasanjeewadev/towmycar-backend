@@ -62,52 +62,67 @@ export type UserRepositoryType = {
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
-  console.log("Creating user:", user);
-  return new Promise((resolve, reject) => {
-    resolve(1);
-  });
-  // const result = await DB.insert(user)
-  //   .values({firstName:"",
-  //     // email: user.email,
-  //     // firstName: user.firstName,
-  //     // lastName: user.lastName,
-  //     // postcode: user.postcode,
-  //     // vehicleRegistration: user.vehicleRegistration,
-  //     // mobileNumber: user.mobileNumber,
-  //   })
-  //   .returning();
-  // const id = result[0].id;
-  // return id;
+  try {
+    console.log("Creating user:", user);
+    return new Promise((resolve, reject) => {
+      resolve(1);
+    });
+    // const result = await DB.insert(user)
+    //   .values({firstName:"",
+    //     // email: user.email,
+    //     // firstName: user.firstName,
+    //     // lastName: user.lastName,
+    //     // postcode: user.postcode,
+    //     // vehicleRegistration: user.vehicleRegistration,
+    //     // mobileNumber: user.mobileNumber,
+    //   })
+    //   .returning();
+    // const id = result[0].id;
+    // return id;
+  } catch (error) {
+    console.error("Error in createUser:", error);
+    throw new DataBaseError(`Failed to create user: ${error}`);
+  }
 };
 
 const getOrCreateUser = async (
   userRegisterInput: UserRegisterInput
 ): Promise<{ id: number; isCreated: boolean }> => {
-  // Try to find the user by email
-  const existingUser = await DB.select()
-    .from(user)
-    // .where(eq(user.email, user.email))
-    .limit(1);
+  try {
+    // Try to find the user by email
+    const existingUser = await DB.select()
+      .from(user)
+      // .where(eq(user.email, user.email))
+      .limit(1);
 
-  if (existingUser.length > 0) {
-    // User found, return the existing user's ID and isCreated as false
-    console.log("User found:", existingUser[0].id);
-    return { id: existingUser[0].id, isCreated: false };
-  } else {
-    // User not found, create a new user
-    console.log("User not found, creating new user");
-    const newUserId = await createUser(userRegisterInput);
-    return { id: newUserId, isCreated: true };
+    if (existingUser.length > 0) {
+      // User found, return the existing user's ID and isCreated as false
+      console.log("User found:", existingUser[0].id);
+      return { id: existingUser[0].id, isCreated: false };
+    } else {
+      // User not found, create a new user
+      console.log("User not found, creating new user");
+      const newUserId = await createUser(userRegisterInput);
+      return { id: newUserId, isCreated: true };
+    }
+  } catch (error) {
+    console.error("Error in getOrCreateUser:", error);
+    throw new DataBaseError(`Failed to get or create user: ${error}`);
   }
 };
 
 const getUserProfileByEmail = async (email: string): Promise<any | null> => {
-  const result = await DB.select()
-    .from(user)
-    .where(eq(user.email, email))
-    .limit(1);
+  try {
+    const result = await DB.select()
+      .from(user)
+      .where(eq(user.email, email))
+      .limit(1);
 
-  return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error in getUserProfileByEmail:", error);
+    throw new DataBaseError(`Failed to get user profile by email: ${error}`);
+  }
 };
 
 const getUserProfileById = async (id: number): Promise<any | null> => {

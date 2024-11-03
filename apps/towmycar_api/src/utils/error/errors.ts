@@ -7,7 +7,7 @@ export const ERROR_CODES = {
   DATABASE_ERROR: "DATABASE_ERROR",
   PAYMENT_FAILED: "PAYMENT_FAILED",
   STRIPE_CARD_NOT_ADDED: "STRIPE_CARD_NOT_ADDED",
-  EXTERNAL_API_ERROR:"EXTERNAL_API_ERROR",
+  EXTERNAL_API_ERROR: "EXTERNAL_API_ERROR",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
   INVALID_RESPONSE: "INVALID_RESPONSE",
   CONFLICT_ERROR: "CONFLICT_ERROR",
@@ -113,20 +113,16 @@ export class CustomError extends BaseError {
   }
 }
 
-export class DataBaseError extends BaseError {
-  constructor(code: string, statusCode: number, message?: string) {
-    super(
-      "DataBaseError",
-      statusCode,
-      code,
-      message || ERROR_MESSAGES[code] || "An error occurred"
-    );
-  }
-}
 
-export class DatabaseError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "DatabaseError";
+export class DataBaseError extends BaseError {
+  constructor(
+    description: string = ERROR_MESSAGES[ERROR_CODES.DATABASE_ERROR]
+  ) {
+    super(
+      "Database Error",
+      STATUS_CODES.INTERNAL_ERROR,
+      ERROR_CODES.DATABASE_ERROR,
+      description
+    );
   }
 }

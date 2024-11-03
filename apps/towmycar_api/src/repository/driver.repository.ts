@@ -15,13 +15,19 @@ import {
   not,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DatabaseError } from "../utils/error/errors";
+import {
+  NotFoundError,
+  DataBaseError,
+  ERROR_CODES,
+  ERROR_MESSAGES,
+} from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
 import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
 import {
   BreakdownAssignmentDetails,
   CloseDriverAssignmentParams,
 } from "./../types/types";
+import { logger, STATUS_CODES } from "../utils";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -218,7 +224,9 @@ export const DriverRepository: IDriverRepository = {
       //@ts-ignore
       return result;
     } catch (error) {
-      throw new DatabaseError(error);
+      throw new DataBaseError(
+        `Failed to fetch breakdown request by IDs: ${error}`
+      );
     }
   },
 
@@ -618,8 +626,11 @@ export const DriverRepository: IDriverRepository = {
 
       return result.length > 0;
     } catch (error) {
-      console.error("Error updating breakdown request status:", error);
-      throw new DatabaseError("Failed to update breakdown request status");
+      logger.error("Error updating breakdown request status:", error);
+      throw new DataBaseError(
+        
+        `Failed to update breakdown request status: ${error}`
+      );
     }
   },
   async closeBreakdownRequestAndRequestRating(
@@ -680,8 +691,10 @@ export const DriverRepository: IDriverRepository = {
         }
       });
     } catch (error) {
-      console.error("Error in closeBreakdownRequestAndUpdateRating:", error);
-      throw new DatabaseError(`Failed to close breakdown request: ${error}`);
+      logger.error("Error in closeBreakdownRequestAndUpdateRating:", error);
+      throw new DataBaseError(
+        `Error in closeBreakdownRequestAndUpdateRating:: ${error}`
+      );
     }
   },
 };

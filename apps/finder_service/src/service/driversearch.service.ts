@@ -55,7 +55,8 @@ const findAndNotifyNearbyDrivers = async (
       request.location.latitude,
       request.location.longitude,
       request?.toLocation?.latitude ?? null,
-      request?.toLocation?.longitude ?? null
+      request?.toLocation?.longitude ?? null,
+      request?.weight ?? null
     );
 
     console.log("nearbyDrivers...........", nearbyDrivers);

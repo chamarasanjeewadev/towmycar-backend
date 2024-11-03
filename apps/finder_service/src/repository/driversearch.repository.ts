@@ -22,7 +22,8 @@ export type DriverSearchRepositoryType = {
     latitude: number,
     longitude: number,
     toLatitude: number | null,
-    toLongitude: number | null
+    toLongitude: number | null,
+    weight:string|number|null
   ) => Promise<NearbyDriver[]>;
 
   updateDriverRequests: (
@@ -41,9 +42,14 @@ const findNearbyDrivers = async (
   latitude: number,
   longitude: number,
   toLatitude: number | null,
-  toLongitude: number | null
+  toLongitude: number | null,
+  weight:string|number|null
 ): Promise<NearbyDriver[]> => {
   try {
+    const weightCondition = weight 
+      ? sql`AND CAST(${driver.maxWeight} AS DECIMAL) >= CAST(${weight} AS DECIMAL)`
+      : sql``;
+
     const nearbyDrivers = await DB.select({
       id: driver.id,
       firstName: user.firstName,
@@ -51,21 +57,22 @@ const findNearbyDrivers = async (
       email: user.email,
       phoneNumber: driver.phoneNumber,
       vehicleType: driver.vehicleType,
+      vehicleWeightCapacity: driver.maxWeight,
       distance: sql`
-    ST_Distance(
-      ${driver.primaryLocation}::geography,
-      ST_MakePoint(${longitude}, ${latitude})::geography
-    ) / 1000
-  `.as("distance"),
+        ST_Distance(
+          ${driver.primaryLocation}::geography,
+          ST_MakePoint(${longitude}, ${latitude})::geography
+        ) / 1000
+      `.as("distance"),
     })
       .from(driver)
       .leftJoin(user, eq(driver.userId, user.id))
       .where(
         sql`ST_DWithin(
-      ${driver.primaryLocation}::geography,
-      ST_MakePoint(${longitude}, ${latitude})::geography,
-      ${driver.serviceRadius} * 1000
-    )`
+          ${driver.primaryLocation}::geography,
+          ST_MakePoint(${longitude}, ${latitude})::geography,
+          ${driver.serviceRadius} * 1000
+        ) ${weightCondition}`
       )
       .orderBy(sql`distance`);
     console.log("nearbyDrivers", nearbyDrivers);
@@ -82,7 +89,8 @@ const findNearbyDrivers2 = async (
   latitude: number,
   longitude: number,
   toLatitude: number | null,
-  toLongitude: number | null
+  toLongitude: number | null,
+  weight:number
 ): Promise<NearbyDriver[]> => {
   try {
     const distanceCalc =
@@ -128,6 +136,10 @@ const findNearbyDrivers2 = async (
           )
         `;
 
+    const weightCondition = weight 
+      ? sql`AND CAST(unique_drivers.vehicle_weight_capacity AS DECIMAL) >= CAST(${weight} AS DECIMAL)`
+      : sql``;
+
     const nearbyDrivers = await DB.select({
       id: sql`unique_drivers.id`,
       firstName: user.firstName,
@@ -135,6 +147,7 @@ const findNearbyDrivers2 = async (
       email: user.email,
       phoneNumber: sql`unique_drivers.phone_number`,
       vehicleType: sql`unique_drivers.vehicle_type`,
+      vehicleWeightCapacity: sql`unique_drivers.vehicle_weight_capacity`,
       distance: distanceCalc.as("distance"),
     })
       .from(
@@ -144,10 +157,11 @@ const findNearbyDrivers2 = async (
           ${driver.userId},
           ${driver.phoneNumber},
           ${driver.vehicleType},
+          ${driver.maxWeight},
           ${driver.primaryLocation},
           ${driver.serviceRadius}
         FROM ${driver}
-        WHERE ${locationFilter}
+        WHERE ${locationFilter} ${weightCondition}
       ) as unique_drivers`
       )
       .innerJoin(user, eq(sql`unique_drivers.user_id`, user.id))

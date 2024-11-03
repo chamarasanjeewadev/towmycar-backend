@@ -12,6 +12,9 @@ export type NearbyDriver = {
   lastName: string;
   email: string;
   phoneNumber: string;
+  vehicleType: string;
+  vehicleWeightCapacity: string | number;
+  distance: number;
 };
 
 export type DriverNotificationType = {

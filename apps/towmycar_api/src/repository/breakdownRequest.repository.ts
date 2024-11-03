@@ -22,8 +22,10 @@ import {
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { UserStatus, BreakdownRequestStatus } from "../enums";
 import { DriverStatus } from "@towmycar/common";
-import { ConflictError } from "../utils/error";
+import { ConflictError, DataBaseError, ERROR_CODES, ERROR_MESSAGES, STATUS_CODES } from "../utils/error";
 import { BreakdownAssignmentDetails } from "./../types/types";
+import { logger } from "../utils";
+
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -134,8 +136,8 @@ const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
 
     return breakdownResult[0];
   } catch (error) {
-    console.log("error occured at breakdown repo", error);
-    throw error;
+    console.error("Error in saveBreakdownRequest:", error);
+    throw new DataBaseError(`Failed to save breakdown request: ${error}`);
   }
 };
 
@@ -282,10 +284,9 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
       totalCount: count,
     };
   } catch (error) {
-    console.error("Error in getPaginatedBreakdownRequestsByCustomerId:", error);
-    throw new Error(
-      "Failed to fetch paginated breakdown requests with user details"
-    );
+    logger.error("Error in getPaginatedBreakdownRequestsByCustomerId:", error);
+    throw new DataBaseError(`Failed to fetch paginated breakdown requests`);
+
   }
 };
 
@@ -350,8 +351,8 @@ const updateUserStatusInBreakdownAssignment = async (
 
     return result.length > 0 ? result[0] : null;
   } catch (error) {
-    console.error("Error in updateUserStatusInBreakdownAssignment:", error);
-    throw error;
+    logger.error("Error in updateUserStatusInBreakdownAssignment:", error);
+    throw new DataBaseError(`Failed to update assignment status: ${error}`);
   }
 };
 
@@ -629,7 +630,8 @@ const getBreakdownRequestById = async (
     return breakdownRequestWithDetails;
   } catch (error) {
     console.error("Error in getBreakdownRequestById:", error);
-    throw new Error("Failed to fetch breakdown request by ID");
+    throw new DataBaseError(`Failed to fetch breakdown request by IDs: ${error}`);
+ 
   }
 };
 

@@ -13,7 +13,7 @@ import {
   sendPushNotificationAndEmail,
   sendSNS,
 } from "@towmycar/common";
-import { CustomError } from "../../utils/error/errors";
+import { APIError, BaseError, CustomError, ERROR_CODES } from "../../utils/error/errors";
 import { EmailNotificationType, UserStatus } from "@towmycar/common";
 
 const CreateBreakdownRequest = async (
@@ -39,24 +39,25 @@ const CreateBreakdownRequest = async (
       },
     };
 
-    const createdRequest = await BreakdownRequestRepository.saveBreakdownRequest(
-      breakdownRequestData
-    );
-const searchDriverPayload = {
-  requestId: createdRequest?.id,
-  // customerId: userInfo.customerId,
-  // userLocation: {
-  //   latitude: combinedInput.userLocation.latitude,
-  //   longitude: combinedInput.userLocation.longitude,
-  // },
-  // userToLocation: {
-  //   latitude: combinedInput.userToLocation.latitude,
-  //   longitude: combinedInput.userToLocation.longitude,
-  // },
+    const createdRequest =
+      await BreakdownRequestRepository.saveBreakdownRequest(
+        breakdownRequestData
+      );
+    const searchDriverPayload = {
+      requestId: createdRequest?.id,
+      // customerId: userInfo.customerId,
+      // userLocation: {
+      //   latitude: combinedInput.userLocation.latitude,
+      //   longitude: combinedInput.userLocation.longitude,
+      // },
+      // userToLocation: {
+      //   latitude: combinedInput.userToLocation.latitude,
+      //   longitude: combinedInput.userToLocation.longitude,
+      // },
 
-  // viewRequestLink: `${VIEW_REQUEST_BASE_URL}/request/${createdRequest?.id}`,
-  // createdAt: createdRequest?.createdAt
-};  
+      // viewRequestLink: `${VIEW_REQUEST_BASE_URL}/request/${createdRequest?.id}`,
+      // createdAt: createdRequest?.createdAt
+    };
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendSNS(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
@@ -74,10 +75,16 @@ const searchDriverPayload = {
       userId: userInfo.userId,
     };
   } catch (error) {
-    console.error("Error in CreateCombinedBreakdownRequest:", error);
-    throw new CustomError(
-      "Failed to process combined breakdown request",
-      error
+     if (error instanceof BaseError) {
+      throw error;
+    }
+    
+    // For unknown errors, wrap with APIError and include original message
+    throw new APIError(
+      ERROR_CODES.INTERNAL_SERVER_ERROR,
+      error instanceof Error 
+        ? error.message 
+        : "An unexpected error occurred while creating breakdown request"
     );
   }
 };
