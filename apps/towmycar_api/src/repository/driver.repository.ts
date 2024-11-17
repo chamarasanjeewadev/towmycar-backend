@@ -28,11 +28,24 @@ import {
   CloseDriverAssignmentParams,
 } from "./../types/types";
 import { logger, STATUS_CODES } from "../utils";
+import { payments } from "@towmycar/database/db-schema";
 
 interface UpdateAssignmentData {
   driverStatus: string;
   estimation?: string; // Change to string
   explanation?: string; // Rename to explanation
+}
+
+interface CreatePaymentAndUpdateAssignmentParams {
+  payment: {
+    stripePaymentIntentId: string;
+    amount: number;
+    currency: string;
+    status: string;
+    driverId: number;
+    requestId: number;
+  };
+  assignmentData: UpdateAssignmentData;
 }
 
 const create = async (
@@ -108,6 +121,10 @@ export interface IDriverRepository {
   closeBreakdownRequestAndRequestRating(
     params: CloseDriverAssignmentParams
   ): Promise<void>;
+  createPaymentAndUpdateAssignment({
+    payment,
+    assignmentData,
+  }: CreatePaymentAndUpdateAssignmentParams): Promise<void>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -696,5 +713,43 @@ export const DriverRepository: IDriverRepository = {
         `Error in closeBreakdownRequestAndUpdateRating:: ${error}`
       );
     }
+  },
+  async createPaymentAndUpdateAssignment({
+    payment,
+    assignmentData,
+  }: CreatePaymentAndUpdateAssignmentParams): Promise<void> {
+    await DB.transaction(async (tx) => {
+      // Create payment record
+      const [paymentRecord] = await tx
+        .insert(payments)
+        //@ts-ignore
+        .values({
+          stripePaymentIntentId: payment.stripePaymentIntentId,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          driverId: payment.driverId,
+          requestId: payment.requestId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      // Update breakdown assignment with payment reference
+      await tx
+        .update(breakdownAssignment)
+        .set({
+          ...assignmentData,
+         //@ts-ignore 
+          paymentId: paymentRecord.id,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(breakdownAssignment.driverId, payment.driverId),
+            eq(breakdownAssignment.requestId, payment.requestId)
+          )
+        );
+    });
   },
 };

@@ -149,6 +149,7 @@ export const breakdownAssignment = pgTable(
     explanation: text("estimate_explanation"),
     assignedAt: timestamp("assigned_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    paymentId: integer("payment_id").references(() => payments.id, { onDelete: "set null" }),
   },
   table => ({
     // Adding the unique constraint
@@ -219,6 +220,23 @@ export const serviceRatings = pgTable("service_ratings", {
     .notNull(),
 });
 
+// Add this new table for payment tracking
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey().notNull(),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }).notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull(),
+  driverId: integer("driver_id")
+    .references(() => driver.id, { onDelete: "cascade" })
+    .notNull(),
+  requestId: integer("request_id")
+    .references(() => breakdownRequest.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type User = typeof user.$inferSelect;
 export type Customer = typeof customer.$inferSelect;
 export type Driver = typeof driver.$inferSelect;
@@ -228,3 +246,4 @@ export type FcmToken = typeof fcmTokens.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type Chat = typeof chats.$inferSelect;
 export type ServiceRating = typeof serviceRatings.$inferSelect;
+export type Payment = typeof payments.$inferSelect;

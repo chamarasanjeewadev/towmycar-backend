@@ -5,15 +5,8 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import {
-  BaseNotificationType,
-  DriverNotificationEmailPayload,
-  PushNotificationType,
-  sendNotification,
-  sendPushNotificationAndEmail,
-  sendSNS,
-} from "@towmycar/common";
-import { APIError, BaseError, CustomError, ERROR_CODES } from "../../utils/error/errors";
+import { sendPushNotificationAndEmail, sendSNS } from "@towmycar/common";
+import { APIError, BaseError, ERROR_CODES } from "../../utils/error/errors";
 import { EmailNotificationType, UserStatus } from "@towmycar/common";
 
 const CreateBreakdownRequest = async (
@@ -43,47 +36,27 @@ const CreateBreakdownRequest = async (
       await BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData
       );
-    const searchDriverPayload = {
-      requestId: createdRequest?.id,
-      // customerId: userInfo.customerId,
-      // userLocation: {
-      //   latitude: combinedInput.userLocation.latitude,
-      //   longitude: combinedInput.userLocation.longitude,
-      // },
-      // userToLocation: {
-      //   latitude: combinedInput.userToLocation.latitude,
-      //   longitude: combinedInput.userToLocation.longitude,
-      // },
-
-      // viewRequestLink: `${VIEW_REQUEST_BASE_URL}/request/${createdRequest?.id}`,
-      // createdAt: createdRequest?.createdAt
-    };
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendSNS(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
       { requestId: createdRequest?.id }
     );
-    //need to changes this to above
-    // sendNotification(BREAKDOWN_REQUEST_SNS_TOPIC_ARN!, {
-    //   type: BaseNotificationType.PUSH,
-    //   subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
-    //   payload: pushNotificationPayload,
-    // }),
+
     return {
       requestId: createdRequest?.id,
       status: "Breakdown reported successfully.",
       userId: userInfo.userId,
     };
   } catch (error) {
-     if (error instanceof BaseError) {
+    if (error instanceof BaseError) {
       throw error;
     }
-    
+
     // For unknown errors, wrap with APIError and include original message
     throw new APIError(
       ERROR_CODES.INTERNAL_SERVER_ERROR,
-      error instanceof Error 
-        ? error.message 
+      error instanceof Error
+        ? error.message
         : "An unexpected error occurred while creating breakdown request"
     );
   }
@@ -211,26 +184,29 @@ const getBreakdownRequestById = async (requestId: number) => {
 const closeBreakdownAndUpdateRating = async (
   params: CloseBreakdownParams
 ): Promise<void> => {
-  const {
-    requestId,
-    customerRating,
-    customerFeedback,
-    siteRating,
-    siteFeedback,
-  } = params;
-
-  await BreakdownRequestRepository.closeBreakdownAndUpdateRating({
-    requestId,
-    customerRating,
-    customerFeedback,
-    siteRating,
-    siteFeedback,
-  });
+  await BreakdownRequestRepository.closeBreakdownAndUpdateRating(params);
 };
 
 // Add this new function
 const getDriverRatingCount = async (driverId: number) => {
   return await BreakdownRequestRepository.getDriverRatingCount(driverId);
+};
+
+// Add this new function before the BreakdownRequestService object
+const getDriverProfile = async (
+  driverId: number,
+  requestId: number,
+  page: number = 1,
+  pageSize: number = 10
+) => {
+  const profile = await BreakdownRequestRepository.getDriverProfile(
+    driverId,
+    requestId
+  );
+  if (!profile) {
+    throw new Error("Driver not found");
+  }
+  return profile;
 };
 
 // Update the BreakdownRequestService object
@@ -243,13 +219,19 @@ export const BreakdownRequestService = {
   getBreakdownAssignmentsByDriverIdAndRequestId,
   closeBreakdownAndUpdateRating,
   getBreakdownRequestById,
-  getDriverRatingCount, // Add this line
+  getDriverRatingCount,
+  getDriverProfile: (
+    driverId: number,
+    requestId: number,
+    page?: number,
+    pageSize?: number
+  ) => getDriverProfile(driverId, requestId, page, pageSize),
 };
-
 interface CloseBreakdownParams {
   requestId: number;
-  customerRating: number | null;
-  customerFeedback: string | null;
+  driverRating: number | null;
+  driverFeedback: string | null;
   siteRating: number | null;
   siteFeedback: string | null;
+  driverId?: number;
 }

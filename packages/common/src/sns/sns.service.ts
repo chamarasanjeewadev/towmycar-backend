@@ -4,7 +4,6 @@ import { EmailNotificationType } from "../enums";
 
 // AWS.config.update({ region:process.env.REGION});
 
-// Configure AWS SDK to use credentials from the local AWS config file
 const sns = new SNS({
   region:process.env.REGION|| "eu-west-2", 
 });

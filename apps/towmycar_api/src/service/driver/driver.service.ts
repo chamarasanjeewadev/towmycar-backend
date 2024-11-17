@@ -15,6 +15,7 @@ import {
 import { sendNotification } from "@towmycar/common";
 import { BaseNotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
+import { CustomError, ERROR_CODES } from "./../../../src/utils";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -27,15 +28,21 @@ interface UpdateAssignmentData {
   description?: string;
 }
 
+interface PaymentData {
+  stripePaymentIntentId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  driverId: number;
+  requestId: number;
+}
+
 export class DriverService {
   async getDriverByEmail(email: string, repository: IDriverRepository) {
     return repository.findByEmail(email);
   }
 
-  async getDriverRequestWithInfo(
-    driverId: number,
-    requestId: number
-  ) {
+  async getDriverRequestWithInfo(driverId: number, requestId: number) {
     const request = await DriverRepository.getSpecificDriverRequestWithInfo(
       driverId,
       requestId
@@ -46,8 +53,6 @@ export class DriverService {
 
   async getDriverRequestsWithInfo(driverId: number) {
     const requests = await DriverRepository.getDriverRequestsWithInfo(driverId);
-
-   
 
     return requests;
   }
@@ -164,6 +169,64 @@ export class DriverService {
       closeBreakdownAssignment
     );
     // TODO: Send notifications to customers
+  }
+
+  async processPaymentAndUpdateAssignment(
+    driverId: number,
+    requestId: number,
+    estimation: number,
+    dataToUpdate: UpdateAssignmentData
+  ): Promise<void> {
+    const driver = await this.getDriverWithPaymentMethod(driverId);
+
+    if (!driver?.stripePaymentMethodId) {
+      throw new CustomError(
+        ERROR_CODES.STRIPE_CARD_NOT_ADDED,
+        400,
+        "Unable to process payment. Please add a valid payment method."
+      );
+    }
+
+    const amount = Math.round(estimation * 100); // Convert to cents
+
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: "usd",
+        customer: driver.stripeId,
+        payment_method: driver.stripePaymentMethodId,
+        off_session: true,
+        confirm: true,
+      });
+
+      if (paymentIntent.status !== "succeeded") {
+        throw new CustomError(
+          ERROR_CODES.PAYMENT_FAILED,
+          400,
+          "Payment failed"
+        );
+      }
+
+      // Save payment and update assignment
+      await DriverRepository.createPaymentAndUpdateAssignment({
+        payment: {
+          stripePaymentIntentId: paymentIntent.id,
+          amount: estimation,
+          currency: "usd",
+          status: paymentIntent.status,
+          driverId,
+          requestId,
+        },
+        assignmentData: dataToUpdate,
+      });
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      throw new CustomError(
+        ERROR_CODES.PAYMENT_FAILED,
+        400,
+        "Payment processing failed. Please try again or contact support."
+      );
+    }
   }
 }
 export const getDriverById = async (

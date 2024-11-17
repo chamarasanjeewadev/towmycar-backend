@@ -18,14 +18,21 @@ import {
   desc,
   count,
   or,
+  payments,
+  isNotNull,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { UserStatus, BreakdownRequestStatus } from "../enums";
 import { DriverStatus } from "@towmycar/common";
-import { ConflictError, DataBaseError, ERROR_CODES, ERROR_MESSAGES, STATUS_CODES } from "../utils/error";
+import {
+  ConflictError,
+  DataBaseError,
+  ERROR_CODES,
+  ERROR_MESSAGES,
+  STATUS_CODES,
+} from "../utils/error";
 import { BreakdownAssignmentDetails } from "./../types/types";
 import { logger } from "../utils";
-
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -61,11 +68,37 @@ type BreakdownRequestWithUserDetails = {
 
 type CloseBreakdownParams = {
   requestId: number;
-  customerRating: number | null;
-  customerFeedback: string | null;
+  driverId?: number;
+  driverRating: number | null;
+  driverFeedback: string | null;
   siteRating: number | null;
   siteFeedback: string | null;
 };
+
+// Add this interface near the top with other type definitions
+interface DriverProfile {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phoneNumber: string | null;
+  imageUrl: string | null;
+  ratings: {
+    count: number;
+    averageRating: number | null;
+    completedJobs: number;
+  };
+  reviews: {
+    rating: number;
+    feedback: string;
+    createdAt: Date;
+    customer: {
+      firstName: string;
+      lastName: string;
+      imageUrl: string | null;
+    };
+  }[];
+}
 
 // declare repository type
 export type BreakdownRequestRepositoryType = {
@@ -99,14 +132,20 @@ export type BreakdownRequestRepositoryType = {
   getBreakdownRequestById: (
     requestId: number
   ) => Promise<BreakdownRequestWithUserDetails | null>;
-  getDriverRatingCount: (
-    driverId: number
-  ) => Promise<{ count: number; averageRating: number | null }>;
+  getDriverRatingCount: (driverId: number) => Promise<{
+    count: number;
+    averageRating: number | null;
+    completedJobs: number;
+  }>;
+  getDriverProfile: (
+    driverId: number,
+    requestId: number
+  ) => Promise<DriverProfile | null>;
 };
 
 const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
   try {
-    const breakdownData: Omit<BreakdownRequest, 'id'> = {
+    const breakdownData: Omit<BreakdownRequest, "id"> = {
       customerId: data.customerId,
       requestType: data.requestType,
       address: data.address,
@@ -286,7 +325,6 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
   } catch (error) {
     logger.error("Error in getPaginatedBreakdownRequestsByCustomerId:", error);
     throw new DataBaseError(`Failed to fetch paginated breakdown requests`);
-
   }
 };
 
@@ -460,10 +498,11 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
 // Update the method implementation
 const closeBreakdownAndUpdateRating = async ({
   requestId,
-  customerRating,
-  customerFeedback,
+  driverRating,
+  driverFeedback,
   siteRating,
   siteFeedback,
+  driverId,
 }: CloseBreakdownParams): Promise<void> => {
   try {
     await DB.transaction(async tx => {
@@ -493,24 +532,24 @@ const closeBreakdownAndUpdateRating = async ({
       }
 
       // Find the accepted driver for this request
-      const acceptedAssignment = await tx
-        .select({
-          driverId: breakdownAssignment.driverId,
-        })
-        .from(breakdownAssignment)
-        .where(
-          and(
-            eq(breakdownAssignment.requestId, requestId),
-            eq(breakdownAssignment.driverStatus, DriverStatus.ACCEPTED),
-            or(
-              eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
-              eq(breakdownAssignment.userStatus, UserStatus.CLOSED)
-            )
-          )
-        )
-        .limit(1);
+      // const acceptedAssignment = await tx
+      //   .select({
+      //     driverId: breakdownAssignment.driverId,
+      //   })
+      //   .from(breakdownAssignment)
+      //   .where(
+      //     and(
+      //       eq(breakdownAssignment.requestId, requestId),
+      //       eq(breakdownAssignment.driverStatus, DriverStatus.ACCEPTED),
+      //       or(
+      //         eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
+      //         eq(breakdownAssignment.userStatus, UserStatus.CLOSED)
+      //       )
+      //     )
+      //   )
+      //   .limit(1);
 
-      const driverId = acceptedAssignment[0]?.driverId ?? null;
+      // const driverId = acceptedAssignment[0]?.driverId ?? null;
 
       // Insert service rating
       //@ts-ignore
@@ -520,8 +559,8 @@ const closeBreakdownAndUpdateRating = async ({
         driverId,
         siteRating,
         siteFeedback,
-        customerRating,
-        customerFeedback,
+        customerRating: driverRating,
+        customerFeedback: driverFeedback,
       });
     });
   } catch (error) {
@@ -630,29 +669,158 @@ const getBreakdownRequestById = async (
     return breakdownRequestWithDetails;
   } catch (error) {
     console.error("Error in getBreakdownRequestById:", error);
-    throw new DataBaseError(`Failed to fetch breakdown request by IDs: ${error}`);
- 
+    throw new DataBaseError(
+      `Failed to fetch breakdown request by IDs: ${error}`
+    );
   }
 };
 
 const getDriverRatingCount = async (
   driverId: number
-): Promise<{ count: number; averageRating: number | null }> => {
+): Promise<{
+  count: number;
+  averageRating: number | null;
+  completedJobs: number;
+}> => {
   try {
-    const result = await DB.select({
+    // Get ratings data
+    const ratingsResult = await DB.select({
       count: count(),
       averageRating: sql<number>`CAST(AVG(${serviceRatings.customerRating}) AS FLOAT)`,
     })
       .from(serviceRatings)
       .where(and(eq(serviceRatings.driverId, driverId)));
 
+    // Get completed jobs count
+    const completedJobsResult = await DB.select({
+      completedJobs: count(),
+    })
+      .from(breakdownAssignment)
+      .where(
+        and(
+          eq(breakdownAssignment.driverId, driverId),
+          eq(breakdownAssignment.isCompleted, true),
+          eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED)
+        )
+      );
+
     return {
-      count: result[0].count,
-      averageRating: result[0].averageRating,
+      count: ratingsResult[0].count,
+      averageRating: ratingsResult[0].averageRating,
+      completedJobs: completedJobsResult[0].completedJobs,
     };
   } catch (error) {
     console.error("Error in getDriverRatingCount:", error);
-    throw new Error("Failed to fetch driver rating count");
+    throw new DataBaseError(`Failed to fetch driver statistics: ${error}`);
+  }
+};
+
+// Update the getDriverProfile function to accept requestId
+const getDriverProfile = async (
+  driverId: number,
+  requestId: number
+): Promise<DriverProfile | null> => {
+  try {
+    // First check if there's an accepted assignment for this request and driver
+    const assignment = await DB.select({
+      userStatus: breakdownAssignment.userStatus,
+      driverStatus: breakdownAssignment.driverStatus,
+      paymentId: breakdownAssignment.paymentId,
+    })
+      .from(breakdownAssignment)
+      .where(
+        and(
+          eq(breakdownAssignment.driverId, driverId),
+          eq(breakdownAssignment.requestId, requestId)
+        )
+      )
+      .limit(1);
+
+    const isAccepted = assignment?.[0]?.paymentId !== null; // &&
+    // assignment?.[0]?.userStatus === UserStatus.ACCEPTED &&
+    // assignment?.[0]?.driverStatus === DriverStatus.ACCEPTED;
+
+    // Get driver basic info with conditional contact details
+    const driverInfo = await DB.select({
+      id: driver.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: sql<string>`CASE 
+        WHEN ${isAccepted} THEN ${user.email}
+        ELSE NULL 
+      END`,
+      phoneNumber: sql<string>`CASE 
+        WHEN ${isAccepted} THEN ${driver.phoneNumber}
+        ELSE NULL 
+      END`,
+      imageUrl: user.imageUrl,
+    })
+      .from(driver)
+      .innerJoin(user, eq(driver.userId, user.id))
+      .where(eq(driver.id, driverId))
+      .limit(1);
+
+    if (!driverInfo.length) {
+      return null;
+    }
+
+    // Get ratings statistics
+    const ratingsResult = await DB.select({
+      count: count(),
+      averageRating: sql<number>`CAST(AVG(${serviceRatings.customerRating}) AS FLOAT)`,
+    })
+      .from(serviceRatings)
+      .where(eq(serviceRatings.driverId, driverId));
+
+    // Get completed jobs count
+    const completedJobsResult = await DB.select({
+      completedJobs: count(),
+    })
+      .from(breakdownAssignment)
+      .where(
+        and(
+          eq(breakdownAssignment.driverId, driverId),
+          eq(breakdownAssignment.isCompleted, true),
+          eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED)
+        )
+      );
+
+    // Get reviews
+    const reviews = await DB.select({
+      rating: serviceRatings.customerRating,
+      feedback: serviceRatings.customerFeedback,
+      createdAt: serviceRatings.createdAt,
+      customer: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        imageUrl: user.imageUrl,
+      },
+    })
+      .from(serviceRatings)
+      .innerJoin(customer, eq(serviceRatings.customerId, customer.id))
+      .innerJoin(user, eq(customer.userId, user.id))
+      .where(
+        and(
+          eq(serviceRatings.driverId, driverId),
+          isNotNull(serviceRatings.customerRating),
+          isNotNull(serviceRatings.customerFeedback)
+        )
+      )
+      .orderBy(desc(serviceRatings.createdAt))
+      .limit(10); // Limit to last 10 reviews
+
+    return {
+      ...driverInfo[0],
+      ratings: {
+        count: ratingsResult[0].count,
+        averageRating: ratingsResult[0].averageRating,
+        completedJobs: completedJobsResult[0].completedJobs,
+      },
+      reviews: reviews,
+    };
+  } catch (error) {
+    console.error("Error in getDriverProfile:", error);
+    throw new DataBaseError(`Failed to fetch driver profile: ${error}`);
   }
 };
 
@@ -665,4 +833,5 @@ export const BreakdownRequestRepository: BreakdownRequestRepositoryType = {
   closeBreakdownAndUpdateRating,
   getBreakdownRequestById,
   getDriverRatingCount,
+  getDriverProfile,
 };

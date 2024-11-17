@@ -25,6 +25,8 @@ import {
   SingleDriverNotificationType,
   UserWithCustomer,
 } from "../types/types";
+import { EventEmitter } from 'events';
+import { NOTIFICATION_EVENTS, Location } from '../events/notificationEvents';
 
 // Add User interface (you might want to import this from a shared types file)
 
@@ -145,6 +147,15 @@ const sendNotifications = async ({
   }
 };
 
+const notificationEmitter = new EventEmitter();
+
+// Initialize listeners
+import { initializeEmailListener } from './listeners/emailListener.service';
+import { initializePushNotificationListener } from './listeners/pushNotificationListener.service';
+
+initializeEmailListener(notificationEmitter);
+initializePushNotificationListener(notificationEmitter);
+
 async function sendDriverNotifications({
   driver,
   user,
@@ -155,43 +166,17 @@ async function sendDriverNotifications({
 }: SingleDriverNotificationType) {
   const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/requests/${requestId}`;
   const googleMapsLink = createGoogleMapsDirectionsLink(location, toLocation);
-  const email: DriverNotificationEmailPayload = {
-    breakdownRequestId: requestId,
-    googleMapsLink,
+
+  notificationEmitter.emit(NOTIFICATION_EVENTS.NOTIFY_DRIVERS, {
     driver,
-    // @ts-ignore
+    requestId,
     user,
-    viewRequestLink,
-    recipientEmail: "towmycar.uk@gmail.com", // driver.email??"towmycar.uk@gmail.com",
+    location,
+    toLocation,
     createdAt,
-  };
-  
-  const pushNotificationPayload: PushNotificationPayload = {
-    title: "New Towing Request #" + requestId,
-    userId: driver.id,
-    url: viewRequestLink,
-    message:
-      `New towing request #${requestId} has been assigned to you. Tap to view request details and respond.`,
-  };
-
-  try {
-    await Promise.all([
-      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: BaseNotificationType.EMAIL,
-        subType: EmailNotificationType.DRIVER_ASSIGNED_EMAIL,
-        payload: email,
-      }),
-      sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: BaseNotificationType.PUSH,
-        subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
-        payload: pushNotificationPayload,
-      }),
-    ]);
-
-    console.log(`Notifications sent successfully to driver ${driver.id}`);
-  } catch (error) {
-    console.error(`Error sending notifications to driver ${driver.id}:`, error);
-  }
+    viewRequestLink,
+    googleMapsLink,
+  });
 }
 
 export const DriverSearchService: DriverSearchServiceType = {

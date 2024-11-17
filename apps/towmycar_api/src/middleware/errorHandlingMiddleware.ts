@@ -21,7 +21,6 @@ export const errorMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  debugger;
   let statusCode = 500;
   let errorCode = "INTERNAL_ERROR";
   let message = "Something went wrong";

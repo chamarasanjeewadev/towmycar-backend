@@ -3,10 +3,10 @@ import * as service from "../service/user/userBreakdownRequest.service";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-import { TokenService } from '@towmycar/common';
-import { verifyTokenMiddleware } from '../middleware/tokenVerification';
-import { combinedAuthMiddleware } from '../middleware/combinedAuth';
-import { UserRepository } from '../repository/user.repository';
+import { TokenService } from "@towmycar/common";
+import { verifyTokenMiddleware } from "../middleware/tokenVerification";
+import { combinedAuthMiddleware } from "../middleware/combinedAuth";
+import { UserRepository } from "../repository/user.repository";
 
 const router = express.Router();
 
@@ -159,7 +159,13 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const requestId = parseInt(req.params.requestId, 10);
-      const { customerRating, customerFeedback, siteRating, siteFeedback } = req.body;
+      const {
+        driverRating,
+        driverFeedback,
+        siteRating,
+        siteFeedback,
+        driverId,
+      } = req.body;
 
       if (isNaN(requestId)) {
         return res.status(400).json({ error: "Invalid request ID" });
@@ -167,10 +173,13 @@ router.post(
 
       // Validate ratings if provided
       const validateRating = (rating: number | null) => {
-        return rating === null || (typeof rating === "number" && rating >= 1 && rating <= 5);
+        return (
+          rating === null ||
+          (typeof rating === "number" && rating >= 1 && rating <= 5)
+        );
       };
 
-      if (!validateRating(customerRating) || !validateRating(siteRating)) {
+      if (!validateRating(driverRating) || !validateRating(siteRating)) {
         return res.status(400).json({
           error: "Invalid rating. Must be null or a number between 1 and 5.",
         });
@@ -181,19 +190,27 @@ router.post(
         return feedback === null || typeof feedback === "string";
       };
 
-      if (!validateFeedback(customerFeedback) || !validateFeedback(siteFeedback)) {
-        return res.status(400).json({ error: "Invalid feedback. Must be null or a string." });
+      if (
+        !validateFeedback(driverFeedback) ||
+        !validateFeedback(siteFeedback)
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Invalid feedback. Must be null or a string." });
       }
 
       await service.BreakdownRequestService.closeBreakdownAndUpdateRating({
         requestId,
-        customerRating,
-        customerFeedback,
+        driverRating,
+        driverFeedback,
         siteRating,
         siteFeedback,
+        driverId,
       });
 
-      res.status(200).json({ message: "Breakdown request closed and rated successfully" });
+      res
+        .status(200)
+        .json({ message: "Breakdown request closed and rated successfully" });
     } catch (error) {
       next(error);
     }
@@ -236,7 +253,8 @@ router.get(
         return res.status(400).json({ error: "Invalid driver ID" });
       }
 
-      const ratingCount = await service.BreakdownRequestService.getDriverRatingCount(driverId);
+      const ratingCount =
+        await service.BreakdownRequestService.getDriverRatingCount(driverId);
 
       res.status(200).json(ratingCount);
     } catch (error) {
@@ -245,31 +263,36 @@ router.get(
   }
 );
 
-// router.post(
-//   "/request-rating/:requestId",
-//   clerkAuthMiddleware("customer"),
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const requestId = parseInt(req.params.requestId, 10);
-//       const { customerId } = req.userInfo;
+// Update the driver profile route to support review pagination
+router.get(
+  "/driver-profile/:requestId/:driverId",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const driverId = parseInt(req.params.driverId, 10);
+      const requestId = parseInt(req.params.requestId, 10);
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const pageSize = parseInt(req.query.pageSize as string, 10) || 10;
 
-//       if (isNaN(requestId)) {
-//         return res.status(400).json({ error: "Invalid request ID" });
-//       }
+      if (isNaN(driverId) || isNaN(requestId)) {
+        return res
+          .status(400)
+          .json({ error: "Invalid driver ID or request ID" });
+      }
 
-//       const customerEmail = await UserRepository.getCustomerEmail(customerId);
+      const driverProfile =
+        await service.BreakdownRequestService.getDriverProfile(
+          driverId,
+          requestId,
+          page,
+          pageSize
+        );
 
-//       if (!customerEmail) {
-//         return res.status(404).json({ error: "Customer email not found" });
-//       }
-
-//       await service.BreakdownRequestService.generateRatingToken(requestId, customerEmail);
-
-//       res.status(200).json({ message: "Rating request sent successfully" });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
+      res.status(200).json(driverProfile);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;
