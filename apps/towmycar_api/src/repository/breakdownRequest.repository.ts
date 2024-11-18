@@ -256,10 +256,10 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
               'updatedAt', ${breakdownAssignment.updatedAt},
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
-                'email', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driverUser.email} ELSE NULL END,
+                'email', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.email} ELSE NULL END,
                 'firstName', ${driverUser.firstName},
                 'lastName', ${driverUser.lastName},
-                'phoneNumber', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driver.phoneNumber} ELSE NULL END,
+                'phoneNumber', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END,
                 'imageUrl', ${driverUser.imageUrl}
               )
             )
@@ -408,8 +408,8 @@ const getBreakdownAssignmentsByRequestId = async (
     updatedAt: breakdownAssignment.updatedAt,
     driver: {
       id: driver.id,
-      email: sql<string>`CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driverUser.email} ELSE NULL END`,
-      phoneNumber: sql<string>`CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driver.phoneNumber} ELSE NULL END`,
+      email: sql<string>`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.email} ELSE NULL END`,
+      phoneNumber: sql<string>`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END`,
       firstName: driverUser.firstName,
       lastName: driverUser.lastName,
       imageUrl: driverUser.imageUrl,
@@ -634,10 +634,10 @@ const getBreakdownRequestById = async (
               'updatedAt', ${breakdownAssignment.updatedAt},
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
-                'email', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${user.email} ELSE NULL END,
+                'email', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.email} ELSE NULL END,
                 'firstName', ${user.firstName},
                 'lastName', ${user.lastName},
-                'phoneNumber', CASE WHEN ${breakdownAssignment.driverStatus} = ${DriverStatus.ACCEPTED} THEN ${driver.phoneNumber} ELSE NULL END,
+                'phoneNumber', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END,
                 'imageUrl', ${user.imageUrl}
               )
             )

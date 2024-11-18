@@ -183,7 +183,7 @@ export const DriverRepository: IDriverRepository = {
           updatedAt: breakdownRequest.updatedAt,
           make: breakdownRequest.make,
           makeModel: breakdownRequest.model,
-          mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+          mobileNumber: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
           requestType: breakdownRequest.requestType,
         },
         driver: {
@@ -216,8 +216,8 @@ export const DriverRepository: IDriverRepository = {
           id: customer.id,
           firstName: user.firstName,
           lastName: user.lastName,
-          email: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${user.email} ELSE NULL END`,
-          mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+          email: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.email} ELSE NULL END`,
+          mobileNumber: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
           imageUrl: user.imageUrl,
         },
       })
@@ -232,9 +232,9 @@ export const DriverRepository: IDriverRepository = {
         .leftJoin(user, eq(customer.userId, user.id))
         .where(
           and(
-            eq(breakdownAssignment.driverId, driverId),
+            eq(breakdownAssignment.driverId, driverId)
             // Add this condition to exclude CLOSED requests
-            not(eq(breakdownRequest.status, BreakdownRequestStatus.CLOSED))
+            // not(eq(breakdownRequest.status, BreakdownRequestStatus.CLOSED))
           )
         )
         .orderBy(desc(breakdownAssignment.updatedAt));
@@ -330,8 +330,8 @@ export const DriverRepository: IDriverRepository = {
         id: customer.id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${user.email} ELSE NULL END`,
-        mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+        email: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.email} ELSE NULL END`,
+        mobileNumber: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
         // authId: user.authId,
         imageUrl: user.imageUrl,
       },
@@ -645,7 +645,6 @@ export const DriverRepository: IDriverRepository = {
     } catch (error) {
       logger.error("Error updating breakdown request status:", error);
       throw new DataBaseError(
-        
         `Failed to update breakdown request status: ${error}`
       );
     }
@@ -718,7 +717,7 @@ export const DriverRepository: IDriverRepository = {
     payment,
     assignmentData,
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void> {
-    await DB.transaction(async (tx) => {
+    await DB.transaction(async tx => {
       // Create payment record
       const [paymentRecord] = await tx
         .insert(payments)
@@ -740,7 +739,7 @@ export const DriverRepository: IDriverRepository = {
         .update(breakdownAssignment)
         .set({
           ...assignmentData,
-         //@ts-ignore 
+          //@ts-ignore
           paymentId: paymentRecord.id,
           updatedAt: new Date(),
         })
