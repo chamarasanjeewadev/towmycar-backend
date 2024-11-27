@@ -51,4 +51,8 @@ export enum UserGroup {
     CLOSED = 'CLOSED' ,
     QUOTED='QUOTED'
   }
-  
+  export enum SmsNotificationType {
+    DRIVER_ASSIGNED = 'DRIVER_ASSIGNED',
+    REQUEST_STATUS_UPDATE = 'REQUEST_STATUS_UPDATE',
+    PAYMENT_CONFIRMATION = 'PAYMENT_CONFIRMATION'
+  }  

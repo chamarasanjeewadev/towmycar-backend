@@ -17,9 +17,9 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.645.0",
-    "@towmycar/database": "*",
-    "@towmycar/common": "*",
     "@sinclair/typebox": "^0.32.30",
+    "@towmycar/common": "*",
+    "@towmycar/database": "*",
     "ajv": "^8.13.0",
     "aws-sdk": "^2.1690.0",
     "axios": "^1.7.2",
@@ -31,7 +31,8 @@
     "pg": "^8.11.4",
     "pino": "^9.1.0",
     "pino-http": "^10.1.0",
-    "pino-pretty": "^11.1.0"
+    "pino-pretty": "^11.1.0",
+    "twilio": "^5.3.6"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.145",

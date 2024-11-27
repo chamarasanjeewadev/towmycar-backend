@@ -152,9 +152,11 @@ const notificationEmitter = new EventEmitter();
 // Initialize listeners
 import { initializeEmailListener } from './listeners/emailListener.service';
 import { initializePushNotificationListener } from './listeners/pushNotificationListener.service';
+import { initializeSmsNotificationListener } from "./listeners/smsNotificationListener.service";
 
 initializeEmailListener(notificationEmitter);
 initializePushNotificationListener(notificationEmitter);
+initializeSmsNotificationListener (notificationEmitter);
 
 async function sendDriverNotifications({
   driver,
