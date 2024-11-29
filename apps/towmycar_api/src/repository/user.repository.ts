@@ -18,6 +18,9 @@ import {
   User,
   eq,
   and,
+  notifications,
+  desc,
+  sql,
 } from "@towmycar/database";
 
 export type UserRepositoryType = {
@@ -59,6 +62,9 @@ export type UserRepositoryType = {
     firstName: string;
     lastName: string;
   }) => Promise<{ customer: any; user: any; isNewUser: boolean }>;
+  markNotificationAsSeen: (notificationId: number) => Promise<void>;
+  getUserNotifications: (userId: number) => Promise<Notification[]>;
+  getUnseenNotificationsCount: (userId: number) => Promise<number>;
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
@@ -447,6 +453,46 @@ const createUserFromWebhook = async (
   }
 };
 
+const getUserNotifications = async (userId: number): Promise<Notification[]> => {
+  try {
+    return await DB.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  } catch (error) {
+    console.error("Error in getUserNotifications:", error);
+    throw new DataBaseError(`Failed to get user notifications: ${error}`);
+  }
+};
+
+const markNotificationAsSeen = async (notificationId: number): Promise<void> => {
+  try {
+    await DB.update(notifications)
+      .set({ isSeen: true })
+      .where(eq(notifications.id, notificationId));
+  } catch (error) {
+    console.error("Error in markNotificationAsSeen:", error);
+    throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
+  }
+};
+
+const getUnseenNotificationsCount = async (userId: number): Promise<number> => {
+  try {
+    const result = await DB.select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isSeen, false)
+        )
+      );
+    return Number(result[0].count) || 0;
+  } catch (error) {
+    console.error("Error in getUnseenNotificationsCount:", error);
+    throw new DataBaseError(`Failed to get unseen notifications count: ${error}`);
+  }
+};
+
 export const UserRepository: UserRepositoryType = {
   createUser,
   getOrCreateUser,
@@ -462,4 +508,7 @@ export const UserRepository: UserRepositoryType = {
   deleteVehicle,
   createUserFromWebhook,
   createAnonymousCustomer,
+  markNotificationAsSeen,
+  getUserNotifications,
+  getUnseenNotificationsCount,
 };

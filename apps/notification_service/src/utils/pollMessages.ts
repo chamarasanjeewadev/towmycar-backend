@@ -6,13 +6,13 @@ import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
 import {
   BaseNotificationType,
   EmailNotificationType,
+  PushNotificationPayload,
   PushNotificationType,
 } from "@towmycar/common";
 import {
   BreakdownNotificationType,
   EmailPayloadBaseType,
   EmailPayloadType,
-  FcmNotificationPayloadType,
 } from "@towmycar/common";
 import { sendEmail } from "./../service/email.service";
 
@@ -40,7 +40,7 @@ async function processMessage(message: AWS.SQS.Message) {
           case BaseNotificationType.PUSH:
             await UserNotificationService.sendPushNotification(
               messageData.subType as PushNotificationType,
-              messageData.payload as FcmNotificationPayloadType
+              messageData.payload as PushNotificationPayload
             );
             break;
         }
@@ -76,7 +76,8 @@ export const pollMessagesFromSQS = async () => {
       })
       .promise();
     console.log("poll triggered....");
-    if (data?.Messages?.length>0) {
+    
+    if (data?.Messages && data.Messages.length > 0) {
       for (const message of data.Messages) {
         await processMessage(message);
       }

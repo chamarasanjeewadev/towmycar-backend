@@ -26,7 +26,7 @@ export function initializeEmailListener(emitter: EventEmitter) {
     try {
       await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.EMAIL,
-        subType: EmailNotificationType.DRIVER_ASSIGNED_EMAIL,
+        subType: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
         payload: emailPayload,
       });
       

@@ -6,12 +6,12 @@ import {
 import { DriverRepository } from "../repository/driver.repository";
 import { DriverService } from "../service/driver/driver.service";
 import { driverProfileSchema } from "../dto/driver.dto";
-import { DriverStatus } from "../enums";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import Stripe from "stripe";
 import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 import { CustomError, ERROR_CODES } from "../utils";
+import { DriverStatus } from "@towmycar/common";
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -301,6 +301,41 @@ router.post(
       res
         .status(200)
         .json({ message: "Breakdown request closed successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  "/notifications",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userInfo.userId;
+      const notifications = await driverService.getDriverNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.patch(
+  "/notifications/:notificationId/isSeen",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const notificationId = parseInt(req.params.notificationId);
+      if (isNaN(notificationId)) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid notification ID"
+        );
+      }
+      await driverService.markNotificationAsSeen(notificationId);
+      res.json({ message: "Notification marked as seen" });
     } catch (error) {
       next(error);
     }

@@ -22,7 +22,7 @@ export interface DriverNotificationEventPayload {
 
 // Import this from your shared types or define here
 interface UserWithCustomer {
-  id: string;
+  id: number;
   email: string;
   firstName?: string;
   lastName?: string;

@@ -5,6 +5,7 @@ import {
 } from "../../events/notificationEvents";
 import { logger } from "../../utils";
 import { getSMSProvider } from "../sms/smsProviderFactory";
+import { SMS_CONFIG } from "../../config";
 
 const smsProvider = getSMSProvider();
 
@@ -12,6 +13,11 @@ export function initializeSmsNotificationListener(emitter: EventEmitter) {
   emitter.on(
     NOTIFICATION_EVENTS.NOTIFY_DRIVERS,
     async (payload: DriverNotificationEventPayload) => {
+      if (!SMS_CONFIG.isEnabled) {
+        logger.info("SMS notifications are disabled");
+        return;
+      }
+
       const {
         driver,
         requestId,

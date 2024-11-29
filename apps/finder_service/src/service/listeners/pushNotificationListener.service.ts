@@ -10,11 +10,11 @@ import { NOTIFICATION_EVENTS, DriverNotificationEventPayload } from '../../event
 
 export function initializePushNotificationListener(emitter: EventEmitter) {
   emitter.on(NOTIFICATION_EVENTS.NOTIFY_DRIVERS, async (payload: DriverNotificationEventPayload) => {
-    const { driver, requestId, viewRequestLink } = payload;
+    const { driver, requestId,user, viewRequestLink } = payload;
 
     const pushNotificationPayload: PushNotificationPayload = {
       title: `New Towing Request #${requestId}`,
-      userId: driver.id,
+      userId: user?.id,
       url: viewRequestLink,
       message: `New towing request #${requestId} has been assigned to you. Tap to view request details and respond.`,
     };
@@ -22,7 +22,7 @@ export function initializePushNotificationListener(emitter: EventEmitter) {
     try {
       await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.PUSH,
-        subType: PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION,
+        subType: PushNotificationType.NOTIFY_DRIVER_NOTIFICATION,
         payload: pushNotificationPayload,
       });
       

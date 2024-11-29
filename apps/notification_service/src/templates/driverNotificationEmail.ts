@@ -34,48 +34,18 @@ export function driverNotificationEmail(
     <p>If you have any questions or need additional information, don't hesitate to contact our support team.</p>
     
     <p>Thank you for your dedication to helping drivers in need.</p>
+
+    <div style="text-align: center;">
+      <a href="${payload.viewRequestLink}" class="button">View and Accept Request</a>
+    </div>
   `;
 
   const htmlBody = createBaseTemplate({
     content,
-    buttonText: "View and Accept Request",
-    buttonLink: payload.viewRequestLink,
-    socialLinks: {
-      instagram: "https://instagram.com/towmycar",
-      facebook: "https://facebook.com/towmycar",
-      linkedin: "https://linkedin.com/company/towmycar",
-    },
   });
-
-  const textBody = `Hello ${payload.driver.firstName},
-
-We have an urgent breakdown request in your area that needs your expertise!
-
-Request Details:
-- Request ID: #${payload.breakdownRequestId}
-- Location: ${payload.location}
-  Maps Link: ${locationLink}
-- Time Submitted: ${new Date().toLocaleString()}
-
-User Details:
-- Name: ${payload.user.firstName} ${payload.user.lastName}
-- Phone: ${payload.user.phoneNumber || "Not provided"}
-
-A driver in distress is counting on professionals like you. Your quick response can make a significant difference in their day.
-
-To view full details and accept this request, please visit:
-${payload.viewRequestLink}
-
-Remember, fast response times lead to higher ratings and more business opportunities!
-
-Thank you for your dedication to helping drivers in need.
-
-Best regards,
-Your Breakdown Assistance Team`;
 
   return {
     subject: `New Breakdown Request: Your Assistance Needed! - Request #${payload.breakdownRequestId}`,
-    textBody,
     htmlBody,
   };
 }

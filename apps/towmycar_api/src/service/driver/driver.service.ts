@@ -101,7 +101,7 @@ export class DriverService {
         newPrice: data.estimation,
         estimation: data.estimation,
         description: data?.description ?? "",
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
       };
 
       // Update the breakdown request status to IN_PROGRESS when a driver quotes
@@ -130,7 +130,7 @@ export class DriverService {
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
       };
     } else if (data.driverStatus === DriverStatus.CLOSED) {
-      const token = TokenService.generateUrlSafeToken(requestId);
+      const token = TokenService.generateUrlSafeToken(requestId, driverId);
       notificationType = EmailNotificationType.RATING_REVIEW_EMAIL;
       payload = {
         requestId,
@@ -226,6 +226,25 @@ export class DriverService {
         400,
         "Payment processing failed. Please try again or contact support."
       );
+    }
+  }
+
+  async getDriverNotifications(userId: number) {
+    try {
+      const notifications = await DriverRepository.getUserNotifications(userId);
+      return notifications;
+    } catch (error) {
+      console.error("Error fetching driver notifications:", error);
+      throw error;
+    }
+  }
+
+  async markNotificationAsSeen(notificationId: number) {
+    try {
+      await DriverRepository.markNotificationAsSeen(notificationId);
+    } catch (error) {
+      console.error("Error marking notification as seen:", error);
+      throw error;
     }
   }
 }

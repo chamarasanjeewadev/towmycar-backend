@@ -164,8 +164,9 @@ router.post(
         driverFeedback,
         siteRating,
         siteFeedback,
-        driverId,
       } = req.body;
+
+      const driverId = req.tokenData?.driverId;
 
       if (isNaN(requestId)) {
         return res.status(400).json({ error: "Invalid request ID" });

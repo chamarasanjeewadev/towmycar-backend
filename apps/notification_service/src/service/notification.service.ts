@@ -1,7 +1,6 @@
 import { sendPushNotification as sendPush } from "../utils/pushNotificationSender";
 import { FcmRepository } from "../repository/fcm.repository";
 import {
-  FcmNotificationPayloadType,
   PushNotificationPayload,
 } from "@towmycar/common";
 import { PushNotificationType } from "@towmycar/common";
@@ -25,6 +24,13 @@ async function sendGenericPushNotification(
   }
 
   try {
+    await FcmRepository.saveNotification({
+      userId,
+      title,
+      message,
+      url,
+    });
+
     const tokens = await FcmRepository.getFcmTokensByUserId(userId);
 
     if (tokens.length === 0) {
@@ -54,46 +60,106 @@ async function sendGenericPushNotification(
   }
 }
 
-// async function sendDriverAssignedBreakdownPushNotification(
-//   payload: EmailPayload
-// ): Promise<void> {
-//   const userId = payload?.user?.id;
-
-//   if (!userId) {
-//     console.error("User ID is missing in the payload");
-//     return;
-//   }
-
-//   await sendGenericPushNotification({
-//     userId: Number(userId),
-//     title: "Assignment status updated",
-//     message: "The status of your breakdown assignment has been updated. Tap to view details.",
-//     url: "/breakdown-details", // Replace with the actual URL
-//   });
-// }
-
-function sendDriverAssignedPushNotification(
-  payload: FcmNotificationPayloadType
-): void {
-  console.log("Payload in sendDriverAssignedPushNotification:", payload);
-
-  sendGenericPushNotification({
-    userId: payload.userId,
-    title: payload.title,
-    message: payload.message,
-    url: payload.url, // Replace with the actual URL
-  });
-}
-
 async function sendPushNotification(
   type: PushNotificationType,
-  payload: FcmNotificationPayloadType
+  payload: PushNotificationPayload
 ): Promise<void> {
-  if (type === PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION) {
-    sendDriverAssignedPushNotification(payload);
+  switch (type) {
+    case PushNotificationType.DRIVER_ASSIGNED_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "Driver Assigned",
+        message: "A driver has been assigned to your request",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.DRIVER_REGISTERED_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "Registration Complete",
+        message: "Your driver registration has been received",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.USER_REQUEST_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "New Request",
+        message: "Your breakdown assistance request has been received",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.DRIVER_QUOTATION_UPDATED_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "Quotation Updated",
+        message: "A driver has updated their quotation for your request",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.DRIVER_QUOTE_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "New Quote Available",
+        message: "A new quote is available for your breakdown request",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.USER_ACCEPT_NOTIFICATION:
+    case PushNotificationType.DRIVER_ACCEPT_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "Request Accepted",
+        message: payload.message || "Your request has been accepted",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.USER_REJECT_NOTIFICATION:
+    case PushNotificationType.DRIVER_REJECT_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "Request Status Update",
+        message: payload.message || "There has been an update to your request",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.NOTIFY_DRIVER_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "New Breakdown Request",
+        message: "A new breakdown request is available in your area",
+        url: payload.url
+      });
+      break;
+
+    case PushNotificationType.RATING_REVIEW_NOTIFICATION:
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: "New Rating & Review",
+        message: "You have received a new rating and review",
+        url: payload.url
+      });
+      break;
+
+    default:
+      // Handle any other notification types with generic notification
+      await sendGenericPushNotification({
+        userId: payload.userId,
+        title: payload.title || "Notification",
+        message: payload.message || "You have a new notification",
+        url: payload.url
+      });
+      break;
   }
-  // Add more conditions for other notification types as needed
-  console.log("Payload in sendPushNotification:", payload);
+
+  console.log(`Push notification sent for type: ${type}`, payload);
 }
 
 export const UserNotificationService = {

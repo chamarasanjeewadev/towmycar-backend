@@ -1,19 +1,20 @@
+import { createBaseTemplate } from "./baseTemplate";
 
-export const driverRejectEmail = (payload: any) => ({
-  subject: `Driver Rejected Request #${payload.requestId}`,
-  textBody: `Hello,
-
-Unfortunately, the driver has rejected your request #${payload.requestId}. We'll continue to look for another driver.
-
-View your request: ${payload.viewRequestLink}
-
-Best regards,
-Your Company`,
-  htmlBody: `
+export const driverRejectEmail = (payload: any) => {
+  const content = `
     <h1>Driver Rejected Your Request</h1>
     <p>Hello,</p>
     <p>Unfortunately, the driver has rejected your request #${payload.requestId}. We'll continue to look for another driver.</p>
-    <p><a href="${payload.viewRequestLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block;">View Request</a></p>
-    <p>Best regards,<br>Your Company</p>
-  `,
-});
+
+    <div style="text-align: center;">
+      <a href="${payload.viewRequestLink}" class="button">View Request</a>
+    </div>
+  `;
+
+  const htmlBody = createBaseTemplate({ content });
+
+  return {
+    subject: `Driver Rejected Request #${payload.requestId}`,
+    htmlBody,
+  };
+};

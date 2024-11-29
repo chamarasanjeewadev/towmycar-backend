@@ -29,17 +29,11 @@ export type BreakdownRequestDriverNotificationPayload = {};
 
 export interface PushNotificationPayload {
   userId: number;
+  requestId?: number;
   title: string;
   message: string;
   url?: string;
 }
-
-export type FcmNotificationPayloadType = {
-  userId: number;
-  title: string;
-  message: string;
-  url: string;
-};
 
 export type EmailPayloadType = {
   recipientEmail: string;

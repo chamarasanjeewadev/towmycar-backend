@@ -150,6 +150,11 @@ export class CdkStack extends cdk.Stack {
         VIEW_REQUEST_BASE_URL: process.env.VIEW_REQUEST_BASE_URL || "",
         NOTIFICATION_REQUEST_SNS_TOPIC_ARN: this.sendNotificationTopic.topicArn,
         SQS_QUEUE_URL: this.breakdownRequestQueue.queueUrl,
+        SMS_PROVIDER: process.env.SMS_PROVIDER || "twilio",
+        TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",
+        TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
+        TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
+        ENABLE_SMS: process.env.ENABLE_SMS || "false",
       },
     });
 

@@ -386,4 +386,41 @@ router.patch(
   }
 );
 
+// Add this new route
+router.get(
+  "/notifications",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userInfo.userId;
+      const notifications = await service.getUserNotifications(userId, repo);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Add this new route for marking notifications as seen
+router.patch(
+  "/notifications/:notificationId/isSeen",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const notificationId = parseInt(req.params.notificationId);
+      if (isNaN(notificationId)) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid notification ID"
+        );
+      }
+      await service.markNotificationAsSeen(notificationId, repo);
+      res.json({ message: "Notification marked as seen" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

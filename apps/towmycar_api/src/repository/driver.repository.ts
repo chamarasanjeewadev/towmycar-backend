@@ -12,23 +12,22 @@ import {
   desc,
   aliasedTable,
   sql,
-  not,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import {
   NotFoundError,
   DataBaseError,
-  ERROR_CODES,
-  ERROR_MESSAGES,
 } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
-import { BreakdownRequestStatus, DriverStatus, UserStatus } from "../enums";
 import {
   BreakdownAssignmentDetails,
   CloseDriverAssignmentParams,
 } from "./../types/types";
-import { logger, STATUS_CODES } from "../utils";
+import { logger } from "../utils";
 import { payments } from "@towmycar/database/db-schema";
+import { notifications } from "@towmycar/database/db-schema";
+import { Notification } from "@towmycar/database/db-schema";
+import { UserStatus ,DriverStatus, BreakdownRequestStatus} from "@towmycar/common";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -125,6 +124,9 @@ export interface IDriverRepository {
     payment,
     assignmentData,
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void>;
+  getUserNotifications: (userId: number) => Promise<Notification[]>;
+  markNotificationAsSeen: (notificationId: number) => Promise<void>;
+  getUnseenNotificationsCount: (userId: number) => Promise<number>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -750,5 +752,42 @@ export const DriverRepository: IDriverRepository = {
           )
         );
     });
+  },
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    try {
+      return await DB.select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      logger.error("Error in getUserNotifications:", error);
+      throw new DataBaseError(`Failed to get user notifications: ${error}`);
+    }
+  },
+  async markNotificationAsSeen(notificationId: number): Promise<void> {
+    try {
+      await DB.update(notifications)
+        //@ts-ignore
+        .set({ isSeen: true })
+        .where(eq(notifications.id, notificationId));
+    } catch (error) {
+      logger.error("Error in markNotificationAsSeen:", error);
+      throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
+    }
+  },
+  async getUnseenNotificationsCount(userId: number): Promise<number> {
+    try {
+      const result = await DB.select({ count: sql<number>`count(*)` })
+        .from(notifications)
+        .where(
+          and(eq(notifications.userId, userId), eq(notifications.isSeen, false))
+        );
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      logger.error("Error in getUnseenNotificationsCount:", error);
+      throw new DataBaseError(
+        `Failed to get unseen notifications count: ${error}`
+      );
+    }
   },
 };

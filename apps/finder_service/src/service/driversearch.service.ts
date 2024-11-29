@@ -25,8 +25,8 @@ import {
   SingleDriverNotificationType,
   UserWithCustomer,
 } from "../types/types";
-import { EventEmitter } from 'events';
-import { NOTIFICATION_EVENTS, Location } from '../events/notificationEvents';
+import { EventEmitter } from "events";
+import { NOTIFICATION_EVENTS, Location } from "../events/notificationEvents";
 
 // Add User interface (you might want to import this from a shared types file)
 
@@ -86,24 +86,6 @@ const findAndNotifyNearbyDrivers = async (
       console.log("No nearby drivers found for requestId:", requestId);
       return [];
     }
-
-    // Get user details
-    // const user = await DriverSearchRepository.getUserByCustomerId(customerId);
-
-    // Send notifications to nearby drivers
-
-    // Send notification to the user
-    // await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-    //   type: EmailNotificationType.USER_NOTIFICATION_EMAIL,
-    //   payload: {
-    //     breakdownRequestId: requestId,
-    //     user,
-    //     viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
-    //   },
-    // });
-
-    console.log("should be requestId", requestId);
-    return nearbyDrivers;
   } catch (error) {
     console.error("Error in findAndNotifyNearbyDrivers:", error);
     throw error;
@@ -150,13 +132,13 @@ const sendNotifications = async ({
 const notificationEmitter = new EventEmitter();
 
 // Initialize listeners
-import { initializeEmailListener } from './listeners/emailListener.service';
-import { initializePushNotificationListener } from './listeners/pushNotificationListener.service';
+import { initializeEmailListener } from "./listeners/emailListener.service";
+import { initializePushNotificationListener } from "./listeners/pushNotificationListener.service";
 import { initializeSmsNotificationListener } from "./listeners/smsNotificationListener.service";
 
 initializeEmailListener(notificationEmitter);
 initializePushNotificationListener(notificationEmitter);
-initializeSmsNotificationListener (notificationEmitter);
+initializeSmsNotificationListener(notificationEmitter);
 
 async function sendDriverNotifications({
   driver,

@@ -35,10 +35,7 @@ export const sendEmail = async (
           Charset: "UTF-8",
         },
         Body: {
-          Text: {
-            Data: emailContent.textBody,
-            Charset: "UTF-8",
-          },
+          
           Html: {
             Data: emailContent.htmlBody,
             Charset: "UTF-8",
@@ -67,8 +64,9 @@ export const sendEmail = async (
 // Update the getEmailContent function
 function getEmailContent(
   type: EmailNotificationType,
-  payload: EmailPayloadBaseType
+  payload: EmailPayloadType & EmailPayloadBaseType
 ) {
+  
   switch (type) {
     case EmailNotificationType.USER_REQUEST_EMAIL:
       return userRequestEmail(payload);

@@ -134,3 +134,29 @@ export const createUserFromWebhook = async (
     throw error;
   }
 };
+
+// Add these new functions
+export const getUserNotifications = async (
+  userId: number,
+  repo: UserRepositoryType
+) => {
+  try {
+    const notifications = await repo.getUserNotifications(userId);
+    return notifications;
+  } catch (error) {
+    console.error("Error fetching user notifications:", error);
+    throw error;
+  }
+};
+
+export const markNotificationAsSeen = async (
+  notificationId: number,
+  repo: UserRepositoryType
+) => {
+  try {
+    await repo.markNotificationAsSeen(notificationId);
+  } catch (error) {
+    console.error("Error marking notification as seen:", error);
+    throw error;
+  }
+};
