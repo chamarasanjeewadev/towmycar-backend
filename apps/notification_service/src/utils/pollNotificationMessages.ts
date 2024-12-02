@@ -31,23 +31,23 @@ async function processMessage(message: AWS.SQS.Message) {
       logger.warn("Invalid SNS notification: missing Message field");
     }
 
-    // await sqs
-    //   .deleteMessage({
-    //     QueueUrl: queueURL!,
-    //     ReceiptHandle: message.ReceiptHandle ?? "",
-    //   })
-    //   .promise();
+    await sqs
+      .deleteMessage({
+        QueueUrl: queueURL!,
+        ReceiptHandle: message.ReceiptHandle ?? "",
+      })
+      .promise();
   } catch (error) {
     logger.error("Error processing message:", error);
     throw error;
   }
   finally {
-    // await sqs
-    //   .deleteMessage({
-    //     QueueUrl: queueURL!,
-    //     ReceiptHandle: message.ReceiptHandle ?? "",
-    //   })
-    //   .promise();
+    await sqs
+      .deleteMessage({
+        QueueUrl: queueURL!,
+        ReceiptHandle: message.ReceiptHandle ?? "",
+      })
+      .promise();
   }
 }
 

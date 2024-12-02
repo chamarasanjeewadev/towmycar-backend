@@ -1,5 +1,4 @@
 import { EventEmitter } from "events";
-import { NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../../config";
 import {
   BaseNotificationType,
   sendNotification,
@@ -7,7 +6,6 @@ import {
   NotificationType,
   UserNotificationEventPayload,
   NotificationPayload,
-  PushNotificationPayloadForDrivers,
   UserWithDriver,
 } from "@towmycar/common";
 
@@ -15,11 +13,9 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
   emitter.on(
     NotificationType.DRIVER_NOTIFICATION,
     async (payload: DriverNotifyEventPayload) => {
-      const { drivers, requestId, viewRequestLink } = payload;
-
+      const { drivers } = payload;
       // Create individual push notifications for each driver
       const pushNotificationsForDrivers = drivers.map(driver => {
-
         const userWithDriver: UserWithDriver = {
           id: driver.userId,
           email: driver.email,
@@ -29,9 +25,9 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
           driver: {
             id: driver.id,
             phoneNumber: driver.phoneNumber,
-          }
+          },
         };
-         const pushPlayload: NotificationPayload = {
+        const pushPlayload: NotificationPayload = {
           driver: userWithDriver,
           location: payload.location,
           breakdownRequestId: payload.requestId,
@@ -41,12 +37,11 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
           googleMapsLink: payload.googleMapsLink,
         };
 
-       
         return pushPlayload;
       });
 
       // Send individual push notifications
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.PUSH,
         subType: NotificationType.DRIVER_NOTIFICATION,
         payload: pushNotificationsForDrivers,
@@ -58,7 +53,7 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
   emitter.on(
     NotificationType.USER_NOTIFICATION,
     async (payload: UserNotificationEventPayload) => {
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.PUSH,
         subType: NotificationType.USER_NOTIFICATION,
         payload,

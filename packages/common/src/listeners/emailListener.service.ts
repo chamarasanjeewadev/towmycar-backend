@@ -1,5 +1,4 @@
 import { EventEmitter } from "events";
-import { NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../../config";
 import {
   BaseNotificationType,
   sendNotification,
@@ -43,7 +42,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         return emailPlayload;
       });
       // modify payload for email
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.EMAIL,
         subType: NotificationType.DRIVER_NOTIFICATION,
         payload:emailsForDrivers,
@@ -55,7 +54,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     NotificationType.USER_NOTIFICATION,
     async (payload: UserNotificationEventPayload) => {
       // modify payload as push notification expects
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.EMAIL,
         subType: NotificationType.USER_NOTIFICATION,
         payload,

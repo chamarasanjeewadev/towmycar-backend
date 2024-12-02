@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 
-import { NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../../config";
 import {
   BaseNotificationType,
   sendNotification,
@@ -17,12 +16,6 @@ export function registerSmsNotificationListener(emitter: EventEmitter) {
     async (payload: DriverNotifyEventPayload) => {
       const {
         drivers,
-        requestId,
-        user,
-        viewRequestLink,
-        location,
-        toLocation,
-        googleMapsLink,
       } = payload;
 
       // Create individual SMS notifications for each driver
@@ -54,7 +47,7 @@ export function registerSmsNotificationListener(emitter: EventEmitter) {
       });
 
       // Send individual SMS notifications
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.SMS,
         subType: NotificationType.DRIVER_NOTIFICATION,
         payload: smsForDrivers,
@@ -65,7 +58,7 @@ export function registerSmsNotificationListener(emitter: EventEmitter) {
   emitter.on(
     NotificationType.USER_NOTIFICATION,
     async (payload: UserNotificationEventPayload) => {
-      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.SMS,
         subType: NotificationType.USER_NOTIFICATION,
         payload,

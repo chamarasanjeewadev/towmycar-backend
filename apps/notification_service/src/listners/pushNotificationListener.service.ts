@@ -3,11 +3,9 @@ import {
   BaseNotificationType,
   NotificationPayload,
   NotificationType,
-  UserNotificationEventPayload,
   driverNotificationEmailType,
 } from "@towmycar/common";
 import { UserNotificationService } from "../service/notification.service";
-import { NotificationRepository } from "../repository/notification.repository";
 
 export function registerPushNotificationListener(emitter: EventEmitter): void {
   emitter.on(

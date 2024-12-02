@@ -1,17 +1,16 @@
 import { DriverSearchRepository } from "../repository/driversearch.repository";
-
 import { VIEW_REQUEST_BASE_URL } from "../config";
 import {
   createGoogleMapsDirectionsLink,
   NearbyDriver,
   NotificationType,
+  registerEmailListener,
+  registerPushNotificationListener,
+  registerSmsNotificationListener,
 } from "@towmycar/common";
 import { EventEmitter } from "events";
 
 // Initialize listeners
-import { registerEmailListener } from "./listeners/emailListener.service";
-import { registerPushNotificationListener } from "./listeners/pushNotificationListener.service";
-import { registerSmsNotificationListener } from "./listeners/smsNotificationListener.service";
 const notificationEmitter = new EventEmitter();
 registerEmailListener(notificationEmitter);
 registerPushNotificationListener(notificationEmitter);
@@ -67,21 +66,18 @@ const findAndNotifyNearbyDrivers = async (
         request.location,
         request.toLocation
       );
-      // const notificationPromises = nearbyDrivers.map(driver => {
+      // may be we need to check if the emitted record is successfyll resolved before deleting
       notificationEmitter.emit(NotificationType.DRIVER_NOTIFICATION, {
         drivers: nearbyDrivers,
         requestId,
         user,
-        location:request?.location,
+        location: request?.location,
         toLocation: request.toLocation,
         createdAt: request.createdAt,
         viewRequestLink,
         googleMapsLink,
-      } );
-      // });
-      // send push notification to user stating request has been assigned to few drivers
+      });
 
-      // await Promise.allSettled(notificationPromises);
       return nearbyDrivers;
     } else {
       console.log("No nearby drivers found for requestId:", requestId);

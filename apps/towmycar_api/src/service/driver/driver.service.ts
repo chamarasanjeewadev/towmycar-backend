@@ -16,7 +16,6 @@ import { sendNotification } from "@towmycar/common";
 import { BaseNotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
 import { CustomError, ERROR_CODES } from "./../../../src/utils";
-import { NotificationType } from "aws-sdk/clients/budgets";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
