@@ -251,6 +251,30 @@ export const notifications = pgTable("notifications", {
   isSeen: boolean("is_seen").default(false).notNull(),
 });
 
+export const notificationHistory = pgTable("notification_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull(),
+  notificationType: varchar("notification_type", { length: 100 }).notNull(), // EMAIL, SMS, PUSH
+  deliveryType: varchar("delivery_type", { length: 20 }).notNull(),
+  breakdownRequestId: integer("breakdown_request_id")
+    .references(() => breakdownRequest.id, { onDelete: "cascade" })
+    .notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING, SENT, FAILED
+  retryCount: integer("retry_count").notNull().default(0),
+  errorMessage: text("error_message"),
+  lastAttempt: timestamp("last_attempt", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type User = typeof user.$inferSelect;
 export type Customer = typeof customer.$inferSelect;
 export type Driver = typeof driver.$inferSelect;
@@ -262,3 +286,4 @@ export type Chat = typeof chats.$inferSelect;
 export type ServiceRating = typeof serviceRatings.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type NotificationHistory = typeof notificationHistory.$inferSelect;

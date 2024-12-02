@@ -1,9 +1,8 @@
 import AWS from "aws-sdk";
 import { DriverSearchService } from "../service/driversearch.service";
-import { logger } from "./index";
 import { SQSEvent, Callback } from "aws-lambda";
 import { Context } from "vm";
-import { DriverNotificationEmailPayload } from "@towmycar/common";
+import { logger } from "./logger";
 
 // Configure the region and credentials (if not already configured globally)
 AWS.config.update({ region: process.env.REGION });
@@ -13,9 +12,7 @@ logger.info("AWS SDK configured");
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 logger.info("SQS service object created");
 
-// The URL of the SQS queue to poll from
-// const queueURL =
-//   "https://sqs.eu-west-2.amazonaws.com/841162667869/breakdown-request-queue";
+
 const queueURL = process.env.SQS_QUEUE_URL;
 logger.info(`SQS Queue URL: ${queueURL}`);
 
@@ -41,7 +38,8 @@ export async function processMessage(message: AWS.SQS.Message) {
     logger.error("Error processing message inside quotation service :", error);
     logger.error("Error stack:", (error as Error).stack);
   } finally {
-    await deleteMessage(message);
+    console.log("Deleting message");
+     await deleteMessage(message);
   }
 }
 

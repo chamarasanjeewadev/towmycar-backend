@@ -1,6 +1,6 @@
 import expressApp from "./express-app";
 import { logger } from "./utils";
-import { pollMessagesFromSQS, handler } from "./utils/pollMessages";
+import { pollMessagesFromSQS, handler } from "./utils/pollFinderMessages";
 import dotenv from "dotenv";
 dotenv.config();
 

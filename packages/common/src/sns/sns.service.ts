@@ -34,7 +34,7 @@ export const sendSNS = async (topicArn: string, message: any) => {
 
 export const sendNotification = async (
   topicArn: string,
-  message: BreakdownNotificationType
+  message:BreakdownNotificationType 
 ) => {
   const snsParams = {
     Message: JSON.stringify(message),

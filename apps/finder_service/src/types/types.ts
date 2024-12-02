@@ -1,30 +1,6 @@
-export type UserWithCustomer = {
-  id: number;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-  mobileNumber: string | null;
-};
+import { NearbyDriver, UserWithCustomer } from "@towmycar/common";
 
-export type NearbyDriver = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  vehicleType: string;
-  vehicleWeightCapacity: string | number;
-  distance: number;
-};
 
-export type DriverNotificationType = {
-  nearbyDrivers: NearbyDriver[];
-  requestId: number;
-  customerId: number;
-  toLocation: { latitude: number; longitude: number } | null;
-  location: { latitude: number; longitude: number } | null;
-  createdAt: Date;
-};
 
 export type SingleDriverNotificationType = {
   driver: NearbyDriver;

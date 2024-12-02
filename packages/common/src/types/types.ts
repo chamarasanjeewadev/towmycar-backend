@@ -1,6 +1,7 @@
 import {
   BaseNotificationType,
   EmailNotificationType,
+  NotificationType,
   PushNotificationType,
 } from "../enums";
 
@@ -15,17 +16,15 @@ interface User {
   phoneNumber?: string;
 }
 
-export type DriverNotificationEmailPayload = {
+export type NotificationPayload = {
   breakdownRequestId: number;
-  location: string;
-  driver: Driver;
-  user: User;
-  googleMapsLink: string|null;
+  location: Location;
+  driver: UserWithDriver;
+  user: UserWithCustomer;
+  googleMapsLink: string | null;
   viewRequestLink: string;
   createdAt: Date;
 };
-
-export type BreakdownRequestDriverNotificationPayload = {};
 
 export interface PushNotificationPayload {
   userId: number;
@@ -35,17 +34,94 @@ export interface PushNotificationPayload {
   url?: string;
 }
 
+export interface PushNotificationPayloadForDrivers {
+  drivers: NearbyDriver[];
+  pushMessage: PushNotificationPayload;
+}
+
+export interface EmailPayloadForDrivers {
+  drivers: NearbyDriver[];
+  pushMessage: NotificationPayload & EmailPayloadType;
+}
+
 export type EmailPayloadType = {
   recipientEmail: string;
   subject: string;
-  textBody: string;
-  htmlBody: string;
+  textBody?: string;
+  htmlBody?: string;
 };
 
 export type BreakdownNotificationType = {
   type: BaseNotificationType;
-  subType: EmailNotificationType | PushNotificationType;
-  payload: PushNotificationPayload | DriverNotificationEmailPayload;
+  subType: NotificationType | PushNotificationType;
+  payload: driverNotificationEmailType[] | any;
 };
 
-export type EmailPayloadBaseType = DriverNotificationEmailPayload;
+export type driverNotificationEmailType = EmailPayloadType &
+  NotificationPayload;
+
+export type NearbyDriver = {
+  id: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  vehicleType: string;
+  vehicleWeightCapacity: string | number;
+  distance: number;
+};
+export interface UserWithCustomer {
+  id: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  customer?: {
+    id: string;
+    phoneNumber?: string;
+  };
+}
+export interface UserWithDriver {
+  id: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  driver?: {
+    id: number;
+    phoneNumber?: string;
+  };
+}
+
+interface FcmNotificationPayloadType {
+  userId: number;
+  title?: string;
+  message?: string;
+  url?: string;
+  breakdownId?: string;
+  quotationId?: string;
+  // Add any other relevant fields
+}
+export interface UserNotificationEventPayload {
+  user: UserWithCustomer;
+  requestId: number;
+  driver: NearbyDriver;
+  location: Location;
+  toLocation: Location;
+  createdAt: Date;
+  viewRequestLink: string;
+  googleMapsLink: string;
+}
+
+export interface DriverNotifyEventPayload {
+  drivers: NearbyDriver[];
+  requestId: number;
+  user: UserWithCustomer; // Updated type
+  location: Location;
+  toLocation: Location;
+  createdAt: Date;
+  viewRequestLink: string;
+  googleMapsLink: string;
+}
+

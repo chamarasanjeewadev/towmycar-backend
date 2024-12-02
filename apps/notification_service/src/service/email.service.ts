@@ -7,9 +7,9 @@ import { driverQuotationUpdatedEmail } from "../templates/driverQuotationUpdated
 import { userCreatedEmail } from "../templates/userCreatedEmail";
 import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
-import {EmailNotificationType,
-  EmailPayloadBaseType,
-  EmailPayloadType,
+import {
+  driverNotificationEmailType,
+  NotificationType,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 
@@ -17,8 +17,8 @@ import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 const sesClient = new SESClient();
 
 export const sendEmail = async (
-  type: EmailNotificationType,
-  payload: EmailPayloadType & EmailPayloadBaseType
+  type: NotificationType,
+  payload: driverNotificationEmailType
 ) => {
   try {
     console.log("payload in sendEmail", type, payload);
@@ -27,7 +27,7 @@ export const sendEmail = async (
     const params = {
       Source: "towmycar.uk@gmail.com",
       Destination: {
-        ToAddresses: [payload.recipientEmail ?? "towmycar.uk@gmail.com"],
+        ToAddresses: ["towmycar.uk@gmail.com"],
       },
       Message: {
         Subject: {
@@ -35,7 +35,6 @@ export const sendEmail = async (
           Charset: "UTF-8",
         },
         Body: {
-          
           Html: {
             Data: emailContent.htmlBody,
             Charset: "UTF-8",
@@ -62,29 +61,27 @@ export const sendEmail = async (
 };
 
 // Update the getEmailContent function
-function getEmailContent(
-  type: EmailNotificationType,
-  payload: EmailPayloadType & EmailPayloadBaseType
-) {
-  
+function getEmailContent(type: NotificationType, payload: any) {
   switch (type) {
-    case EmailNotificationType.USER_REQUEST_EMAIL:
+    case NotificationType.USER_REQUEST:
       return userRequestEmail(payload);
-    case EmailNotificationType.DRIVER_ACCEPT_EMAIL:
+    case NotificationType.DRIVER_ACCEPT:
       return driverAcceptEmail(payload);
-    case EmailNotificationType.USER_ACCEPT_EMAIL:
+    case NotificationType.USER_ACCEPT:
       return userAcceptEmail(payload);
-    case EmailNotificationType.DRIVER_REJECT_EMAIL:
+    case NotificationType.DRIVER_REJECT:
       return driverRejectEmail(payload);
-    case EmailNotificationType.DRIVER_QUOTATION_UPDATED_EMAIL:
+    case NotificationType.DRIVER_QUOTATION_UPDATED:
       return driverQuotationUpdatedEmail(payload);
-    case EmailNotificationType.USER_CREATED_EMAIL:
+    case NotificationType.USER_CREATED:
       return userCreatedEmail(payload);
-    case EmailNotificationType.DRIVER_ASSIGNED_EMAIL:
+    case NotificationType.DRIVER_ASSIGNED:
       return driverNotificationEmail(payload);
-    case EmailNotificationType.USER_NOTIFICATION_EMAIL:
+    case NotificationType.USER_NOTIFICATION:
       return userNotificationEmail(payload);
-    case EmailNotificationType.RATING_REVIEW_EMAIL:
+    case NotificationType.DRIVER_NOTIFICATION:
+      return driverNotificationEmail(payload);
+    case NotificationType.RATING_REVIEW:
       return RatingRequestEmail({
         requestId: payload.breakdownRequestId,
         link: payload.viewRequestLink,

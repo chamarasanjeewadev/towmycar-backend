@@ -61,3 +61,6 @@ BD07XAA 1180
 cdk bootstrap --profile tow-my-car-dev-account  
 
 AWS_PROFILE=tow-my-car-dev-account yarn run deploy:dev 
+
+
+CREATE EXTENSION IF NOT EXISTS postgis;

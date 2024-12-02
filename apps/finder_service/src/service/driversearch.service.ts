@@ -1,32 +1,22 @@
 import { DriverSearchRepository } from "../repository/driversearch.repository";
 
-import {
-  VIEW_REQUEST_BASE_URL,
-  NOTIFICATION_REQUEST_SNS_TOPIC_ARN,
-} from "../config";
+import { VIEW_REQUEST_BASE_URL } from "../config";
 import {
   createGoogleMapsDirectionsLink,
-  createGoogleMapsLink,
-  DriverNotificationEmailPayload,
-  EmailPayloadBaseType,
-  EmailPayloadType,
-  PushNotificationPayload,
-  sendNotification,
-} from "@towmycar/common";
-import {
-  BaseNotificationType,
-  EmailNotificationType,
-  PushNotificationType,
-  formatDate,
-} from "@towmycar/common";
-import {
-  DriverNotificationType,
   NearbyDriver,
-  SingleDriverNotificationType,
-  UserWithCustomer,
-} from "../types/types";
+  NotificationType,
+} from "@towmycar/common";
 import { EventEmitter } from "events";
-import { NOTIFICATION_EVENTS, Location } from "../events/notificationEvents";
+
+// Initialize listeners
+import { registerEmailListener } from "./listeners/emailListener.service";
+import { registerPushNotificationListener } from "./listeners/pushNotificationListener.service";
+import { registerSmsNotificationListener } from "./listeners/smsNotificationListener.service";
+const notificationEmitter = new EventEmitter();
+registerEmailListener(notificationEmitter);
+registerPushNotificationListener(notificationEmitter);
+registerSmsNotificationListener(notificationEmitter);
+// initializeSmsNotificationListener(notificationEmitter);
 
 // Add User interface (you might want to import this from a shared types file)
 
@@ -38,7 +28,6 @@ const findAndNotifyNearbyDrivers = async (
   requestId: number
 ): Promise<NearbyDriver[]> => {
   try {
-    console.log("finding nearby drivers for requestId:", requestId);
     const request = await DriverSearchRepository.getBreakdownRequestById(
       requestId
     );
@@ -61,8 +50,6 @@ const findAndNotifyNearbyDrivers = async (
       request?.weight ?? null
     );
 
-    console.log("nearbyDrivers...........", nearbyDrivers);
-
     // Only update and return if nearby drivers are available
     if (nearbyDrivers && nearbyDrivers.length > 0) {
       // Pass the full nearbyDrivers array to updateDriverRequests
@@ -70,17 +57,31 @@ const findAndNotifyNearbyDrivers = async (
         requestId,
         nearbyDrivers
       );
-      console.log("Updated driver requests for requestId:", requestId);
-      console.log("trying to send notifications, calling sendNotifications");
 
-      await sendNotifications({
-        nearbyDrivers,
+      const user = await DriverSearchRepository.getUserByCustomerId(
+        request.customerId
+      );
+
+      const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/requests/${requestId}`;
+      const googleMapsLink = createGoogleMapsDirectionsLink(
+        request.location,
+        request.toLocation
+      );
+      // const notificationPromises = nearbyDrivers.map(driver => {
+      notificationEmitter.emit(NotificationType.DRIVER_NOTIFICATION, {
+        drivers: nearbyDrivers,
         requestId,
-        location: request.toLocation,
-        toLocation: request.location,
-        customerId: request.customerId,
+        user,
+        location:request?.location,
+        toLocation: request.toLocation,
         createdAt: request.createdAt,
-      });
+        viewRequestLink,
+        googleMapsLink,
+      } );
+      // });
+      // send push notification to user stating request has been assigned to few drivers
+
+      // await Promise.allSettled(notificationPromises);
       return nearbyDrivers;
     } else {
       console.log("No nearby drivers found for requestId:", requestId);
@@ -91,77 +92,6 @@ const findAndNotifyNearbyDrivers = async (
     throw error;
   }
 };
-
-const sendNotifications = async ({
-  nearbyDrivers,
-  requestId,
-  customerId,
-  toLocation,
-  location,
-  createdAt,
-}: DriverNotificationType) => {
-  console.log("Sending notifications to nearby drivers", {
-    nearbyDrivers,
-    requestId,
-    toLocation,
-    location,
-    customerId,
-  });
-
-  try {
-    const user = await DriverSearchRepository.getUserByCustomerId(customerId);
-    const notificationPromises = nearbyDrivers.map(driver =>
-      sendDriverNotifications({
-        driver,
-        customerId,
-        user,
-        requestId,
-        location,
-        toLocation,
-        createdAt,
-      })
-    );
-    // send push notification to user stating request has been assigned to few drivers
-
-    await Promise.allSettled(notificationPromises);
-  } catch (error) {
-    console.error("Error in sendNotifications:", error);
-  }
-};
-
-const notificationEmitter = new EventEmitter();
-
-// Initialize listeners
-import { initializeEmailListener } from "./listeners/emailListener.service";
-import { initializePushNotificationListener } from "./listeners/pushNotificationListener.service";
-import { initializeSmsNotificationListener } from "./listeners/smsNotificationListener.service";
-
-initializeEmailListener(notificationEmitter);
-initializePushNotificationListener(notificationEmitter);
-initializeSmsNotificationListener(notificationEmitter);
-
-async function sendDriverNotifications({
-  driver,
-  user,
-  requestId,
-  location,
-  toLocation,
-  createdAt,
-}: SingleDriverNotificationType) {
-  const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/requests/${requestId}`;
-  const googleMapsLink = createGoogleMapsDirectionsLink(location, toLocation);
-
-  notificationEmitter.emit(NOTIFICATION_EVENTS.NOTIFY_DRIVERS, {
-    driver,
-    requestId,
-    user,
-    location,
-    toLocation,
-    createdAt,
-    viewRequestLink,
-    googleMapsLink,
-  });
-}
 
 export const DriverSearchService: DriverSearchServiceType = {
   findAndNotifyNearbyDrivers,

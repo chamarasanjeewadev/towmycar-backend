@@ -1,60 +1,75 @@
 import { EventEmitter } from "events";
+
+import { NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../../config";
 import {
-  NOTIFICATION_EVENTS,
-  DriverNotificationEventPayload,
-} from "../../events/notificationEvents";
-import { logger } from "../../utils";
-import { getSMSProvider } from "../sms/smsProviderFactory";
-import { SMS_CONFIG } from "../../config";
+  BaseNotificationType,
+  sendNotification,
+  DriverNotifyEventPayload,
+  NotificationType,
+  UserNotificationEventPayload,
+  NotificationPayload,
+  UserWithDriver,
+} from "@towmycar/common";
 
-const smsProvider = getSMSProvider();
-
-export function initializeSmsNotificationListener(emitter: EventEmitter) {
+export function registerSmsNotificationListener(emitter: EventEmitter) {
   emitter.on(
-    NOTIFICATION_EVENTS.NOTIFY_DRIVERS,
-    async (payload: DriverNotificationEventPayload) => {
-      if (!SMS_CONFIG.isEnabled) {
-        logger.info("SMS notifications are disabled");
-        return;
-      }
-
+    NotificationType.DRIVER_NOTIFICATION,
+    async (payload: DriverNotifyEventPayload) => {
       const {
-        driver,
+        drivers,
         requestId,
         user,
+        viewRequestLink,
         location,
         toLocation,
-        viewRequestLink,
         googleMapsLink,
       } = payload;
 
-      if (!driver.phoneNumber) {
-        logger.warn(`No phone number available for driver ${driver.id}`);
-        return;
-      }
+      // Create individual SMS notifications for each driver
+      const smsForDrivers = drivers.map(driver => {
 
-      const locationInfo = toLocation
-        ? `from ${location} to ${toLocation}`
-        : `at ${location}`;
+        const userWithDriver: UserWithDriver = {
+          id: driver.userId,
+          email: driver.email,
+          firstName: driver.firstName,
+          lastName: driver.lastName,
+          phoneNumber: driver.phoneNumber,
+          driver: {
+            id: driver.id,
+            phoneNumber: driver.phoneNumber,
+          }
+        };
+         const smsPayload: NotificationPayload = {
+          driver: userWithDriver,
+          location: payload.location,
+          breakdownRequestId: payload.requestId,
+          user: payload.user,
+          viewRequestLink: payload.viewRequestLink,
+          createdAt: payload.createdAt,
+          googleMapsLink: payload.googleMapsLink,
+        };
 
-      const message =
-        `New tow request from ${user.firstName}!\n` +
-        `Location: ${locationInfo}\n` +
-        `View request: ${viewRequestLink}\n` +
-        `Maps: ${googleMapsLink}`;
+       
+        return smsPayload;
+      });
 
-      try {
-        await smsProvider.sendSMS(driver.phoneNumber, message);
-        logger.info(
-          `SMS notification sent successfully to driver ${driver.id}`
-        );
-      } catch (error) {
-        console.log("error", error);
-        logger.error(
-          `Error sending SMS notification to driver ${driver.id}:`,
-          error
-        );
-      }
+      // Send individual SMS notifications
+      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+        type: BaseNotificationType.SMS,
+        subType: NotificationType.DRIVER_NOTIFICATION,
+        payload: smsForDrivers,
+      });
+    }
+  );
+
+  emitter.on(
+    NotificationType.USER_NOTIFICATION,
+    async (payload: UserNotificationEventPayload) => {
+      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+        type: BaseNotificationType.SMS,
+        subType: NotificationType.USER_NOTIFICATION,
+        payload,
+      });
     }
   );
 }

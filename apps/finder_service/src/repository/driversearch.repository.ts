@@ -5,16 +5,16 @@ import {
   breakdownRequest,
   customer,
   user,
-  Customer,
   eq,
   sql,
 } from "@towmycar/database";
-import { DriverStatus, UserStatus } from "@towmycar/common";
 import {
-  BreakdownRequestWithUserDetails,
+  DriverStatus,
   NearbyDriver,
+  UserStatus,
   UserWithCustomer,
-} from "../types/types";
+} from "@towmycar/common";
+import { BreakdownRequestWithUserDetails } from "../types/types";
 // Define a type for the nearby driver data
 
 export type DriverSearchRepositoryType = {
@@ -23,7 +23,7 @@ export type DriverSearchRepositoryType = {
     longitude: number,
     toLatitude: number | null,
     toLongitude: number | null,
-    weight:string|number|null
+    weight: string | number | null
   ) => Promise<NearbyDriver[]>;
 
   updateDriverRequests: (
@@ -43,15 +43,16 @@ const findNearbyDrivers = async (
   longitude: number,
   toLatitude: number | null,
   toLongitude: number | null,
-  weight:string|number|null
+  weight: string | number | null
 ): Promise<NearbyDriver[]> => {
   try {
-    const weightCondition = weight 
+    const weightCondition = weight
       ? sql`AND CAST(${driver.maxWeight} AS DECIMAL) >= CAST(${weight} AS DECIMAL)`
       : sql``;
 
     const nearbyDrivers = await DB.select({
       id: driver.id,
+      userId:user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -90,7 +91,7 @@ const findNearbyDrivers2 = async (
   longitude: number,
   toLatitude: number | null,
   toLongitude: number | null,
-  weight:number
+  weight: number
 ): Promise<NearbyDriver[]> => {
   try {
     const distanceCalc =
@@ -136,7 +137,7 @@ const findNearbyDrivers2 = async (
           )
         `;
 
-    const weightCondition = weight 
+    const weightCondition = weight
       ? sql`AND CAST(unique_drivers.vehicle_weight_capacity AS DECIMAL) >= CAST(${weight} AS DECIMAL)`
       : sql``;
 
@@ -234,7 +235,7 @@ const getUserByCustomerId = async (customerId: number) => {
       return null;
     }
 
-    return result[0];
+    return result[0] as UserWithCustomer;
   } catch (error) {
     console.error("Error in getUserByCustomerId:", error);
     if (error) {

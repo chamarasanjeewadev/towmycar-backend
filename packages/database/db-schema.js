@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.payments = exports.serviceRatings = exports.chats = exports.vehicles = exports.breakdownAssignment = exports.fcmTokens = exports.breakdownRequest = exports.driver = exports.customer = exports.user = void 0;
+exports.notificationHistory = exports.notifications = exports.payments = exports.serviceRatings = exports.chats = exports.vehicles = exports.breakdownAssignment = exports.fcmTokens = exports.breakdownRequest = exports.driver = exports.customer = exports.user = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const common_1 = require("@towmycar/common");
 // Renamed userAuth to user
@@ -208,4 +208,40 @@ exports.payments = (0, pg_core_1.pgTable)("payments", {
         .notNull(),
     createdAt: (0, pg_core_1.timestamp)("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+exports.notifications = (0, pg_core_1.pgTable)("notifications", {
+    id: (0, pg_core_1.serial)("id").primaryKey().notNull(),
+    userId: (0, pg_core_1.integer)("user_id")
+        .references(() => exports.user.id, { onDelete: "cascade" })
+        .notNull(),
+    title: (0, pg_core_1.varchar)("title", { length: 255 }).notNull(),
+    message: (0, pg_core_1.text)("message").notNull(),
+    url: (0, pg_core_1.text)("url"),
+    createdAt: (0, pg_core_1.timestamp)("created_at", { withTimezone: true })
+        .defaultNow()
+        .notNull(),
+    isSeen: (0, pg_core_1.boolean)("is_seen").default(false).notNull(),
+});
+exports.notificationHistory = (0, pg_core_1.pgTable)("notification_history", {
+    id: (0, pg_core_1.serial)("id").primaryKey(),
+    userId: (0, pg_core_1.integer)("user_id")
+        .references(() => exports.user.id, { onDelete: "cascade" })
+        .notNull(),
+    notificationType: (0, pg_core_1.varchar)("notification_type", { length: 100 }).notNull(), // EMAIL, SMS, PUSH
+    deliveryType: (0, pg_core_1.varchar)("delivery_type", { length: 20 }).notNull(),
+    breakdownRequestId: (0, pg_core_1.integer)("breakdown_request_id")
+        .references(() => exports.breakdownRequest.id, { onDelete: "cascade" })
+        .notNull(),
+    status: (0, pg_core_1.varchar)("status", { length: 20 }).notNull().default("PENDING"), // PENDING, SENT, FAILED
+    retryCount: (0, pg_core_1.integer)("retry_count").notNull().default(0),
+    errorMessage: (0, pg_core_1.text)("error_message"),
+    lastAttempt: (0, pg_core_1.timestamp)("last_attempt", { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+    createdAt: (0, pg_core_1.timestamp)("created_at", { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at", { withTimezone: true })
+        .notNull()
+        .defaultNow(),
 });

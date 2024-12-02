@@ -1,38 +1,65 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 import { NOTIFICATION_REQUEST_SNS_TOPIC_ARN } from "../../config";
-import { 
-  BaseNotificationType, 
-  EmailNotificationType,
+import {
+  BaseNotificationType,
   sendNotification,
-  DriverNotificationEmailPayload 
+  DriverNotifyEventPayload,
+  NotificationType,
+  UserNotificationEventPayload,
+  driverNotificationEmailType,
+  UserWithDriver,
 } from "@towmycar/common";
-import { NOTIFICATION_EVENTS, DriverNotificationEventPayload } from '../../events/notificationEvents';
 
-export function initializeEmailListener(emitter: EventEmitter) {
-  emitter.on(NOTIFICATION_EVENTS.NOTIFY_DRIVERS, async (payload: DriverNotificationEventPayload) => {
-    const { driver, requestId, user, googleMapsLink, viewRequestLink, createdAt } = payload;
+export function registerEmailListener(emitter: EventEmitter): void {
+  emitter.on(
+    NotificationType.DRIVER_NOTIFICATION,
+    async (payload: DriverNotifyEventPayload) => {
+      const emailsForDrivers = payload?.drivers.map(driver => {
+        
+        const userWithDriver: UserWithDriver = {
+          id: driver.userId,
+          email: driver.email,
+          firstName: driver.firstName,
+          lastName: driver.lastName,
+          phoneNumber: driver.phoneNumber,
+          driver: {
+            id: driver.id,
+            phoneNumber: driver.phoneNumber,
+          }
+        };
 
-    const emailPayload: Omit<DriverNotificationEmailPayload, 'recipientEmail'> & { recipientEmail: string } = {
-      breakdownRequestId: requestId,
-      googleMapsLink,
-      driver,
-      //@ts-ignore
-      user,
-      viewRequestLink,
-      createdAt,
-      recipientEmail: driver.email ?? "towmycar.uk@gmail.com",
-    };
-
-    try {
+        const emailPlayload: driverNotificationEmailType = {
+          driver: userWithDriver,
+          location: payload.location,
+          breakdownRequestId: payload.requestId,
+          user: payload.user,
+          viewRequestLink: payload.viewRequestLink,
+          createdAt: payload.createdAt,
+          googleMapsLink: payload.googleMapsLink,
+          subject: `TowmyCar - Towing Request #${payload.requestId}`,
+          recipientEmail: driver.email,
+        };
+         
+        return emailPlayload;
+      });
+      // modify payload for email
       await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.EMAIL,
-        subType: EmailNotificationType.DRIVER_NOTIFICATION_EMAIL,
-        payload: emailPayload,
+        subType: NotificationType.DRIVER_NOTIFICATION,
+        payload:emailsForDrivers,
       });
-      
-      console.log(`Email notification sent successfully to driver ${driver.id}`);
-    } catch (error) {
-      console.error(`Error sending email notification to driver ${driver.id}:`, error);
     }
-  });
-} 
+  );
+
+  emitter.on(
+    NotificationType.USER_NOTIFICATION,
+    async (payload: UserNotificationEventPayload) => {
+      // modify payload as push notification expects
+      await sendNotification(NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+        type: BaseNotificationType.EMAIL,
+        subType: NotificationType.USER_NOTIFICATION,
+        payload,
+      });
+    }
+  );
+}

@@ -16,6 +16,7 @@ import { sendNotification } from "@towmycar/common";
 import { BaseNotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
 import { CustomError, ERROR_CODES } from "./../../../src/utils";
+import { NotificationType } from "aws-sdk/clients/budgets";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -83,7 +84,7 @@ export class DriverService {
     }
 
     // Determine the notification type and payload based on the status
-    let notificationType: EmailNotificationType;
+    let notificationType: any;
     let payload: any;
 
     if (data.driverStatus === DriverStatus.QUOTED) {
@@ -112,7 +113,7 @@ export class DriverService {
         driverId,
         user: userDetails,
         status: data.driverStatus,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         driverName: `${""}`,
         driverPhone: driverDetails.phoneNumber,
         driverEmail: "driverDetails.email",
@@ -127,7 +128,7 @@ export class DriverService {
         driverId,
         user: userDetails,
         driverStatus: data.driverStatus,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/view-requests/${requestId}`,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
       };
     } else if (data.driverStatus === DriverStatus.CLOSED) {
       const token = TokenService.generateUrlSafeToken(requestId, driverId);

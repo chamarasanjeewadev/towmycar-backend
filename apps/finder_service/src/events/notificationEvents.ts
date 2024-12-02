@@ -1,4 +1,4 @@
-import { NearbyDriver } from "../types/types";
+import { NearbyDriver } from "@towmycar/common";
 
 export interface Location {
   latitude: number;
@@ -6,28 +6,8 @@ export interface Location {
 }
 
 export const NOTIFICATION_EVENTS = {
-  NOTIFY_DRIVERS: 'notify-drivers'
+  NOTIFY_DRIVERS: "notify-drivers",
+  NOTIFY_USER: "notify-user",
 } as const;
 
-export interface DriverNotificationEventPayload {
-  driver: NearbyDriver;
-  requestId: number;
-  user: UserWithCustomer; // Updated type
-  location: Location;
-  toLocation: Location;
-  createdAt: Date;
-  viewRequestLink: string;
-  googleMapsLink: string;
-}
-
 // Import this from your shared types or define here
-interface UserWithCustomer {
-  id: number;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  customer?: {
-    id: string;
-    phoneNumber?: string;
-  };
-} 

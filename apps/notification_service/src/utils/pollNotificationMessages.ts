@@ -1,24 +1,21 @@
-import { UserNotificationService } from "../service/notification.service";
 import AWS from "aws-sdk";
 import { logger } from "./index";
 import { SQS_QUEUE_URL } from "../config";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
-import {
-  BaseNotificationType,
-  EmailNotificationType,
-  PushNotificationPayload,
-  PushNotificationType,
-} from "@towmycar/common";
-import {
-  BreakdownNotificationType,
-  EmailPayloadBaseType,
-  EmailPayloadType,
-} from "@towmycar/common";
-import { sendEmail } from "./../service/email.service";
+import { BreakdownNotificationType } from "@towmycar/common";
+import { EventEmitter } from "stream";
+import { registerEmailListener } from "./../listners/emailListener.service";
+import { registerPushNotificationListener } from "./../listners/pushNotificationListener.service";
+import { registerSmsNotificationListener } from "./../listners/smsNotificationListener.service";
 
-AWS.config.update({ region:process.env.REGION});
+AWS.config.update({ region: process.env.REGION });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 const queueURL = SQS_QUEUE_URL;
+
+const eventEmitter = new EventEmitter();
+registerEmailListener(eventEmitter);
+registerPushNotificationListener(eventEmitter);
+registerSmsNotificationListener(eventEmitter);
 
 async function processMessage(message: AWS.SQS.Message) {
   try {
@@ -27,41 +24,30 @@ async function processMessage(message: AWS.SQS.Message) {
       const messageData: BreakdownNotificationType = JSON.parse(
         snsNotification.Message
       );
-      console.log("parsed sns msg",JSON.stringify(messageData));
-
-      if (messageData.type && messageData.payload) {
-        switch (messageData.type) {
-          case BaseNotificationType.EMAIL:
-            await sendEmail(
-              messageData.subType as EmailNotificationType,
-              messageData.payload as EmailPayloadType & EmailPayloadBaseType
-            );
-            break;
-          case BaseNotificationType.PUSH:
-            await UserNotificationService.sendPushNotification(
-              messageData.subType as PushNotificationType,
-              messageData.payload as PushNotificationPayload
-            );
-            break;
-        }
-       
-        console.log("notification sent");
-      } else {
-        logger.warn("Invalid message format: missing type or payload");
-      }
+      console.log("parsed sns msg", JSON.stringify(messageData));
+      eventEmitter.emit(`${messageData.type}:${messageData.subType}`, messageData.payload);
+     
     } else {
       logger.warn("Invalid SNS notification: missing Message field");
     }
 
-    await sqs
-      .deleteMessage({
-        QueueUrl: queueURL!,
-        ReceiptHandle: message.ReceiptHandle ?? "",
-      })
-      .promise();
+    // await sqs
+    //   .deleteMessage({
+    //     QueueUrl: queueURL!,
+    //     ReceiptHandle: message.ReceiptHandle ?? "",
+    //   })
+    //   .promise();
   } catch (error) {
     logger.error("Error processing message:", error);
     throw error;
+  }
+  finally {
+    // await sqs
+    //   .deleteMessage({
+    //     QueueUrl: queueURL!,
+    //     ReceiptHandle: message.ReceiptHandle ?? "",
+    //   })
+    //   .promise();
   }
 }
 
@@ -76,7 +62,7 @@ export const pollMessagesFromSQS = async () => {
       })
       .promise();
     console.log("poll triggered....");
-    
+
     if (data?.Messages && data.Messages.length > 0) {
       for (const message of data.Messages) {
         await processMessage(message);

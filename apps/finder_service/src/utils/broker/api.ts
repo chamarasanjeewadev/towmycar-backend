@@ -1,7 +1,7 @@
 import axios from "axios";
-import { APIError, NotFoundError } from "../error";
-import { logger } from "../logger";
+import { NotFoundError } from "../error";
 import { Product } from "../../dto/product.dto";
+import { logger } from "../logger";
 
 const CATALOG_BASE_URL =
   process.env.CATALOG_BASE_URL || "http://localhost:9001"; // env variable

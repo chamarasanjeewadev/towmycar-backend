@@ -17,13 +17,10 @@ import {
   eq,
   desc,
   count,
-  or,
-  payments,
   isNotNull,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { UserStatus, BreakdownRequestStatus } from "../enums";
-import { DriverStatus } from "@towmycar/common";
+import { BreakdownRequestStatus, DriverStatus ,UserStatus} from "@towmycar/common";
 import {
   ConflictError,
   DataBaseError,
