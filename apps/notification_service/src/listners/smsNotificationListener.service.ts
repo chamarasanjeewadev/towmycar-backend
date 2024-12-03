@@ -4,14 +4,14 @@ import {
   NotificationPayload,
   NotificationType,
   UserNotificationEventPayload,
-  driverNotificationEmailType,
+  DriverNotificationEmailType,
 } from "@towmycar/common";
 import { SMSNotificationService } from "../service/sms.service";
 
 export function registerSmsNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     `${BaseNotificationType.SMS}:${NotificationType.DRIVER_NOTIFICATION}`,
-    async (payload: driverNotificationEmailType[]) => {
+    async (payload: DriverNotificationEmailType[]) => {
       const processPromises = payload.map(async payloadData => {
         try {
           const isAlreadySent = false;
@@ -64,28 +64,85 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
   );
 
   emitter.on(
-    `${BaseNotificationType.SMS}:${NotificationType.USER_NOTIFICATION}`,
+    `${BaseNotificationType.SMS}:${NotificationType.USER_REQUEST}`,
     async (payload: NotificationPayload) => {
       try {
-        if (!payload.user.phoneNumber) {
-          console.warn(`No phone number available for user ${payload.user.id}`);
+        if (!payload.user?.phoneNumber) {
+          console.warn(`No phone number available for user ${payload.user?.id}`);
           return;
         }
-
         await SMSNotificationService.sendSMSNotification(
           NotificationType.USER_REQUEST,
-          {
-            ...payload,
-            viewRequestLink: payload.viewRequestLink,
-          }
-        );
-
-        console.log(
-          `SMS notification sent successfully to user ${payload.user.id}`
+          payload
         );
       } catch (error) {
-        console.error("Failed to process user SMS notification:", error);
+        console.error("Failed to send USER_REQUEST SMS:", error);
       }
     }
   );
+
+  emitter.on(
+    `${BaseNotificationType.SMS}:${NotificationType.DRIVER_REGISTERED}`,
+    async (payload: NotificationPayload) => {
+      try {
+        if (!payload.user?.phoneNumber) {
+          console.warn(`No phone number available for user ${payload.user?.id}`);
+          return;
+        }
+        await SMSNotificationService.sendSMSNotification(
+          NotificationType.DRIVER_REGISTERED,
+          payload
+        );
+      } catch (error) {
+        console.error("Failed to send DRIVER_REGISTERED SMS:", error);
+      }
+    }
+  );
+
+  emitter.on(
+    `${BaseNotificationType.SMS}:${NotificationType.USER_NOTIFICATION}`,
+    async (payload: UserNotificationEventPayload) => {
+      try {
+        if (!payload.user?.phoneNumber) {
+          console.warn(`No phone number available for user ${payload.user?.id}`);
+          return;
+        }
+        await SMSNotificationService.sendSMSNotification(
+          NotificationType.USER_NOTIFICATION,
+          payload as any
+        );
+      } catch (error) {
+        console.error("Failed to send USER_NOTIFICATION SMS:", error);
+      }
+    }
+  );
+
+  const remainingTypes = [
+    NotificationType.USER_CREATED,
+    NotificationType.USER_ACCEPT,
+    NotificationType.DRIVER_REJECT,
+    NotificationType.DRIVER_QUOTATION_UPDATED,
+    NotificationType.DRIVER_ASSIGNED,
+    NotificationType.DRIVER_QUOTE,
+    NotificationType.DRIVER_ACCEPT,
+    NotificationType.USER_REJECT,
+    NotificationType.RATING_REVIEW,
+  ];
+
+  remainingTypes.forEach(type => {
+    emitter.on(
+      `${BaseNotificationType.SMS}:${type}`,
+      async (payload: NotificationPayload) => {
+        try {
+          if (!payload.user?.phoneNumber) {
+            console.warn(`No phone number available for user ${payload.user?.id}`);
+            return;
+          }
+          await SMSNotificationService.sendSMSNotification(type, payload);
+        } catch (error) {
+          console.error(`Failed to send ${type} SMS:`, error);
+        }
+      }
+    );
+  });
 }

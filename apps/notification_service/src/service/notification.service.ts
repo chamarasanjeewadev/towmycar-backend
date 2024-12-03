@@ -1,5 +1,5 @@
-import { user } from './../../../../packages/database/db-schema';
-import { customer } from './../../../../node_modules/@towmycar/database/db-schema';
+import { user } from "./../../../../packages/database/db-schema";
+import { customer } from "./../../../../node_modules/@towmycar/database/db-schema";
 import { sendPushNotification as sendPush } from "../utils/pushNotificationSender";
 import { FcmRepository } from "../repository/fcm.repository";
 import { NotificationPayload, PushNotificationPayload } from "@towmycar/common";
@@ -67,94 +67,93 @@ async function sendPushNotification(
   switch (type) {
     case NotificationType.DRIVER_ASSIGNED:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "Driver Assigned",
         message: "A driver has been assigned to your request",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.DRIVER_REGISTERED:
       await sendGenericPushNotification({
-        userId: payload.driver.id,
+        userId: payload?.driver?.id,
         title: "Registration Complete",
         message: "Your driver registration has been received",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.USER_REQUEST:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "New Request",
         message: "Your breakdown assistance request has been received",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.DRIVER_QUOTATION_UPDATED:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "Quotation Updated",
         message: "A driver has updated their quotation for your request",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.DRIVER_QUOTE:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "New Quote Available",
         message: "A new quote is available for your breakdown request",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.USER_ACCEPT:
     case NotificationType.DRIVER_ACCEPT:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "Request Accepted",
         message: "Your request has been accepted",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.USER_REJECT:
     case NotificationType.DRIVER_REJECT:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "Request Status Update",
         message: "There has been an update to your request",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.DRIVER_NOTIFICATION:
       await sendGenericPushNotification({
-        userId: payload.driver.id,
+        userId: payload?.driver?.id,
         title: "New Breakdown Request",
         message: "A new breakdown request is available in your area",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     case NotificationType.RATING_REVIEW:
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "New Rating & Review",
         message: "You have received a new rating and review",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
 
     default:
-      // Handle any other notification types with generic notification
       await sendGenericPushNotification({
-        userId: payload.user.id,
+        userId: payload?.user?.id,
         title: "Notification",
         message: "You have a new notification",
-        url: payload.viewRequestLink,
+        url: payload?.viewRequestLink,
       });
       break;
   }

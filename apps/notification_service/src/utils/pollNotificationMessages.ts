@@ -52,7 +52,7 @@ async function processMessage(message: AWS.SQS.Message) {
 }
 
 export const pollMessagesFromSQS = async () => {
-  logger.info("Polling messages");
+  logger.info("Polling notification messages");
   try {
     const data = await sqs
       .receiveMessage({

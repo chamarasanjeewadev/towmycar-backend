@@ -1,6 +1,6 @@
 import AWS, { SNS } from "aws-sdk";
 import { BreakdownNotificationType } from "../types/types";
-import { EmailNotificationType } from "../enums";
+import { NotificationType } from "../enums";
 
 // AWS.config.update({ region:process.env.REGION});
 
@@ -59,7 +59,7 @@ export const sendNotification = async (
 };
 
 export const sendPushNotificationAndEmail = async (breakdownRequestData: {
-  type: EmailNotificationType;
+  type: NotificationType;
   payload: any;
 }) => {
   console.log(

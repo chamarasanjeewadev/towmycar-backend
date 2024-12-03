@@ -12,7 +12,6 @@ logger.info("AWS SDK configured");
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 logger.info("SQS service object created");
 
-
 const queueURL = process.env.SQS_QUEUE_URL;
 logger.info(`SQS Queue URL: ${queueURL}`);
 
@@ -39,7 +38,7 @@ export async function processMessage(message: AWS.SQS.Message) {
     logger.error("Error stack:", (error as Error).stack);
   } finally {
     console.log("Deleting message");
-     await deleteMessage(message);
+    await deleteMessage(message);
   }
 }
 
@@ -61,7 +60,7 @@ async function deleteMessage(message: AWS.SQS.Message) {
 }
 
 export const pollMessagesFromSQS = async () => {
-  logger.info("Starting to poll messages inside quotation service");
+  logger.info("Starting to poll messages inside finder service");
   const params = {
     QueueUrl: queueURL,
     MaxNumberOfMessages: 10,

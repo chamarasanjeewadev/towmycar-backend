@@ -5,9 +5,20 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { sendPushNotificationAndEmail, sendSNS } from "@towmycar/common";
+import {
+  registerEmailListener,
+  registerPushNotificationListener,
+  registerSmsNotificationListener,
+  sendSNS,
+} from "@towmycar/common";
 import { APIError, BaseError, ERROR_CODES } from "../../utils/error/errors";
-import { EmailNotificationType, UserStatus } from "@towmycar/common";
+import { NotificationType, UserStatus } from "@towmycar/common";
+import EventEmitter from "events";
+
+const notificationEmitter = new EventEmitter();
+registerEmailListener(notificationEmitter);
+registerPushNotificationListener(notificationEmitter);
+registerSmsNotificationListener(notificationEmitter);
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -82,7 +93,8 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
 
 const updateUserStatusInBreakdownAssignment = async (
   assignmentId: number,
-  userStatus: UserStatus
+  userStatus: UserStatus,
+  userId: number
 ): Promise<boolean> => {
   const updatedAssignment =
     await BreakdownRequestRepository.updateUserStatusInBreakdownAssignment(
@@ -91,24 +103,21 @@ const updateUserStatusInBreakdownAssignment = async (
     );
 
   if (updatedAssignment) {
-    let emailType: EmailNotificationType;
+    let notificationType: NotificationType;
     if (userStatus === UserStatus.ACCEPTED) {
-      emailType = EmailNotificationType.USER_ACCEPT_EMAIL;
+      notificationType = NotificationType.USER_ACCEPT;
     } else if (userStatus === UserStatus.REJECTED) {
-      emailType = EmailNotificationType.USER_REJECT_EMAIL;
+      notificationType = NotificationType.USER_REJECT;
     } else {
       // If status is PENDING or any other status, we don't send an email
       return true;
     }
 
-    await sendPushNotificationAndEmail({
-      type: emailType,
-      payload: {
-        requestId: updatedAssignment.requestId,
-        userStatus,
-        userId: 88,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/view-requests/${assignmentId}`,
-      },
+    notificationEmitter.emit(notificationType, {
+      requestId: updatedAssignment.requestId,
+      userStatus,
+      userId,
+      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/requests/${assignmentId}`,
     });
 
     return true;

@@ -122,8 +122,9 @@ router.get(
 );
 
 router.patch(
-  "/assignment/:assignmentId/status",
+  "/assignment/:assignmentId/status", clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
+    const { userId, customerId } = req.userInfo;
     try {
       const assignmentId = parseInt(req.params.assignmentId, 10);
       const { userStatus } = req.body;
@@ -135,7 +136,8 @@ router.patch(
       const updated =
         await service.BreakdownRequestService.updateUserStatusInBreakdownAssignment(
           assignmentId,
-          userStatus
+          userStatus,
+          userId
         );
 
       if (updated) {

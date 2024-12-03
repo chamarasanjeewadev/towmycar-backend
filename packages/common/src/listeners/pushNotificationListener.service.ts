@@ -9,12 +9,26 @@ import {
   UserWithDriver,
 } from "@towmycar/common";
 
+function registerCommonNotificationHandler(
+  emitter: EventEmitter,
+  notificationType: NotificationType,
+  type: BaseNotificationType
+) {
+  emitter.on(notificationType, async (payload) => {
+    await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      type,
+      subType: notificationType,
+      payload,
+    });
+  });
+}
+
 export function registerPushNotificationListener(emitter: EventEmitter) {
+  // Special case handlers
   emitter.on(
     NotificationType.DRIVER_NOTIFICATION,
     async (payload: DriverNotifyEventPayload) => {
       const { drivers } = payload;
-      // Create individual push notifications for each driver
       const pushNotificationsForDrivers = drivers.map(driver => {
         const userWithDriver: UserWithDriver = {
           id: driver.userId,
@@ -40,7 +54,6 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
         return pushPlayload;
       });
 
-      // Send individual push notifications
       await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
         type: BaseNotificationType.PUSH,
         subType: NotificationType.DRIVER_NOTIFICATION,
@@ -49,15 +62,16 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
     }
   );
 
-  // Keep USER_NOTIFICATION handler unchanged
-  emitter.on(
-    NotificationType.USER_NOTIFICATION,
-    async (payload: UserNotificationEventPayload) => {
-      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: BaseNotificationType.PUSH,
-        subType: NotificationType.USER_NOTIFICATION,
-        payload,
-      });
-    }
+  // Register common handlers for all other notification types
+  const notificationTypes = Object.values(NotificationType).filter(
+    type => type !== NotificationType.DRIVER_NOTIFICATION
   );
+
+  notificationTypes.forEach(notificationType => {
+    registerCommonNotificationHandler(
+      emitter,
+      notificationType,
+      BaseNotificationType.PUSH
+    );
+  });
 }

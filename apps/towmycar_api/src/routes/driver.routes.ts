@@ -15,9 +15,6 @@ import { DriverStatus } from "@towmycar/common";
 
 const router = express.Router();
 const driverService = new DriverService();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20", // Updated to the latest API version
-});
 
 router.get(
   "/assigned-requests",
@@ -126,38 +123,38 @@ router.patch(
         ...(explanation && { explanation }),
       };
 
-      if (driverStatus === DriverStatus.ACCEPTED) {
-        if (!estimation) {
-          const breakdownAssignment =
-            await BreakdownRequestService.getBreakdownAssignmentsByDriverIdAndRequestId(
-              Number(driverId),
-              Number(requestId)
-            );
-          estimation = breakdownAssignment?.estimation;
-        }
+      // if (driverStatus === DriverStatus.ACCEPTED) {
+      //   if (!estimation) {
+      //     const breakdownAssignment =
+      //       await BreakdownRequestService.getBreakdownAssignmentsByDriverIdAndRequestId(
+      //         Number(driverId),
+      //         Number(requestId)
+      //       );
+      //     estimation = breakdownAssignment?.estimation;
+      //   }
 
-        await driverService.processPaymentAndUpdateAssignment(
-          Number(driverId),
-          Number(requestId),
-          Number(estimation ?? 5),
-          dataToUpdate
-        );
-      } else {
-        // Update the assignment without payment processing
-        const updated = await driverService.updateBreakdownAssignment(
-          Number(driverId),
-          Number(requestId),
-          dataToUpdate
-        );
+      //   await driverService.processPaymentAndUpdateAssignment(
+      //     Number(driverId),
+      //     Number(requestId),
+      //     Number(estimation ?? 5),
+      //     dataToUpdate
+      //   );
+      // } else {
+      // Update the assignment without payment processing
+      const updated = await driverService.updateBreakdownAssignment(
+        Number(driverId),
+        Number(requestId),
+        dataToUpdate
+      );
 
-        if (!updated) {
-          throw new CustomError(
-            ERROR_CODES.RESOURCE_NOT_FOUND,
-            404,
-            "Driver request not found"
-          );
-        }
+      if (!updated) {
+        throw new CustomError(
+          ERROR_CODES.RESOURCE_NOT_FOUND,
+          404,
+          "Driver request not found"
+        );
       }
+      // }
 
       res.json({
         message: `Driver request status updated to ${driverStatus}`,
@@ -290,13 +287,12 @@ router.post(
         );
       }
 
-      
       await driverService.closeBreakdownRequestAndUpdateRating({
         driverId,
         requestId,
         markAsCompleted,
-       reason }
-      );
+        reason,
+      });
 
       res
         .status(200)

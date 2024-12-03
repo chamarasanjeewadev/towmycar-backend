@@ -1,8 +1,6 @@
 import {
   BaseNotificationType,
-  EmailNotificationType,
   NotificationType,
-  PushNotificationType,
 } from "../enums";
 
 interface Driver {
@@ -53,11 +51,11 @@ export type EmailPayloadType = {
 
 export type BreakdownNotificationType = {
   type: BaseNotificationType;
-  subType: NotificationType | PushNotificationType;
-  payload: driverNotificationEmailType[] | any;
+  subType: NotificationType ;
+  payload: DriverNotificationEmailType[] | any;
 };
 
-export type driverNotificationEmailType = EmailPayloadType &
+export type DriverNotificationEmailType = EmailPayloadType &
   NotificationPayload;
 
 export type NearbyDriver = {
@@ -94,15 +92,6 @@ export interface UserWithDriver {
   };
 }
 
-interface FcmNotificationPayloadType {
-  userId: number;
-  title?: string;
-  message?: string;
-  url?: string;
-  breakdownId?: string;
-  quotationId?: string;
-  // Add any other relevant fields
-}
 export interface UserNotificationEventPayload {
   user: UserWithCustomer;
   requestId: number;
@@ -112,6 +101,15 @@ export interface UserNotificationEventPayload {
   createdAt: Date;
   viewRequestLink: string;
   googleMapsLink: string;
+}
+export interface DriverQuotedPayload {
+  requestId: number;
+  driverId: number;
+  user: UserWithCustomer;
+  newPrice: number;
+  estimation: number;
+  description: string;
+  viewRequestLink: string;
 }
 
 export interface DriverNotifyEventPayload {
@@ -124,4 +122,3 @@ export interface DriverNotifyEventPayload {
   viewRequestLink: string;
   googleMapsLink: string;
 }
-

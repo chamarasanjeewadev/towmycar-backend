@@ -8,7 +8,8 @@ import { userCreatedEmail } from "../templates/userCreatedEmail";
 import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
-  driverNotificationEmailType,
+  DriverNotificationEmailType,
+  DriverQuotedPayload,
   NotificationType,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
@@ -16,10 +17,7 @@ import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 // Configure the AWS SDK
 const sesClient = new SESClient();
 
-export const sendEmail = async (
-  type: NotificationType,
-  payload: driverNotificationEmailType
-) => {
+export const sendEmail = async(type: NotificationType, payload: any) => {
   try {
     console.log("payload in sendEmail", type, payload);
     const emailContent = getEmailContent(type, payload);
@@ -76,11 +74,11 @@ function getEmailContent(type: NotificationType, payload: any) {
     case NotificationType.USER_CREATED:
       return userCreatedEmail(payload);
     case NotificationType.DRIVER_ASSIGNED:
-      return driverNotificationEmail(payload);
+      return driverNotificationEmail(payload  as DriverNotificationEmailType);
     case NotificationType.USER_NOTIFICATION:
       return userNotificationEmail(payload);
     case NotificationType.DRIVER_NOTIFICATION:
-      return driverNotificationEmail(payload);
+      return driverNotificationEmail(payload as DriverNotificationEmailType);
     case NotificationType.RATING_REVIEW:
       return RatingRequestEmail({
         requestId: payload.breakdownRequestId,

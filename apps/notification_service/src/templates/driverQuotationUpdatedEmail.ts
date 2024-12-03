@@ -3,7 +3,7 @@ import { createBaseTemplate } from "./baseTemplate";
 export const driverQuotationUpdatedEmail = (payload: any) => {
   const content = `
     <h1>Great news! Quotation ready for your request</h1>
-    <p>Hello ${payload.user?.firstName || 'Valued Customer'},</p>
+    <p>Hello ${payload?.user?.firstName ??'Valued Customer'},</p>
     <p>Good news! A driver has provided a quotation for your breakdown request #${payload.requestId}.</p>
     <h2>Quotation details:</h2>
     <ul>
