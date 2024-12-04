@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import {
   BaseNotificationType,
-  DriverQuotedPayload,
+  DriverQuotedEventPayload,
   NotificationType,
   UserNotificationEventPayload,
   DriverNotificationEmailType,
@@ -25,7 +25,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
           if (isAlreadySent) {
             console.log(
-              `Email already sent for driver: ${payloadData.driver.id}`
+              `Email already sent for driver: ${payloadData.driver.userId}`
             );
             return;
           }
@@ -33,7 +33,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
           await sendEmail(NotificationType.DRIVER_NOTIFICATION, payloadData);
         } catch (error) {
           console.error(
-            `Failed to process email for driver ${payloadData.driver.id}:`,
+            `Failed to process email for driver ${payloadData.driver.userId}:`,
             error
           );
         }
@@ -53,10 +53,16 @@ export function registerEmailListener(emitter: EventEmitter): void {
       // modify payload as push notification expects
     }
   );
-
+  emitter.on(
+    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
+    async (payload: DriverQuotedEventPayload) => {
+      await sendEmail(NotificationType.DRIVER_QUOTED, payload);
+      // modify payload as push notification expects
+    }
+  );
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTATION_UPDATED}`,
-    async (payload: DriverQuotedPayload) => {
+    async (payload: DriverQuotedEventPayload) => {
       await sendEmail(NotificationType.DRIVER_QUOTATION_UPDATED, payload);
       // modify payload as push notification expects
     }
@@ -65,7 +71,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // USER_REQUEST handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.USER_REQUEST}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.USER_REQUEST, payload);
       } catch (error) {
@@ -77,7 +83,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // DRIVER_REGISTERED handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_REGISTERED}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.DRIVER_REGISTERED, payload);
       } catch (error) {
@@ -89,7 +95,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // USER_CREATED handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.USER_CREATED}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.USER_CREATED, payload);
       } catch (error) {
@@ -101,7 +107,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // USER_ACCEPT handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.USER_ACCEPT}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.USER_ACCEPT, payload);
       } catch (error) {
@@ -113,7 +119,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // DRIVER_REJECT handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_REJECT}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.DRIVER_REJECT, payload);
       } catch (error) {
@@ -125,7 +131,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // DRIVER_ASSIGNED handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_ASSIGNED}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.DRIVER_ASSIGNED, payload);
       } catch (error) {
@@ -136,10 +142,10 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // DRIVER_QUOTE handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTE}`,
-    async (payload) => {
+    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
+    async payload => {
       try {
-        await sendEmail(NotificationType.DRIVER_QUOTE, payload);
+        await sendEmail(NotificationType.DRIVER_QUOTED, payload);
       } catch (error) {
         console.error("Error sending DRIVER_QUOTE email:", error);
       }
@@ -149,7 +155,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // DRIVER_ACCEPT handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_ACCEPT}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.DRIVER_ACCEPT, payload);
       } catch (error) {
@@ -161,7 +167,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // USER_REJECT handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.USER_REJECT}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.USER_REJECT, payload);
       } catch (error) {
@@ -173,7 +179,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   // RATING_REVIEW handler
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.RATING_REVIEW}`,
-    async (payload) => {
+    async payload => {
       try {
         await sendEmail(NotificationType.RATING_REVIEW, payload);
       } catch (error) {

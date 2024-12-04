@@ -401,6 +401,8 @@ router.get(
   }
 );
 
+
+
 // Add this new route for marking notifications as seen
 router.patch(
   "/notifications/:notificationId/isSeen",

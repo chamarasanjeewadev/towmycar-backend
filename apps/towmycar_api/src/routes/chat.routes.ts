@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import Pusher from "pusher";
 import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 import { DriverService } from "../service/driver/driver.service";
-
 import * as ChatService from "../service/chat/chat.service";
 
 // Add this enum at the top of the file
@@ -13,12 +12,7 @@ export enum MessageSender {
 
 const router = express.Router();
 const driverService = new DriverService();
-// router.use(bodyParser.json());
-interface MessagePayload {
-  message: string;
-  username: string;
-  breakdownId: string;
-}
+
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
   key: process.env.PUSHER_APP_KEY!,
@@ -115,39 +109,6 @@ router.get(
       const assignments = await driverService.getDriverRequestsWithInfo(
         driverId
       );
-
-      // Transform the assignments to include only necessary information
-      // const transformedAssignments = assignments.map(
-      //   (
-      //     assignment: BreakdownAssignment & {
-      //       driver: Driver & Partial<User>;
-      //       user: Customer & Partial<User>;
-      //     }
-      //   ) => ({
-      //     id: assignment.id,
-      //     requestId: assignment.requestId,
-      //     driverStatus: assignment.driverStatus,
-      //     userStatus: assignment.userStatus,
-      //     estimation: assignment.estimation,
-      //     explanation: assignment.explanation,
-      //     updatedAt: assignment.updatedAt,
-      //     userLocation: assignment.user.postcode,
-      //     user: {
-      //       id: assignment.user.id,
-      //       firstName: assignment.user?.firstName,
-      //       lastName: assignment.user?.lastName,
-      //       email: assignment.user?.email,
-      //     },
-      //     driver: {
-      //       id: assignment.driver?.id,
-      //       firstName: assignment.driver?.firstName,
-      //       lastName: assignment.driver?.lastName,
-      //       email: assignment.driver?.email,
-      //     },
-
-      //   })
-      // );
-
       res.status(200).json(assignments);
     } catch (error) {
       console.error("Error fetching driver assignments:", error);

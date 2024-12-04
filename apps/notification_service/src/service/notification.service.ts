@@ -1,9 +1,12 @@
-import { user } from "./../../../../packages/database/db-schema";
-import { customer } from "./../../../../node_modules/@towmycar/database/db-schema";
 import { sendPushNotification as sendPush } from "../utils/pushNotificationSender";
 import { FcmRepository } from "../repository/fcm.repository";
-import { NotificationPayload, PushNotificationPayload } from "@towmycar/common";
-import { NotificationType } from "@towmycar/common";
+import {
+  NotificationPayload,
+  PushNotificationPayload,
+  NotificationType,
+  BaseNotificationType,
+} from "@towmycar/common";
+import { NotificationRepository } from "../repository/notification.repository";
 
 interface NotificationMessage {
   title: string;
@@ -14,6 +17,7 @@ interface NotificationMessage {
 }
 
 async function sendGenericPushNotification(
+  notificationType: NotificationType,
   payload: PushNotificationPayload
 ): Promise<void> {
   const { userId, title, message, url } = payload;
@@ -24,10 +28,13 @@ async function sendGenericPushNotification(
   }
 
   try {
-    await FcmRepository.saveNotification({
+    await NotificationRepository.saveNotification({
       userId,
       title,
       message,
+      baseNotificationType: BaseNotificationType.PUSH,
+      notificationType: notificationType.toString(),
+      payload: JSON.stringify(payload),
       url,
     });
 
@@ -66,7 +73,7 @@ async function sendPushNotification(
 ): Promise<void> {
   switch (type) {
     case NotificationType.DRIVER_ASSIGNED:
-      await sendGenericPushNotification({
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "Driver Assigned",
         message: "A driver has been assigned to your request",
@@ -75,8 +82,8 @@ async function sendPushNotification(
       break;
 
     case NotificationType.DRIVER_REGISTERED:
-      await sendGenericPushNotification({
-        userId: payload?.driver?.id,
+      await sendGenericPushNotification(type, {
+        userId: payload?.driver?.userId,
         title: "Registration Complete",
         message: "Your driver registration has been received",
         url: payload?.viewRequestLink,
@@ -84,7 +91,7 @@ async function sendPushNotification(
       break;
 
     case NotificationType.USER_REQUEST:
-      await sendGenericPushNotification({
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "New Request",
         message: "Your breakdown assistance request has been received",
@@ -93,16 +100,16 @@ async function sendPushNotification(
       break;
 
     case NotificationType.DRIVER_QUOTATION_UPDATED:
-      await sendGenericPushNotification({
-        userId: payload?.user?.id,
+      await sendGenericPushNotification(type, {
+        userId: payload?.driver?.userId,
         title: "Quotation Updated",
         message: "A driver has updated their quotation for your request",
         url: payload?.viewRequestLink,
       });
       break;
 
-    case NotificationType.DRIVER_QUOTE:
-      await sendGenericPushNotification({
+    case NotificationType.DRIVER_QUOTED:
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "New Quote Available",
         message: "A new quote is available for your breakdown request",
@@ -112,7 +119,7 @@ async function sendPushNotification(
 
     case NotificationType.USER_ACCEPT:
     case NotificationType.DRIVER_ACCEPT:
-      await sendGenericPushNotification({
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "Request Accepted",
         message: "Your request has been accepted",
@@ -122,7 +129,7 @@ async function sendPushNotification(
 
     case NotificationType.USER_REJECT:
     case NotificationType.DRIVER_REJECT:
-      await sendGenericPushNotification({
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "Request Status Update",
         message: "There has been an update to your request",
@@ -131,8 +138,8 @@ async function sendPushNotification(
       break;
 
     case NotificationType.DRIVER_NOTIFICATION:
-      await sendGenericPushNotification({
-        userId: payload?.driver?.id,
+      await sendGenericPushNotification(type, {
+        userId: payload?.driver?.userId,
         title: "New Breakdown Request",
         message: "A new breakdown request is available in your area",
         url: payload?.viewRequestLink,
@@ -140,7 +147,7 @@ async function sendPushNotification(
       break;
 
     case NotificationType.RATING_REVIEW:
-      await sendGenericPushNotification({
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "New Rating & Review",
         message: "You have received a new rating and review",
@@ -149,7 +156,7 @@ async function sendPushNotification(
       break;
 
     default:
-      await sendGenericPushNotification({
+      await sendGenericPushNotification(type, {
         userId: payload?.user?.id,
         title: "Notification",
         message: "You have a new notification",

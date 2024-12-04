@@ -1,15 +1,19 @@
 import { NotificationPayload, NotificationType } from "@towmycar/common";
 import { getSMSProvider } from "./../utils/sms/smsProviderFactory";
 
-const smsProvider=getSMSProvider();
-async function sendGenericSMS(phoneNumber: string, message: string, viewLink?: string): Promise<void> {
+const smsProvider = getSMSProvider();
+async function sendGenericSMS(
+  phoneNumber: string,
+  message: string,
+  viewLink?: string
+): Promise<void> {
   try {
-    const fullMessage = viewLink 
+    const fullMessage = viewLink
       ? `${message}\nView details: ${viewLink}`
       : message;
 
     await smsProvider.sendSMS(phoneNumber, fullMessage);
-    
+
     console.log(`SMS sent successfully to ${phoneNumber}`);
   } catch (error) {
     console.error("Error sending SMS:", error);
@@ -53,7 +57,7 @@ async function sendSMSNotification(
       );
       break;
 
-    case NotificationType.DRIVER_QUOTE:
+    case NotificationType.DRIVER_QUOTED:
       await sendGenericSMS(
         payload.user.phoneNumber,
         "A new quote is available for your breakdown request",
@@ -109,4 +113,4 @@ async function sendSMSNotification(
 
 export const SMSNotificationService = {
   sendSMSNotification,
-}; 
+};

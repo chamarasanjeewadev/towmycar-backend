@@ -1,4 +1,4 @@
-import { DocumentMetadataEnum } from "@aws-sdk/client-ssm"
+import { DocumentMetadataEnum } from "@aws-sdk/client-ssm";
 
 export enum UserGroup {
   USER = "user",
@@ -12,14 +12,15 @@ export enum NotificationType {
   USER_CREATED = "USER_CREATED",
   USER_ACCEPT = "USER_ACCEPT",
   DRIVER_REJECT = "DRIVER_REJECT",
+  DRIVER_CLOSED = "DRIVER_CLOSED",
   DRIVER_QUOTATION_UPDATED = "DRIVER_QUOTATION_UPDATED",
   DRIVER_ASSIGNED = "DRIVER_ASSIGNED",
-  DRIVER_QUOTE = "DRIVER_QUOTE",
+  DRIVER_QUOTED = "DRIVER_QUOTE",
   DRIVER_ACCEPT = "DRIVER_ACCEPT",
   DRIVER_NOTIFICATION = "DRIVER_NOTIFICATION",
   USER_NOTIFICATION = "USER_NOTIFICATION",
   USER_REJECT = "USER_REJECT",
-  RATING_REVIEW = "RATING_REVIEW"
+  RATING_REVIEW = "RATING_REVIEW",
 }
 
 export enum DriverStatus {
@@ -36,8 +37,6 @@ export enum UserStatus {
   PENDING = "PENDING",
   INPROGRESS = "INPROGRESS",
 }
-
-
 
 export enum BaseNotificationType {
   EMAIL = "EMAIL",

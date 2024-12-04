@@ -10,8 +10,9 @@ import {
   uuid,
   boolean,
   unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
-import { BreakdownRequestStatus } from "@towmycar/common";
+import { BaseNotificationType, BreakdownRequestStatus } from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -149,7 +150,9 @@ export const breakdownAssignment = pgTable(
     explanation: text("estimate_explanation"),
     assignedAt: timestamp("assigned_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
-    paymentId: integer("payment_id").references(() => payments.id, { onDelete: "set null" }),
+    paymentId: integer("payment_id").references(() => payments.id, {
+      onDelete: "set null",
+    }),
   },
   table => ({
     // Adding the unique constraint
@@ -223,7 +226,9 @@ export const serviceRatings = pgTable("service_ratings", {
 // Add this new table for payment tracking
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey().notNull(),
-  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }).notNull(),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", {
+    length: 255,
+  }).notNull(),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 3 }).notNull(),
   status: varchar("status", { length: 50 }).notNull(),
@@ -233,8 +238,12 @@ export const payments = pgTable("payments", {
   requestId: integer("request_id")
     .references(() => breakdownRequest.id, { onDelete: "cascade" })
     .notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const notifications = pgTable("notifications", {
@@ -242,37 +251,26 @@ export const notifications = pgTable("notifications", {
   userId: integer("user_id")
     .references(() => user.id, { onDelete: "cascade" })
     .notNull(),
+  baseNotificationType: varchar("base_notification_type", {
+    length: 100,
+  }),
+  notificationType: varchar("notification_type", { length: 100 }).notNull(),
+  breakdownRequestId: integer("breakdown_request_id").references(
+    () => breakdownRequest.id,
+    { onDelete: "cascade" }
+  ),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   url: text("url"),
+  payload: jsonb("payload").default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-  isSeen: boolean("is_seen").default(false).notNull(),
-});
-
-export const notificationHistory = pgTable("notification_history", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .references(() => user.id, { onDelete: "cascade" })
-    .notNull(),
-  notificationType: varchar("notification_type", { length: 100 }).notNull(), // EMAIL, SMS, PUSH
-  deliveryType: varchar("delivery_type", { length: 20 }).notNull(),
-  breakdownRequestId: integer("breakdown_request_id")
-    .references(() => breakdownRequest.id, { onDelete: "cascade" })
-    .notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING, SENT, FAILED
-  retryCount: integer("retry_count").notNull().default(0),
-  errorMessage: text("error_message"),
-  lastAttempt: timestamp("last_attempt", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  isSeen: boolean("is_seen").default(false).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING, SENT, FAILED
 });
 
 export type User = typeof user.$inferSelect;
@@ -286,4 +284,3 @@ export type Chat = typeof chats.$inferSelect;
 export type ServiceRating = typeof serviceRatings.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
-export type NotificationHistory = typeof notificationHistory.$inferSelect;

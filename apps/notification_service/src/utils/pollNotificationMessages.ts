@@ -4,9 +4,9 @@ import { SQS_QUEUE_URL } from "../config";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
 import { BreakdownNotificationType } from "@towmycar/common";
 import { EventEmitter } from "stream";
-import { registerEmailListener } from "./../listners/emailListener.service";
-import { registerPushNotificationListener } from "./../listners/pushNotificationListener.service";
-import { registerSmsNotificationListener } from "./../listners/smsNotificationListener.service";
+import { registerEmailListener } from "../listners/notification.email.listner";
+import { registerPushNotificationListener } from "../listners/notification.push.listner";
+import { registerSmsNotificationListener } from "../listners/notification.sms.listner";
 
 AWS.config.update({ region: process.env.REGION });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });

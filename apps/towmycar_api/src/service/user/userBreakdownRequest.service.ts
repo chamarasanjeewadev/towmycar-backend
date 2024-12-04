@@ -14,6 +14,7 @@ import {
 import { APIError, BaseError, ERROR_CODES } from "../../utils/error/errors";
 import { NotificationType, UserStatus } from "@towmycar/common";
 import EventEmitter from "events";
+import { CloseBreakdownParams } from "./../../types/types";
 
 const notificationEmitter = new EventEmitter();
 registerEmailListener(notificationEmitter);
@@ -236,11 +237,4 @@ export const BreakdownRequestService = {
     pageSize?: number
   ) => getDriverProfile(driverId, requestId, page, pageSize),
 };
-interface CloseBreakdownParams {
-  requestId: number;
-  driverRating: number | null;
-  driverFeedback: string | null;
-  siteRating: number | null;
-  siteFeedback: string | null;
-  driverId?: number;
-}
+

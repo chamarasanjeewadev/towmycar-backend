@@ -8,8 +8,6 @@ import { DriverService } from "../service/driver/driver.service";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
-import Stripe from "stripe";
-import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 import { CustomError, ERROR_CODES } from "../utils";
 import { DriverStatus } from "@towmycar/common";
 
@@ -123,24 +121,7 @@ router.patch(
         ...(explanation && { explanation }),
       };
 
-      // if (driverStatus === DriverStatus.ACCEPTED) {
-      //   if (!estimation) {
-      //     const breakdownAssignment =
-      //       await BreakdownRequestService.getBreakdownAssignmentsByDriverIdAndRequestId(
-      //         Number(driverId),
-      //         Number(requestId)
-      //       );
-      //     estimation = breakdownAssignment?.estimation;
-      //   }
-
-      //   await driverService.processPaymentAndUpdateAssignment(
-      //     Number(driverId),
-      //     Number(requestId),
-      //     Number(estimation ?? 5),
-      //     dataToUpdate
-      //   );
-      // } else {
-      // Update the assignment without payment processing
+      
       const updated = await driverService.updateBreakdownAssignment(
         Number(driverId),
         Number(requestId),

@@ -1,22 +1,25 @@
 import { EventEmitter } from "events";
+
 import {
   BaseNotificationType,
   sendNotification,
   DriverNotifyEventPayload,
   NotificationType,
   UserNotificationEventPayload,
-  DriverNotificationEmailType,
+  NotificationPayload,
   UserWithDriver,
-  DriverQuotedPayload,
 } from "@towmycar/common";
 
-export function registerEmailListener(emitter: EventEmitter): void {
+export function registerSmsNotificationListener(emitter: EventEmitter) {
   emitter.on(
     NotificationType.DRIVER_NOTIFICATION,
     async (payload: DriverNotifyEventPayload) => {
-      const emailsForDrivers = payload?.drivers.map(driver => {
+      const { drivers } = payload;
+
+      // Create individual SMS notifications for each driver
+      const smsForDrivers = drivers.map(driver => {
         const userWithDriver: UserWithDriver = {
-          id: driver.userId,
+          userId: driver.userId,
           email: driver.email,
           firstName: driver.firstName,
           lastName: driver.lastName,
@@ -26,8 +29,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
             phoneNumber: driver.phoneNumber,
           },
         };
-
-        const emailPlayload: DriverNotificationEmailType = {
+        const smsPayload: NotificationPayload = {
           driver: userWithDriver,
           location: payload.location,
           breakdownRequestId: payload.requestId,
@@ -35,17 +37,16 @@ export function registerEmailListener(emitter: EventEmitter): void {
           viewRequestLink: payload.viewRequestLink,
           createdAt: payload.createdAt,
           googleMapsLink: payload.googleMapsLink,
-          subject: `TowmyCar - Towing Request #${payload.requestId}`,
-          recipientEmail: driver.email,
         };
 
-        return emailPlayload;
+        return smsPayload;
       });
-      // modify payload for email
+
+      // Send individual SMS notifications
       await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: BaseNotificationType.EMAIL,
+        type: BaseNotificationType.SMS,
         subType: NotificationType.DRIVER_NOTIFICATION,
-        payload: emailsForDrivers,
+        payload: smsForDrivers,
       });
     }
   );
@@ -53,102 +54,108 @@ export function registerEmailListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.USER_NOTIFICATION,
     async (payload: UserNotificationEventPayload) => {
-      // modify payload as push notification expects
       await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: BaseNotificationType.EMAIL,
+        type: BaseNotificationType.SMS,
         subType: NotificationType.USER_NOTIFICATION,
         payload,
       });
     }
   );
 
-  emitter.on(
-    NotificationType.DRIVER_QUOTATION_UPDATED,
-    async (payload: DriverQuotedPayload) => {
-      // modify payload as push notification expects
-      await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        type: BaseNotificationType.EMAIL,
-        subType: NotificationType.DRIVER_QUOTATION_UPDATED,
-        payload,
-      });
-    }
-  );
-
-  emitter.on(NotificationType.DRIVER_REGISTERED, async (payload) => {
+  // New DRIVER_REGISTERED listener
+  emitter.on(NotificationType.DRIVER_REGISTERED, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.DRIVER_REGISTERED,
       payload,
     });
   });
 
-  emitter.on(NotificationType.USER_REQUEST, async (payload) => {
+  // New USER_REQUEST listener
+  emitter.on(NotificationType.USER_REQUEST, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.USER_REQUEST,
       payload,
     });
   });
 
-  emitter.on(NotificationType.USER_CREATED, async (payload) => {
+  // New USER_CREATED listener
+  emitter.on(NotificationType.USER_CREATED, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.USER_CREATED,
       payload,
     });
   });
 
-  emitter.on(NotificationType.USER_ACCEPT, async (payload) => {
+  // New USER_ACCEPT listener
+  emitter.on(NotificationType.USER_ACCEPT, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.USER_ACCEPT,
       payload,
     });
   });
 
-  emitter.on(NotificationType.DRIVER_REJECT, async (payload) => {
+  // New DRIVER_REJECT listener
+  emitter.on(NotificationType.DRIVER_REJECT, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.DRIVER_REJECT,
       payload,
     });
   });
 
-  emitter.on(NotificationType.DRIVER_ASSIGNED, async (payload) => {
+  // New DRIVER_QUOTATION_UPDATED listener
+  emitter.on(NotificationType.DRIVER_QUOTATION_UPDATED, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
+      subType: NotificationType.DRIVER_QUOTATION_UPDATED,
+      payload,
+    });
+  });
+
+  // New DRIVER_ASSIGNED listener
+  emitter.on(NotificationType.DRIVER_ASSIGNED, async payload => {
+    await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      type: BaseNotificationType.SMS,
       subType: NotificationType.DRIVER_ASSIGNED,
       payload,
     });
   });
 
-  emitter.on(NotificationType.DRIVER_QUOTE, async (payload) => {
+  // New DRIVER_QUOTE listener
+  emitter.on(NotificationType.DRIVER_QUOTED, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
-      subType: NotificationType.DRIVER_QUOTE,
+      type: BaseNotificationType.SMS,
+      subType: NotificationType.DRIVER_QUOTED,
       payload,
     });
   });
 
-  emitter.on(NotificationType.DRIVER_ACCEPT, async (payload) => {
+  // New DRIVER_ACCEPT listener
+  emitter.on(NotificationType.DRIVER_ACCEPT, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.DRIVER_ACCEPT,
       payload,
     });
   });
 
-  emitter.on(NotificationType.USER_REJECT, async (payload) => {
+  // New USER_REJECT listener
+  emitter.on(NotificationType.USER_REJECT, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.USER_REJECT,
       payload,
     });
   });
 
-  emitter.on(NotificationType.RATING_REVIEW, async (payload) => {
+  // New RATING_REVIEW listener
+  emitter.on(NotificationType.RATING_REVIEW, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      type: BaseNotificationType.EMAIL,
+      type: BaseNotificationType.SMS,
       subType: NotificationType.RATING_REVIEW,
       payload,
     });

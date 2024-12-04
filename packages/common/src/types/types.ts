@@ -1,7 +1,4 @@
-import {
-  BaseNotificationType,
-  NotificationType,
-} from "../enums";
+import { BaseNotificationType, NotificationType } from "../enums";
 
 interface Driver {
   firstName: string;
@@ -51,7 +48,7 @@ export type EmailPayloadType = {
 
 export type BreakdownNotificationType = {
   type: BaseNotificationType;
-  subType: NotificationType ;
+  subType: NotificationType;
   payload: DriverNotificationEmailType[] | any;
 };
 
@@ -76,12 +73,12 @@ export interface UserWithCustomer {
   lastName?: string;
   phoneNumber?: string;
   customer?: {
-    id: string;
+    id: string | number;
     phoneNumber?: string;
   };
 }
 export interface UserWithDriver {
-  id: number;
+  userId: number;
   email: string;
   firstName?: string;
   lastName?: string;
@@ -102,9 +99,40 @@ export interface UserNotificationEventPayload {
   viewRequestLink: string;
   googleMapsLink: string;
 }
-export interface DriverQuotedPayload {
+
+export interface DriverQuotedEventPayload {
   requestId: number;
-  driverId: number;
+  driver: UserWithDriver;
+  user: UserWithCustomer;
+  newPrice: number;
+  estimation: number;
+  description: string;
+  viewRequestLink: string;
+}
+
+export interface DriverAcceptedEventPayload {
+  requestId: number;
+  driver: UserWithDriver;
+  user: UserWithCustomer;
+  newPrice: number;
+  estimation: number;
+  description: string;
+  viewRequestLink: string;
+}
+
+export interface DriverRejectedEventPayload {
+  requestId: number;
+  driver: UserWithDriver;
+  user: UserWithCustomer;
+  newPrice: number;
+  estimation: number;
+  description: string;
+  viewRequestLink: string;
+}
+
+export interface DriverClosedEventPayload {
+  requestId: number;
+  driver: UserWithDriver;
   user: UserWithCustomer;
   newPrice: number;
   estimation: number;

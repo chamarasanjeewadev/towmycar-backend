@@ -14,7 +14,7 @@ function registerCommonNotificationHandler(
   notificationType: NotificationType,
   type: BaseNotificationType
 ) {
-  emitter.on(notificationType, async (payload) => {
+  emitter.on(notificationType, async payload => {
     await sendNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       type,
       subType: notificationType,
@@ -31,7 +31,7 @@ export function registerPushNotificationListener(emitter: EventEmitter) {
       const { drivers } = payload;
       const pushNotificationsForDrivers = drivers.map(driver => {
         const userWithDriver: UserWithDriver = {
-          id: driver.userId,
+          userId: driver.userId,
           email: driver.email,
           firstName: driver.firstName,
           lastName: driver.lastName,

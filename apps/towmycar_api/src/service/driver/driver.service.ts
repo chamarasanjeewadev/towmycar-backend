@@ -1,3 +1,4 @@
+import { user } from "./../../../../../node_modules/@towmycar/database/db-schema";
 import { DriverProfileDtoType } from "../../dto/driver.dto";
 import {
   IDriverRepository,
@@ -8,11 +9,17 @@ import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the 
 import { Stripe } from "stripe";
 import {
   BreakdownRequestStatus,
+  DriverAcceptedEventPayload,
+  DriverClosedEventPayload,
+  DriverQuotedEventPayload,
+  DriverRejectedEventPayload,
   DriverStatus,
   registerEmailListener,
   registerPushNotificationListener,
   registerSmsNotificationListener,
   TokenService,
+  UserWithCustomer,
+  UserWithDriver,
 } from "@towmycar/common";
 import { NotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
@@ -73,20 +80,41 @@ export class DriverService {
     }
 
     // Fetch user details
-    const userDetails = await DriverRepository.getDriverByRequestId(requestId);
+    const driverInfo = await DriverRepository.getDriverByRequestId(requestId);
+    const customerDetails = await DriverRepository.getUserByRequestId(
+      requestId
+    );
 
-    if (!userDetails) {
+    const driver: UserWithDriver = {
+      userId: driverDetails.userId,
+      email: driverInfo.email,
+      firstName: driverInfo.firstName,
+      lastName: driverInfo.lastName || undefined,
+      phoneNumber: driverDetails.phoneNumber || undefined,
+      driver: {
+        id: driverDetails.id,
+        phoneNumber: driverDetails.phoneNumber,
+      },
+    };
+    const user: UserWithCustomer = {
+      id: driverInfo.id,
+      email: driverInfo.email,
+      firstName: driverInfo.firstName,
+      lastName: driverInfo.lastName || undefined,
+      phoneNumber: driverInfo.phoneNumber || undefined,
+      customer: {
+        id: customerDetails.id,
+        phoneNumber: driverInfo.phoneNumber,
+      },
+    };
+
+    if (!driverInfo) {
       throw new Error(`User not found for request ${requestId}`);
     }
 
     if (data.driverStatus === DriverStatus.ACCEPTED) {
-      let explanation = data?.explanation;
       const dataToUpdate = {
         driverStatus: data.driverStatus,
-        // ...(Number(data?.estimation) !== undefined && {
-        //   estimation: data?.estimation?.toString(),
-        // }),
-        // ...(explanation && { explanation }),
       };
       let estimation = null;
       if (!data.estimation) {
@@ -105,20 +133,16 @@ export class DriverService {
         dataToUpdate
       );
 
-      this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPT, {
+      const payload: DriverAcceptedEventPayload = {
         requestId,
-        driverId,
-        user: userDetails,
-        status: data.driverStatus,
+        driver: driver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-        driverName: `${""}`,
-        driverPhone: driverDetails.phoneNumber,
-        driverEmail: "driverDetails.email",
-        vehicleModel: driverDetails.vehicleType,
-        vehiclePlateNumber: driverDetails.vehicleRegistration,
-        estimation: data.estimation,
-      });
-
+        estimation: +data.estimation,
+        user: user,
+        newPrice: +data.estimation,
+        description: "",
+      };
+      this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPT, payload);
       return true;
     }
 
@@ -130,123 +154,43 @@ export class DriverService {
       );
 
     if (data.driverStatus === DriverStatus.QUOTED) {
-      // set request in progress mode since driver quoted....
-      await DriverRepository.updateBreakdownRequestStatus(
+      const payload: DriverQuotedEventPayload = {
         requestId,
-        BreakdownRequestStatus.QUOTED
+        driver: driver,
+        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        estimation: +data.estimation,
+        user: user,
+        newPrice: +data.estimation,
+        description: "",
+      };
+      this.notificationEmitter.emit(
+        NotificationType.DRIVER_QUOTATION_UPDATED,
+        payload
       );
-
-      this.notificationEmitter.emit(NotificationType.DRIVER_QUOTATION_UPDATED, {
+    } else if (data.driverStatus === DriverStatus.REJECTED) {
+      const payload: DriverRejectedEventPayload = {
         requestId,
-        driverId,
-        user: userDetails,
-        newPrice: data.estimation,
-        estimation: data.estimation,
-        description: data?.description ?? "",
+        driver: driver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-      });
-
-      // notificationType = EmailNotificationType.DRIVER_QUOTATION_UPDATED_EMAIL;
-      // payload = {
-      //   requestId,
-      //   driverId,
-      //   user: userDetails,
-      //   newPrice: data.estimation,
-      //   estimation: data.estimation,
-      //   description: data?.description ?? "",
-      //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-      // };
-
-      // Update the breakdown request status to IN_PROGRESS when a driver quotes
-    }
-    // else if (data.driverStatus === DriverStatus.ACCEPTED) {
-    //   const dataToUpdate = {
-    //     driverStatus: data.driverStatus,
-    //     ...(Number( data.estimation) !== undefined && {
-    //       estimation:data.description.toString(),
-    //     }),
-    //     // ...(data.explanation && { data?.explanation }),
-    //   };
-    //   let estimation = null;
-    //   if (!data.estimation) {
-    //     const breakdownAssignment =
-    //       await BreakdownRequestService.getBreakdownAssignmentsByDriverIdAndRequestId(
-    //         Number(driverId),
-    //         Number(requestId)
-    //       );
-    //     estimation = breakdownAssignment?.estimation;
-    //   }
-
-    //   await this.processPaymentAndUpdateAssignment(
-    //     Number(driverId),
-    //     Number(requestId),
-    //     Number(estimation ?? 5),
-    //     dataToUpdate
-    //   );
-
-    //   this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPT, {
-    //     requestId,
-    //     driverId,
-    //     user: userDetails,
-    //     status: data.driverStatus,
-    //     viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-    //     driverName: `${""}`,
-    //     driverPhone: driverDetails.phoneNumber,
-    //     driverEmail: "driverDetails.email",
-    //     vehicleModel: driverDetails.vehicleType,
-    //     vehiclePlateNumber: driverDetails.vehicleRegistration,
-    //     estimation: data.estimation,
-    //   });
-    //   // notificationType = EmailNotificationType.DRIVER_ACCEPT_EMAIL;
-    //   // payload = {
-    //   //   requestId,
-    //   //   driverId,
-    //   //   user: userDetails,
-    //   //   status: data.driverStatus,
-    //   //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-    //   //   driverName: `${""}`,
-    //   //   driverPhone: driverDetails.phoneNumber,
-    //   //   driverEmail: "driverDetails.email",
-    //   //   vehicleModel: driverDetails.vehicleType,
-    //   //   vehiclePlateNumber: driverDetails.vehicleRegistration,
-    //   //   estimation: data.estimation,
-    //   // };
-    // }
-    else if (data.driverStatus === DriverStatus.REJECTED) {
-      this.notificationEmitter.emit(NotificationType.DRIVER_REJECT, {
-        requestId,
-        driverId,
-        user: userDetails,
-        driverStatus: data.driverStatus,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-      });
-
-      // notificationType = EmailNotificationType.DRIVER_REJECT_EMAIL;
-      // payload = {
-      //   requestId,
-      //   driverId,
-      //   user: userDetails,
-      //   driverStatus: data.driverStatus,
-      //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-      // };
+        estimation: +data.estimation,
+        user: user,
+        newPrice: +data.estimation,
+        description: "",
+      };
+      this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
     } else if (data.driverStatus === DriverStatus.CLOSED) {
       const token = TokenService.generateUrlSafeToken(requestId, driverId);
-
-      this.notificationEmitter.emit(NotificationType.DRIVER_REJECT, {
+      const payload: DriverClosedEventPayload = {
         requestId,
-        driverId,
-        user: userDetails,
-        status: data.driverStatus,
+        driver: driver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${requestId}?token=${token}`,
-      });
-      // notificationType = EmailNotificationType.RATING_REVIEW_EMAIL;
-      // payload = {
-      //   requestId,
-      //   driverId,
-      //   user: userDetails,
-      //   status: data.driverStatus,
-      //   viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${requestId}?token=${token}`,
-      // };
+        estimation: +data.estimation,
+        user: user,
+        newPrice: +data.estimation,
+        description: "",
+      };
+
+      this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
     } else {
       throw new Error("Invalid status or estimation amount");
     }

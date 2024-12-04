@@ -175,6 +175,11 @@ export class CdkStack extends cdk.Stack {
         SOURCE_EMAIL: process.env.SOURCE_EMAIL || "towmycar.uk@gmail.com",
         RATING_SECRET_KEY: process.env.RATING_SECRET_KEY || "",
         SERVICE_ACCOUNT: process.env.SERVICE_ACCOUNT || "",
+        TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",
+        TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
+        TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
+        ENABLE_SMS: process.env.ENABLE_SMS || "false",
+        NODE_TLS_REJECT_UNAUTHORIZED: process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0",
       },
     });
   }

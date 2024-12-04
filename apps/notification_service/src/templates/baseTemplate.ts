@@ -45,7 +45,7 @@ export function createBaseTemplate({
         }
         .main-header {
           text-align: left;
-          padding: 40px 0 20px;
+          padding: 20px 0 10px;
         }
         .main-header a {
           text-decoration: none;

@@ -6,6 +6,7 @@ import {
   DriverNotificationEmailType,
 } from "@towmycar/common";
 import { UserNotificationService } from "../service/notification.service";
+import { NotificationRepository } from "../repository/notification.repository";
 
 export function registerPushNotificationListener(emitter: EventEmitter): void {
   emitter.on(
@@ -14,16 +15,16 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
       const processPromises = payload.map(async payloadData => {
         try {
           const isAlreadySent = false;
-          // await NotificationRepository.checkNotificationSent({
-          //   userId: payloadData.driver.id,
-          //   notificationType: NotificationType.DRIVER_NOTIFICATION,
-          //   deliveryType: BaseNotificationType.PUSH,
-          //   breakdownRequestId: payloadData.breakdownRequestId.toString()
-          // });
+          await NotificationRepository.checkNotificationSent({
+            userId: payloadData.driver.userId,
+            notificationType: NotificationType.DRIVER_NOTIFICATION,
+            deliveryType: BaseNotificationType.PUSH,
+            breakdownRequestId: payloadData.breakdownRequestId.toString(),
+          });
 
           if (isAlreadySent) {
             console.log(
-              `Push notification already sent for driver: ${payloadData.driver.id}`
+              `Push notification already sent for driver: ${payloadData.driver.userId}`
             );
             return;
           }
@@ -34,7 +35,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
           );
         } catch (error) {
           console.error(
-            `Failed to process push notification for driver ${payloadData.driver.id}:`,
+            `Failed to process push notification for driver ${payloadData.driver.userId}:`,
             error
           );
         }
@@ -87,7 +88,10 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
           payload
         );
       } catch (error) {
-        console.error("Failed to send DRIVER_REGISTERED push notification:", error);
+        console.error(
+          "Failed to send DRIVER_REGISTERED push notification:",
+          error
+        );
       }
     }
   );
@@ -127,7 +131,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     NotificationType.DRIVER_REJECT,
     NotificationType.DRIVER_QUOTATION_UPDATED,
     NotificationType.DRIVER_ASSIGNED,
-    NotificationType.DRIVER_QUOTE,
+    NotificationType.DRIVER_QUOTED,
     NotificationType.DRIVER_ACCEPT,
     NotificationType.USER_REJECT,
     NotificationType.RATING_REVIEW,

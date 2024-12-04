@@ -1,8 +1,9 @@
+
 export interface BreakdownRequestType {
   id: number;
   requestId: number;
   driverStatus: string; //'ACCEPTED' | 'PENDING' | 'REJECTED' | 'CLOSED';
-  userStatus: string; //'ACCEPTED' | 'PENDING' | 'REJECTED' | 'CLOSED';
+  userStatus: string;
   estimation: string;
   explanation: string;
   updatedAt: string;
@@ -105,7 +106,7 @@ export interface BreakdownAssignmentDetails {
     lastName: string;
     email: string;
     imageUrl: string | null;
-    mobileNumber:string|null
+    mobileNumber: string | null;
   };
 }
 
@@ -114,14 +115,13 @@ export interface CloseDriverAssignmentParams {
   driverId: number;
   markAsCompleted: boolean;
   reason: string;
-
-} 
+}
 
 export type CloseBreakdownParams = {
-    requestId: number;
-    customerId: number;
-    customerRating: number | null;
-    customerFeedback: string | null;
-    siteRating: number | null;
-    siteFeedback: string | null;
-  };
+  requestId: number;
+  driverId?: number;
+  driverRating?: number | null;
+  driverFeedback?: string | null;
+  siteRating?: number | null;
+  siteFeedback?: string | null;
+};

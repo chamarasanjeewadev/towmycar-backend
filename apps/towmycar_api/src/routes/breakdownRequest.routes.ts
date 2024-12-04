@@ -3,10 +3,9 @@ import * as service from "../service/user/userBreakdownRequest.service";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-import { TokenService } from "@towmycar/common";
-import { verifyTokenMiddleware } from "../middleware/tokenVerification";
 import { combinedAuthMiddleware } from "../middleware/combinedAuth";
-import { UserRepository } from "../repository/user.repository";
+import { RequestIdParamSchema, DriverIdParamSchema, AssignmentIdParamSchema, RatingSchema } from "../dto/breakdownRequest.dto";
+import { AnonymousBreakdownRequestSchema, UserStatusSchema, OptionalRequestIdParamSchema } from "../dto/breakdownRequest.dto";
 
 const router = express.Router();
 
@@ -15,9 +14,11 @@ router.post(
   "/anonymous-breakdown-request",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const validatedData = AnonymousBreakdownRequestSchema.parse({ body: req.body });
+      
       const response =
         await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
-          req.body as BreakdownRequestInput
+          validatedData.body as BreakdownRequestInput
         );
 
       return res.status(200).json(response);
@@ -27,23 +28,23 @@ router.post(
   }
 );
 
-router.get("/assignments/:requestId", async (req: Request, res: Response) => {
-  try {
-    const requestId = parseInt(req.params.requestId, 10);
-    if (isNaN(requestId)) {
-      return res.status(400).json({ error: "Invalid request ID" });
+router.get(
+  "/assignments/:requestId",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { requestId } = RequestIdParamSchema.parse({ requestId: req.params.requestId });
+      
+      const assignments =
+        await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
+          requestId
+        );
+      res.status(200).json(assignments);
+    } catch (error) {
+      next(error);
     }
-
-    const assignments =
-      await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
-        requestId
-      );
-    res.status(200).json(assignments);
-  } catch (error) {
-    console.error("Error fetching assignments:", error);
-    res.status(500).json({ error: "Internal server error" });
   }
-});
+);
 
 router.post(
   "/breakdown-request",
@@ -68,7 +69,7 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { userId, customerId } = req.userInfo;
+      const {  customerId } = req.userInfo;
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
       const { requests, totalCount } =
@@ -95,20 +96,12 @@ router.get(
 
 router.get(
   "/assignments/:requestId?",
+  clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = null;
-      const requestId = req.params.requestId
-        ? parseInt(req.params.requestId, 10)
-        : undefined;
-
-      if (isNaN(userId)) {
-        return res.status(400).json({ error: "Invalid user ID" });
-      }
-
-      if (requestId !== undefined && isNaN(requestId)) {
-        return res.status(400).json({ error: "Invalid request ID" });
-      }
+      const { requestId } = OptionalRequestIdParamSchema.parse({ 
+        requestId: req.params.requestId 
+      });
 
       const assignments =
         await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
@@ -122,16 +115,15 @@ router.get(
 );
 
 router.patch(
-  "/assignment/:assignmentId/status", clerkAuthMiddleware("customer"),
+  "/assignment/:assignmentId/status",
+  clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
-    const { userId, customerId } = req.userInfo;
+    const { userId } = req.userInfo;
     try {
-      const assignmentId = parseInt(req.params.assignmentId, 10);
-      const { userStatus } = req.body;
-
-      if (isNaN(assignmentId)) {
-        return res.status(400).json({ error: "Invalid assignment ID" });
-      }
+      const { assignmentId } = AssignmentIdParamSchema.parse({ 
+        assignmentId: req.params.assignmentId 
+      });
+      const { userStatus } = UserStatusSchema.parse(req.body);
 
       const updated =
         await service.BreakdownRequestService.updateUserStatusInBreakdownAssignment(
@@ -141,13 +133,9 @@ router.patch(
         );
 
       if (updated) {
-        res
-          .status(200)
-          .json({ message: "Assignment status updated successfully" });
+        res.status(200).json({ message: "Assignment status updated successfully" });
       } else {
-        res
-          .status(404)
-          .json({ error: "Assignment not found or update failed" });
+        res.status(404).json({ error: "Assignment not found or update failed" });
       }
     } catch (error) {
       next(error);
@@ -160,60 +148,17 @@ router.post(
   combinedAuthMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestId = parseInt(req.params.requestId, 10);
-      const {
-        driverRating,
-        driverFeedback,
-        siteRating,
-        siteFeedback,
-      } = req.body;
-
+      const { requestId } = RequestIdParamSchema.parse({ requestId: req.params.requestId });
+      const ratingData = RatingSchema.parse(req.body);
       const driverId = req.tokenData?.driverId;
-
-      if (isNaN(requestId)) {
-        return res.status(400).json({ error: "Invalid request ID" });
-      }
-
-      // Validate ratings if provided
-      const validateRating = (rating: number | null) => {
-        return (
-          rating === null ||
-          (typeof rating === "number" && rating >= 1 && rating <= 5)
-        );
-      };
-
-      if (!validateRating(driverRating) || !validateRating(siteRating)) {
-        return res.status(400).json({
-          error: "Invalid rating. Must be null or a number between 1 and 5.",
-        });
-      }
-
-      // Validate feedbacks if provided
-      const validateFeedback = (feedback: string | null) => {
-        return feedback === null || typeof feedback === "string";
-      };
-
-      if (
-        !validateFeedback(driverFeedback) ||
-        !validateFeedback(siteFeedback)
-      ) {
-        return res
-          .status(400)
-          .json({ error: "Invalid feedback. Must be null or a string." });
-      }
 
       await service.BreakdownRequestService.closeBreakdownAndUpdateRating({
         requestId,
-        driverRating,
-        driverFeedback,
-        siteRating,
-        siteFeedback,
+        ...ratingData,
         driverId,
       });
 
-      res
-        .status(200)
-        .json({ message: "Breakdown request closed and rated successfully" });
+      res.status(200).json({ message: "Breakdown request closed and rated successfully" });
     } catch (error) {
       next(error);
     }
@@ -226,11 +171,9 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestId = parseInt(req.params.requestId, 10);
-
-      if (isNaN(requestId)) {
-        return res.status(400).json({ error: "Invalid request ID" });
-      }
+      const { requestId } = RequestIdParamSchema.parse({ 
+        requestId: req.params.requestId 
+      });
 
       const breakdownRequest =
         await service.BreakdownRequestService.getBreakdownRequestById(
@@ -247,14 +190,12 @@ router.get(
 // Add this new route
 router.get(
   "/driver-rating/:driverId",
-  clerkAuthMiddleware("customer"), // You can adjust the middleware as needed
+  clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const driverId = parseInt(req.params.driverId, 10);
-
-      if (isNaN(driverId)) {
-        return res.status(400).json({ error: "Invalid driver ID" });
-      }
+      const { driverId } = DriverIdParamSchema.parse({ 
+        driverId: req.params.driverId 
+      });
 
       const ratingCount =
         await service.BreakdownRequestService.getDriverRatingCount(driverId);
@@ -272,16 +213,9 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const driverId = parseInt(req.params.driverId, 10);
-      const requestId = parseInt(req.params.requestId, 10);
-      const page = parseInt(req.query.page as string, 10) || 1;
-      const pageSize = parseInt(req.query.pageSize as string, 10) || 10;
-
-      if (isNaN(driverId) || isNaN(requestId)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid driver ID or request ID" });
-      }
+      const { requestId } = RequestIdParamSchema.parse({ requestId: req.params.requestId });
+      const { driverId } = DriverIdParamSchema.parse({ driverId: req.params.driverId });
+      const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
       const driverProfile =
         await service.BreakdownRequestService.getDriverProfile(

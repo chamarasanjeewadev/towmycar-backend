@@ -9,7 +9,6 @@ import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
   DriverNotificationEmailType,
-  DriverQuotedPayload,
   NotificationType,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";

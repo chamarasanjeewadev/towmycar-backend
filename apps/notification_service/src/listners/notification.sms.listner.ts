@@ -24,14 +24,14 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
 
           if (isAlreadySent) {
             console.log(
-              `SMS already sent for driver: ${payloadData.driver.id}`
+              `SMS already sent for driver: ${payloadData.driver.userId}`
             );
             return;
           }
 
           if (!payloadData.driver.phoneNumber) {
             console.warn(
-              `No phone number available for driver ${payloadData.driver.id}`
+              `No phone number available for driver ${payloadData.driver.userId}`
             );
             return;
           }
@@ -45,11 +45,11 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
           );
 
           console.log(
-            `SMS notification sent successfully to driver ${payloadData.driver.id}`
+            `SMS notification sent successfully to driver ${payloadData.driver.userId}`
           );
         } catch (error) {
           console.error(
-            `Failed to process SMS for driver ${payloadData.driver.id}:`,
+            `Failed to process SMS for driver ${payloadData.driver.userId}:`,
             error
           );
         }
@@ -68,7 +68,9 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
     async (payload: NotificationPayload) => {
       try {
         if (!payload.user?.phoneNumber) {
-          console.warn(`No phone number available for user ${payload.user?.id}`);
+          console.warn(
+            `No phone number available for user ${payload.user?.id}`
+          );
           return;
         }
         await SMSNotificationService.sendSMSNotification(
@@ -86,7 +88,9 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
     async (payload: NotificationPayload) => {
       try {
         if (!payload.user?.phoneNumber) {
-          console.warn(`No phone number available for user ${payload.user?.id}`);
+          console.warn(
+            `No phone number available for user ${payload.user?.id}`
+          );
           return;
         }
         await SMSNotificationService.sendSMSNotification(
@@ -104,7 +108,9 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
     async (payload: UserNotificationEventPayload) => {
       try {
         if (!payload.user?.phoneNumber) {
-          console.warn(`No phone number available for user ${payload.user?.id}`);
+          console.warn(
+            `No phone number available for user ${payload.user?.id}`
+          );
           return;
         }
         await SMSNotificationService.sendSMSNotification(
@@ -123,7 +129,7 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
     NotificationType.DRIVER_REJECT,
     NotificationType.DRIVER_QUOTATION_UPDATED,
     NotificationType.DRIVER_ASSIGNED,
-    NotificationType.DRIVER_QUOTE,
+    NotificationType.DRIVER_QUOTED,
     NotificationType.DRIVER_ACCEPT,
     NotificationType.USER_REJECT,
     NotificationType.RATING_REVIEW,
@@ -135,7 +141,9 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
       async (payload: NotificationPayload) => {
         try {
           if (!payload.user?.phoneNumber) {
-            console.warn(`No phone number available for user ${payload.user?.id}`);
+            console.warn(
+              `No phone number available for user ${payload.user?.id}`
+            );
             return;
           }
           await SMSNotificationService.sendSMSNotification(type, payload);

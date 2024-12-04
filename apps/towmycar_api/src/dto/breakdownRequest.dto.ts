@@ -1,3 +1,4 @@
+import { UserStatus } from "@towmycar/common";
 import { z } from "zod";
 
 // Define the schema using Zod for validation
@@ -5,9 +6,17 @@ export const BreakdownRequestSchema = z.object({
   customerId: z.number().optional(),
   requestType: z.string(),
   address: z.string(),
+  toAddress: z.string(),
+  make: z.string(),
+  makeModel: z.string(),
   regNo: z.string(),
   weight: z.number(),
+  mobileNumber: z.string(),
   userLocation: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }),
+  userToLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),
   }),
@@ -23,9 +32,9 @@ export interface BreakdownRequestInput {
   customerId?: number;
   requestType: string;
   address: string;
-  toAddress:string;
-  make:string;
-  makeModel:string;
+  toAddress: string;
+  make: string;
+  makeModel: string;
   regNo: string;
   weight: number;
   mobileNumber: string;
@@ -33,10 +42,10 @@ export interface BreakdownRequestInput {
     latitude: number;
     longitude: number;
   };
-  userToLocation:{
+  userToLocation: {
     latitude: number;
     longitude: number;
-  }
+  };
   description: string;
   color: string;
   email: string;
@@ -61,8 +70,53 @@ export interface BreakdownRequestWithUserDetails {
     latitude: number;
     longitude: number;
   };
-  userToLocation:{
+  userToLocation: {
     latitude: number;
     longitude: number;
-  }
+  };
 }
+
+export const RequestIdParamSchema = z.object({
+  requestId: z
+    .string()
+    .transform(val => parseInt(val, 10))
+    .pipe(z.number().positive().int()),
+});
+
+export const DriverIdParamSchema = z.object({
+  driverId: z
+    .string()
+    .transform(val => parseInt(val, 10))
+    .pipe(z.number().positive().int()),
+});
+
+export const AssignmentIdParamSchema = z.object({
+  assignmentId: z
+    .string()
+    .transform(val => parseInt(val, 10))
+    .pipe(z.number().positive().int()),
+});
+
+export const RatingSchema = z.object({
+  driverRating: z.number().min(1).max(5).nullable(),
+  driverFeedback: z.string().nullable(),
+  siteRating: z.number().min(1).max(5).nullable(),
+  siteFeedback: z.string().nullable(),
+});
+
+// Add these new schemas
+export const AnonymousBreakdownRequestSchema = z.object({
+  body: BreakdownRequestSchema,
+});
+
+export const UserStatusSchema = z.object({
+  userStatus: z.nativeEnum(UserStatus),
+});
+
+export const OptionalRequestIdParamSchema = z.object({
+  requestId: z
+    .string()
+    .transform(val => parseInt(val, 10))
+    .pipe(z.number().positive().int())
+    .optional(),
+});

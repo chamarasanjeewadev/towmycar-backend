@@ -3,8 +3,9 @@ import {
   and,
   gt,
   eq,
-  notificationHistory,
-  NotificationHistory,
+  notifications,
+  Notification,
+  desc,
 } from "@towmycar/database";
 
 import { BaseNotificationType, NotificationType } from "@towmycar/common";
@@ -19,13 +20,24 @@ interface NotificationTrackingInput {
   lastAttempt?: Date;
 }
 
+interface NotificationInput {
+  userId: number;
+  title: string;
+  message: string;
+  url?: string;
+  notificationType: string;
+  baseNotificationType: BaseNotificationType;
+  breakdownRequestId?: number;
+  payload?: string;
+}
+
 export interface NotificationRepositoryType {
   checkNotificationSent: (
     tracking: NotificationTrackingInput
   ) => Promise<boolean>;
   trackNotification: (
     tracking: NotificationTrackingInput
-  ) => Promise<NotificationHistory>;
+  ) => Promise<Notification>;
   updateNotificationStatus: (
     breakdownRequestId: string,
     notificationType: NotificationType,
@@ -35,7 +47,10 @@ export interface NotificationRepositoryType {
   ) => Promise<void>;
   getFailedNotifications: (
     deliveryType: BaseNotificationType
-  ) => Promise<NotificationHistory[]>;
+  ) => Promise<Notification[]>;
+  saveNotification: (notification: NotificationInput) => Promise<Notification>;
+  getNotificationsByUserId: (userId: number) => Promise<Notification[]>;
+  markNotificationAsSeen: (notificationId: number) => Promise<void>;
 }
 
 const checkNotificationSent = async (
@@ -43,17 +58,16 @@ const checkNotificationSent = async (
 ): Promise<boolean> => {
   try {
     const existingNotification = await DB.select()
-      .from(notificationHistory)
+      .from(notifications)
       .where(
         and(
-          eq(notificationHistory.userId, tracking.userId),
-          eq(notificationHistory.notificationType, tracking.notificationType),
-          eq(notificationHistory.deliveryType, tracking.deliveryType),
+          eq(notifications.userId, tracking.userId),
+          eq(notifications.notificationType, tracking.notificationType),
           eq(
-            notificationHistory.breakdownRequestId,
+            notifications.breakdownRequestId,
             parseInt(tracking.breakdownRequestId)
           ),
-          gt(notificationHistory.createdAt, new Date(Date.now() - 3600000))
+          gt(notifications.createdAt, new Date(Date.now() - 3600000))
         )
       )
       .limit(1);
@@ -67,19 +81,19 @@ const checkNotificationSent = async (
 
 const trackNotification = async (
   tracking: NotificationTrackingInput
-): Promise<NotificationHistory> => {
+): Promise<Notification> => {
   try {
     const insertData = {
       userId: tracking.userId,
       notificationType: tracking.notificationType,
-      deliveryType: tracking.deliveryType,
       breakdownRequestId: parseInt(tracking.breakdownRequestId),
       status: tracking.status || "SENT",
       retryCount: tracking.retryCount || 0,
       lastAttempt: tracking.lastAttempt || new Date(),
     };
 
-    const [result] = await DB.insert(notificationHistory)
+    const [result] = await DB.insert(notifications)
+      //@ts-ignore
       .values(insertData)
       .returning();
     return result;
@@ -104,17 +118,13 @@ const updateNotificationStatus = async (
       ...(retryCount !== undefined && { retryCount }),
     };
 
-    await DB.update(notificationHistory)
-    //@ts-ignore
+    await DB.update(notifications)
+      //@ts-ignore
       .set(updateData)
       .where(
         and(
-          eq(
-            notificationHistory.breakdownRequestId,
-            parseInt(breakdownRequestId)
-          ),
-          eq(notificationHistory.notificationType, notificationType),
-          eq(notificationHistory.deliveryType, deliveryType)
+          eq(notifications.breakdownRequestId, parseInt(breakdownRequestId)),
+          eq(notifications.notificationType, notificationType)
         )
       );
   } catch (error) {
@@ -125,18 +135,65 @@ const updateNotificationStatus = async (
 
 const getFailedNotifications = async (
   deliveryType: BaseNotificationType
-): Promise<NotificationHistory[]> => {
+): Promise<Notification[]> => {
   try {
     return await DB.select()
-      .from(notificationHistory)
-      .where(
-        and(
-          eq(notificationHistory.status, "FAILED"),
-          eq(notificationHistory.deliveryType, deliveryType)
-        )
-      );
+      .from(notifications)
+      .where(and(eq(notifications.status, "FAILED")));
   } catch (error) {
     console.error("Error in getFailedNotifications:", error);
+    throw error;
+  }
+};
+
+const saveNotification = async (
+  notification: NotificationInput
+): Promise<Notification> => {
+  try {
+    const [result] = await DB.insert(notifications)
+      //@ts-ignore
+      .values({
+        userId: notification.userId,
+        notificationType: notification.notificationType,
+        baseNotificationType: notification.baseNotificationType.toString(),
+        payload: notification.payload,
+        title: notification.title,
+        message: notification.message,
+        breakdownRequestId: notification.breakdownRequestId,
+        url: notification.url,
+      })
+      .returning();
+    return result;
+  } catch (error) {
+    console.error("Error in saveNotification:", error);
+    throw error;
+  }
+};
+
+const getNotificationsByUserId = async (
+  userId: number
+): Promise<Notification[]> => {
+  try {
+    return await DB.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  } catch (error) {
+    console.error("Error in getNotificationsByUserId:", error);
+    throw error;
+  }
+};
+
+const markNotificationAsSeen = async (
+  notificationId: number
+): Promise<void> => {
+  try {
+    await DB.update(notifications)
+      //@ts-ignore
+      .set({ isSeen: true })
+      .where(eq(notifications.id, notificationId));
+  } catch (error) {
+    console.error("Error in markNotificationAsSeen:", error);
     throw error;
   }
 };
@@ -146,4 +203,7 @@ export const NotificationRepository: NotificationRepositoryType = {
   trackNotification,
   updateNotificationStatus,
   getFailedNotifications,
+  saveNotification,
+  getNotificationsByUserId,
+  markNotificationAsSeen,
 };

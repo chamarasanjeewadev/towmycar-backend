@@ -24,11 +24,8 @@ import { BreakdownRequestStatus, DriverStatus ,UserStatus} from "@towmycar/commo
 import {
   ConflictError,
   DataBaseError,
-  ERROR_CODES,
-  ERROR_MESSAGES,
-  STATUS_CODES,
 } from "../utils/error";
-import { BreakdownAssignmentDetails } from "./../types/types";
+import { BreakdownAssignmentDetails, CloseBreakdownParams } from "./../types/types";
 import { logger } from "../utils";
 
 // Add this type definition
@@ -63,14 +60,7 @@ type BreakdownRequestWithUserDetails = {
   }[];
 };
 
-type CloseBreakdownParams = {
-  requestId: number;
-  driverId?: number;
-  driverRating: number | null;
-  driverFeedback: string | null;
-  siteRating: number | null;
-  siteFeedback: string | null;
-};
+
 
 // Add this interface near the top with other type definitions
 interface DriverProfile {
