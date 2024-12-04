@@ -6,7 +6,7 @@ import {
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
 import {
-  registerEmailListener,
+  registerNotificationListener,
   registerPushNotificationListener,
   registerSmsNotificationListener,
   sendSNS,
@@ -17,7 +17,7 @@ import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
 
 const notificationEmitter = new EventEmitter();
-registerEmailListener(notificationEmitter);
+registerNotificationListener(notificationEmitter);
 registerPushNotificationListener(notificationEmitter);
 registerSmsNotificationListener(notificationEmitter);
 
@@ -237,4 +237,3 @@ export const BreakdownRequestService = {
     pageSize?: number
   ) => getDriverProfile(driverId, requestId, page, pageSize),
 };
-

@@ -8,18 +8,36 @@ import { userCreatedEmail } from "../templates/userCreatedEmail";
 import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
-  DriverNotificationEmailType,
+  BaseNotificationType,
+  DriverNotificationPayload,
+  EmailPayloadType,
   NotificationType,
+  UserNotificationNotificationpayload,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
+import { NotificationRepository } from "repository/notification.repository";
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
 
-export const sendEmail = async(type: NotificationType, payload: any) => {
+export const sendEmail = async (
+  type: NotificationType,
+  payload: EmailPayloadType
+) => {
   try {
-    console.log("payload in sendEmail", type, payload);
-    const emailContent = getEmailContent(type, payload);
+    // console.log("payload in sendEmail", type, payload);
+    // const emailContent = getEmailContent(type, payload);
+
+    // await NotificationRepository.saveNotification({
+    //   userId: payload?.driver?.userId,
+    //   breakdownRequestId: payload.breakdownRequestId,
+    //   title: emailContent.subject,
+    //   message: emailContent.htmlBody,
+    //   baseNotificationType: BaseNotificationType.EMAIL,
+    //   notificationType: type.toString(),
+    //   payload: JSON.stringify(payload),
+    //   url: payload.viewRequestLink,
+    // });
 
     const params = {
       Source: "towmycar.uk@gmail.com",
@@ -28,12 +46,12 @@ export const sendEmail = async(type: NotificationType, payload: any) => {
       },
       Message: {
         Subject: {
-          Data: emailContent.subject as string,
+          Data: payload.subject as string,
           Charset: "UTF-8",
         },
         Body: {
           Html: {
-            Data: emailContent.htmlBody,
+            Data: payload.htmlBody,
             Charset: "UTF-8",
           },
         },
@@ -58,7 +76,7 @@ export const sendEmail = async(type: NotificationType, payload: any) => {
 };
 
 // Update the getEmailContent function
-function getEmailContent(type: NotificationType, payload: any) {
+export function getEmailContent(type: NotificationType, payload: any) {
   switch (type) {
     case NotificationType.USER_REQUEST:
       return userRequestEmail(payload);
@@ -73,11 +91,11 @@ function getEmailContent(type: NotificationType, payload: any) {
     case NotificationType.USER_CREATED:
       return userCreatedEmail(payload);
     case NotificationType.DRIVER_ASSIGNED:
-      return driverNotificationEmail(payload  as DriverNotificationEmailType);
+      return driverNotificationEmail(payload as DriverNotificationPayload);
     case NotificationType.USER_NOTIFICATION:
       return userNotificationEmail(payload);
     case NotificationType.DRIVER_NOTIFICATION:
-      return driverNotificationEmail(payload as DriverNotificationEmailType);
+      return driverNotificationEmail(payload as DriverNotificationPayload);
     case NotificationType.RATING_REVIEW:
       return RatingRequestEmail({
         requestId: payload.breakdownRequestId,

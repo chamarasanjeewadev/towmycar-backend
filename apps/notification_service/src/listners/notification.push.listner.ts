@@ -3,15 +3,15 @@ import {
   BaseNotificationType,
   NotificationPayload,
   NotificationType,
-  DriverNotificationEmailType,
+  DriverNotificationPayload,
 } from "@towmycar/common";
-import { UserNotificationService } from "../service/notification.service";
+import { UserNotificationService } from "../service/notification.notification.service";
 import { NotificationRepository } from "../repository/notification.repository";
 
 export function registerPushNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     `${BaseNotificationType.PUSH}:${NotificationType.DRIVER_NOTIFICATION}`,
-    async (payload: DriverNotificationEmailType[]) => {
+    async (payload: DriverNotificationPayload[]) => {
       const processPromises = payload.map(async payloadData => {
         try {
           const isAlreadySent = false;
@@ -51,7 +51,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
 
   emitter.on(
     `${BaseNotificationType.PUSH}:${NotificationType.USER_NOTIFICATION}`,
-    async (payload: NotificationPayload) => {
+    async (payload: DriverNotificationPayload) => {
       try {
         await UserNotificationService.sendPushNotification(
           NotificationType.USER_NOTIFICATION,

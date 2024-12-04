@@ -1,11 +1,14 @@
 import AWS, { SNS } from "aws-sdk";
-import { BreakdownNotificationType } from "../types/types";
+import {
+  BreakdownNotificationType,
+  DriverNotificationPayload,
+} from "../types/types";
 import { NotificationType } from "../enums";
 
 // AWS.config.update({ region:process.env.REGION});
 
 const sns = new SNS({
-  region:process.env.REGION|| "eu-west-2", 
+  region: process.env.REGION || "eu-west-2",
 });
 
 //TODO need to refactor this to use sendNotification
@@ -34,7 +37,10 @@ export const sendSNS = async (topicArn: string, message: any) => {
 
 export const sendNotification = async (
   topicArn: string,
-  message:BreakdownNotificationType 
+  message: {
+    subType: NotificationType;
+    payload: DriverNotificationPayload[] | DriverNotificationPayload;
+  }
 ) => {
   const snsParams = {
     Message: JSON.stringify(message),

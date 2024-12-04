@@ -9,7 +9,7 @@ console.log('DB_URL:', DB_URL);
 console.log('SQS_QUEUE_URL:', SQS_QUEUE_URL);
 
 export const SMS_CONFIG = {
-    isEnabled: process.env.ENABLE_SMS === "true",
+    isEnabled: process.env.ENABLE_SMS ,
     provider: process.env.SMS_PROVIDER,
     twilio: {
       accountSid: process.env.TWILIO_ACCOUNT_SID,

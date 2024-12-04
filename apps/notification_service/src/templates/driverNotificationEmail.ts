@@ -1,12 +1,12 @@
 import {
   NotificationPayload,
   createGoogleMapsLink,
-  DriverNotificationEmailType,
+  DriverNotificationPayload,
   formatDate,
 } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
-export function driverNotificationEmail(payload: DriverNotificationEmailType) {
+export function driverNotificationEmail(payload: DriverNotificationPayload) {
   const content = `
     <h1>New Breakdown Request: Your Assistance Needed!</h1>
     <p>Hello ${payload.driver.firstName},</p>

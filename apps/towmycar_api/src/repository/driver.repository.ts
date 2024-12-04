@@ -14,10 +14,7 @@ import {
   sql,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import {
-  NotFoundError,
-  DataBaseError,
-} from "../utils/error/errors";
+import { NotFoundError, DataBaseError } from "../utils/error/errors";
 import crypto from "crypto"; // Added import for crypto
 import {
   BreakdownAssignmentDetails,
@@ -27,7 +24,11 @@ import { logger } from "../utils";
 import { payments } from "@towmycar/database/db-schema";
 import { notifications } from "@towmycar/database/db-schema";
 import { Notification } from "@towmycar/database/db-schema";
-import { UserStatus ,DriverStatus, BreakdownRequestStatus} from "@towmycar/common";
+import {
+  UserStatus,
+  DriverStatus,
+  BreakdownRequestStatus,
+} from "@towmycar/common";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -90,7 +91,17 @@ export interface IDriverRepository {
   update(id: number, data: Partial<DriverProfileDtoType>): Promise<Driver>;
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
   getDriverById(id: number): Promise<Driver | null>;
-  getUserByRequestId(requestId: number): Promise<Partial<Customer> | null>;
+  getUserByRequestId(requestId: number): Promise<
+    | (Partial<Customer> & {
+        firstName: string;
+        lastName: string;
+        email: string;
+        postcode: string;
+        vehicleRegistration: string;
+        mobileNumber: string;
+      })
+    | null
+  >;
   updateDriver(
     driverId: number,
     updateData: Partial<Driver>

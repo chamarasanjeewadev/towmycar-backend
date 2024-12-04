@@ -1,8 +1,11 @@
 import AWS from "aws-sdk";
 import { logger } from "./index";
-import { SQS_QUEUE_URL } from "../config";
+import { SQS_QUEUE_URL, SMS_CONFIG } from "../config";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
-import { BreakdownNotificationType } from "@towmycar/common";
+import {
+  BaseNotificationType,
+  BreakdownNotificationType,
+} from "@towmycar/common";
 import { EventEmitter } from "stream";
 import { registerEmailListener } from "../listners/notification.email.listner";
 import { registerPushNotificationListener } from "../listners/notification.push.listner";
@@ -12,10 +15,28 @@ AWS.config.update({ region: process.env.REGION });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 const queueURL = SQS_QUEUE_URL;
 
+const NOTIFICATION_TYPES = [
+  BaseNotificationType.EMAIL,
+  BaseNotificationType.PUSH,
+  ...(SMS_CONFIG.isEnabled ? [BaseNotificationType.SMS] : []),
+] as const;
+
 const eventEmitter = new EventEmitter();
 registerEmailListener(eventEmitter);
 registerPushNotificationListener(eventEmitter);
-registerSmsNotificationListener(eventEmitter);
+if (SMS_CONFIG.isEnabled) {
+  registerSmsNotificationListener(eventEmitter);
+}
+
+function emitNotifications(
+  emitter: EventEmitter,
+  subType: string,
+  payload: unknown
+) {
+  NOTIFICATION_TYPES.forEach((type) => {
+    emitter.emit(`${type}:${subType}`, payload);
+  });
+}
 
 async function processMessage(message: AWS.SQS.Message) {
   try {
@@ -24,9 +45,7 @@ async function processMessage(message: AWS.SQS.Message) {
       const messageData: BreakdownNotificationType = JSON.parse(
         snsNotification.Message
       );
-      console.log("parsed sns msg", JSON.stringify(messageData));
-      eventEmitter.emit(`${messageData.type}:${messageData.subType}`, messageData.payload);
-     
+      emitNotifications(eventEmitter, messageData.subType, messageData.payload);
     } else {
       logger.warn("Invalid SNS notification: missing Message field");
     }
@@ -40,14 +59,6 @@ async function processMessage(message: AWS.SQS.Message) {
   } catch (error) {
     logger.error("Error processing message:", error);
     throw error;
-  }
-  finally {
-    await sqs
-      .deleteMessage({
-        QueueUrl: queueURL!,
-        ReceiptHandle: message.ReceiptHandle ?? "",
-      })
-      .promise();
   }
 }
 

@@ -4,36 +4,64 @@ import {
   DriverQuotedEventPayload,
   NotificationType,
   UserNotificationEventPayload,
-  DriverNotificationEmailType,
+  DriverNotificationPayload,
+  UserNotificationNotificationpayload as UserNotificationEmailPayload,
+  UserNotificationNotificationpayload,
+  EmailPayloadType,
 } from "@towmycar/common";
-import { sendEmail } from "../service/email.service";
-import { NotificationRepository } from "../repository/notification.repository";
+import {
+  getEmailContent,
+  sendEmail,
+} from "../service/notification.email.service";
+import { NotificationRepository } from "repository/notification.repository";
 
 export function registerEmailListener(emitter: EventEmitter): void {
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_NOTIFICATION}`,
-    async (payload: DriverNotificationEmailType[]) => {
-      const processPromises = payload.map(async payloadData => {
+    async (payload: DriverNotificationPayload[]) => {
+      const processPromises = payload.map(async payload => {
         try {
           const isAlreadySent = false;
-          // await NotificationRepository.checkNotificationSent({
-          //   userId: payloadData.driver.id,
-          //   notificationType: NotificationType.DRIVER_NOTIFICATION,
-          //   deliveryType: BaseNotificationType.EMAIL,
-          //   breakdownRequestId: payloadData.breakdownRequestId.toString()
-          // });
+          await NotificationRepository.checkNotificationSent({
+            userId: payload.driver.userId,
+            notificationType: NotificationType.DRIVER_NOTIFICATION,
+            deliveryType: BaseNotificationType.EMAIL,
+            breakdownRequestId: payload.breakdownRequestId.toString(),
+          });
 
           if (isAlreadySent) {
             console.log(
-              `Email already sent for driver: ${payloadData.driver.userId}`
+              `Email already sent for driver: ${payload.driver.userId}`
             );
             return;
           }
+          const emailContent = getEmailContent(
+            NotificationType.USER_NOTIFICATION,
+            payload
+          );
+          await NotificationRepository.saveNotification({
+            userId: payload?.driver?.userId,
+            breakdownRequestId: payload.breakdownRequestId,
+            title: emailContent.subject,
+            message: emailContent.htmlBody,
+            baseNotificationType: BaseNotificationType.EMAIL,
+            notificationType: NotificationType.USER_NOTIFICATION.toString(),
+            payload: JSON.stringify(payload),
+            url: payload.viewRequestLink,
+          });
+          const emailPayloadType: EmailPayloadType = {
+            recipientEmail: payload.driver?.email,
+            subject: emailContent.subject,
+            htmlBody: emailContent.htmlBody,
+          };
 
-          await sendEmail(NotificationType.DRIVER_NOTIFICATION, payloadData);
+          await sendEmail(
+            NotificationType.DRIVER_NOTIFICATION,
+            emailPayloadType
+          );
         } catch (error) {
           console.error(
-            `Failed to process email for driver ${payloadData.driver.userId}:`,
+            `Failed to process email for driver ${payload.driver.userId}:`,
             error
           );
         }
@@ -49,21 +77,117 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.USER_NOTIFICATION}`,
-    async (payload: UserNotificationEventPayload) => {
-      // modify payload as push notification expects
+    async (payload: DriverNotificationPayload) => {
+      const emailContent = getEmailContent(
+        NotificationType.USER_NOTIFICATION,
+        payload
+      );
+      const isAlreadySent = false;
+      await NotificationRepository.checkNotificationSent({
+        userId: payload.driver.userId,
+        notificationType: NotificationType.DRIVER_NOTIFICATION,
+        deliveryType: BaseNotificationType.EMAIL,
+        breakdownRequestId: payload.breakdownRequestId.toString(),
+      });
+
+      if (isAlreadySent) {
+        console.log(`Email already sent for driver: ${payload.driver.userId}`);
+        return;
+      }
+      await NotificationRepository.saveNotification({
+        userId: payload?.driver?.userId,
+        breakdownRequestId: payload.breakdownRequestId,
+        title: emailContent.subject,
+        message: emailContent.htmlBody,
+        baseNotificationType: BaseNotificationType.EMAIL,
+        notificationType: NotificationType.USER_NOTIFICATION.toString(),
+        payload: JSON.stringify(payload),
+        url: payload.viewRequestLink,
+      });
+      const emailPayloadType: EmailPayloadType = {
+        recipientEmail: payload.user?.email,
+        subject: emailContent.subject,
+        htmlBody: emailContent.htmlBody,
+      };
+
+      await sendEmail(NotificationType.DRIVER_QUOTED, emailPayloadType);
     }
   );
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
     async (payload: DriverQuotedEventPayload) => {
-      await sendEmail(NotificationType.DRIVER_QUOTED, payload);
+      const isAlreadySent = false;
+      await NotificationRepository.checkNotificationSent({
+        userId: payload.driver.userId,
+        notificationType: NotificationType.DRIVER_NOTIFICATION,
+        deliveryType: BaseNotificationType.EMAIL,
+        breakdownRequestId: payload.requestId.toString(),
+      });
+
+      if (isAlreadySent) {
+        console.log(`Email already sent for driver: ${payload.driver.userId}`);
+        return;
+      }
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_QUOTED,
+        payload
+      );
+      await NotificationRepository.saveNotification({
+        userId: payload?.driver?.userId,
+        breakdownRequestId: payload.requestId,
+        title: emailContent.subject,
+        message: emailContent.htmlBody,
+        baseNotificationType: BaseNotificationType.EMAIL,
+        notificationType: NotificationType.DRIVER_QUOTED.toString(),
+        payload: JSON.stringify(payload),
+        url: payload.viewRequestLink,
+      });
+      const emailPayloadType: EmailPayloadType = {
+        recipientEmail: payload.user?.email,
+        subject: emailContent.subject,
+        htmlBody: emailContent.htmlBody,
+      };
+
+      await sendEmail(NotificationType.DRIVER_QUOTED, emailPayloadType);
       // modify payload as push notification expects
     }
   );
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTATION_UPDATED}`,
     async (payload: DriverQuotedEventPayload) => {
-      await sendEmail(NotificationType.DRIVER_QUOTATION_UPDATED, payload);
+      const isAlreadySent = false;
+      await NotificationRepository.checkNotificationSent({
+        userId: payload.driver.userId,
+        notificationType: NotificationType.DRIVER_NOTIFICATION,
+        deliveryType: BaseNotificationType.EMAIL,
+        breakdownRequestId: payload.requestId.toString(),
+      });
+
+      if (isAlreadySent) {
+        console.log(`Email already sent for driver: ${payload.driver.userId}`);
+        return;
+      }
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_QUOTED,
+        payload
+      );
+      await NotificationRepository.saveNotification({
+        userId: payload?.driver?.userId,
+        breakdownRequestId: payload.requestId,
+        title: emailContent.subject,
+        message: emailContent.htmlBody,
+        baseNotificationType: BaseNotificationType.EMAIL,
+        notificationType: NotificationType.DRIVER_QUOTED.toString(),
+        payload: JSON.stringify(payload),
+        url: payload.viewRequestLink,
+      });
+      const emailPayloadType: EmailPayloadType = {
+        recipientEmail: payload.user?.email,
+        subject: emailContent.subject,
+        htmlBody: emailContent.htmlBody,
+      };
+
+      await sendEmail(NotificationType.DRIVER_QUOTED, emailPayloadType);
       // modify payload as push notification expects
     }
   );

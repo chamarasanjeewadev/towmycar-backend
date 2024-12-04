@@ -8,15 +8,12 @@ import {
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
 import {
-  BreakdownRequestStatus,
   DriverAcceptedEventPayload,
   DriverClosedEventPayload,
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
   DriverStatus,
-  registerEmailListener,
-  registerPushNotificationListener,
-  registerSmsNotificationListener,
+  registerNotificationListener,
   TokenService,
   UserWithCustomer,
   UserWithDriver,
@@ -43,9 +40,7 @@ export class DriverService {
   notificationEmitter = null;
   constructor() {
     this.notificationEmitter = new EventEmitter();
-    registerEmailListener(this.notificationEmitter);
-    registerPushNotificationListener(this.notificationEmitter);
-    registerSmsNotificationListener(this.notificationEmitter);
+    registerNotificationListener(this.notificationEmitter);
   }
 
   async getDriverByEmail(email: string, repository: IDriverRepository) {
@@ -97,14 +92,14 @@ export class DriverService {
       },
     };
     const user: UserWithCustomer = {
-      id: driverInfo.id,
-      email: driverInfo.email,
-      firstName: driverInfo.firstName,
-      lastName: driverInfo.lastName || undefined,
-      phoneNumber: driverInfo.phoneNumber || undefined,
+      id: customerDetails.id,
+      email: customerDetails.email,
+      firstName: customerDetails.firstName,
+      lastName: customerDetails.lastName,
+      phoneNumber: customerDetails.mobileNumber || undefined,
       customer: {
         id: customerDetails.id,
-        phoneNumber: driverInfo.phoneNumber,
+        phoneNumber: customerDetails.mobileNumber,
       },
     };
 

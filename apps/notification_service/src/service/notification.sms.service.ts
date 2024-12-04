@@ -1,5 +1,5 @@
 import { NotificationPayload, NotificationType } from "@towmycar/common";
-import { getSMSProvider } from "./../utils/sms/smsProviderFactory";
+import { getSMSProvider } from "../utils/sms/smsProviderFactory";
 
 const smsProvider = getSMSProvider();
 async function sendGenericSMS(

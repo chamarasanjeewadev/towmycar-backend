@@ -4,14 +4,14 @@ import {
   NotificationPayload,
   NotificationType,
   UserNotificationEventPayload,
-  DriverNotificationEmailType,
+  DriverNotificationPayload,
 } from "@towmycar/common";
-import { SMSNotificationService } from "../service/sms.service";
+import { SMSNotificationService } from "../service/notification.sms.service";
 
 export function registerSmsNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     `${BaseNotificationType.SMS}:${NotificationType.DRIVER_NOTIFICATION}`,
-    async (payload: DriverNotificationEmailType[]) => {
+    async (payload: DriverNotificationPayload[]) => {
       const processPromises = payload.map(async payloadData => {
         try {
           const isAlreadySent = false;
