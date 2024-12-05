@@ -2,6 +2,7 @@ import AWS, { SNS } from "aws-sdk";
 import {
   BreakdownNotificationType,
   DriverNotificationPayload,
+  DriverQuotedPayload,
 } from "../types/types";
 import { NotificationType } from "../enums";
 
@@ -39,7 +40,10 @@ export const sendNotification = async (
   topicArn: string,
   message: {
     subType: NotificationType;
-    payload: DriverNotificationPayload[] | DriverNotificationPayload;
+    payload:
+      | DriverNotificationPayload[]
+      | DriverNotificationPayload
+      | DriverQuotedPayload;
   }
 ) => {
   const snsParams = {

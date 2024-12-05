@@ -165,7 +165,7 @@ export interface BaseNotificationPayload {
   sendToId: number;
   breakdownRequestId: number;
   viewRequestLink: string;
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 // Driver Registration

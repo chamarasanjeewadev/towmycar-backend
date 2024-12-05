@@ -7,6 +7,8 @@ import {
   DriverQuotedEventPayload,
   UserNotificationNotificationpayload,
   DriverNotificationPayload,
+  UserNotificationPayload,
+  DriverQuotedPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -53,7 +55,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.USER_NOTIFICATION,
     async (payload: UserNotificationNotificationpayload) => {
-      const emailPlayload: DriverNotificationPayload = {
+      const driverNotificationPlayload: UserNotificationPayload = {
         sendToId: payload.user.id,
         driver: payload.driver,
         location: payload.location,
@@ -68,21 +70,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
         {
           subType: NotificationType.USER_NOTIFICATION,
-          payload: emailPlayload,
-        }
-      );
-    }
-  );
-
-  emitter.on(
-    NotificationType.DRIVER_QUOTATION_UPDATED,
-    async (payload: DriverQuotedEventPayload) => {
-      // modify payload as push notification expects
-      await sendSNSNotification(
-        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
-        {
-          subType: NotificationType.DRIVER_QUOTATION_UPDATED,
-          payload,
+          payload: driverNotificationPlayload,
         }
       );
     }
@@ -91,11 +79,41 @@ export function registerNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.DRIVER_QUOTED,
     async (payload: DriverQuotedEventPayload) => {
+      const driverQuotedPlayload: DriverQuotedPayload = {
+        sendToId: payload.user.id,
+        driver: payload.driver,
+        breakdownRequestId: payload.requestId,
+        user: payload.user,
+        viewRequestLink: payload.viewRequestLink,
+        price: payload.newPrice,
+        estimation: payload.estimation,
+      };
       await sendSNSNotification(
         process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
         {
           subType: NotificationType.DRIVER_QUOTED,
-          payload,
+          payload: driverQuotedPlayload,
+        }
+      );
+    }
+  );
+  emitter.on(
+    NotificationType.DRIVER_QUOTATION_UPDATED,
+    async (payload: DriverQuotedEventPayload) => {
+      const driverQuotedPlayload: DriverQuotedPayload = {
+        sendToId: payload.user.id,
+        driver: payload.driver,
+        breakdownRequestId: payload.requestId,
+        user: payload.user,
+        viewRequestLink: payload.viewRequestLink,
+        price: payload.newPrice,
+        estimation: payload.estimation,
+      };
+      await sendSNSNotification(
+        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+        {
+          subType: NotificationType.DRIVER_QUOTATION_UPDATED,
+          payload: driverQuotedPlayload,
         }
       );
     }

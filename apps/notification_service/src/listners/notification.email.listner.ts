@@ -8,6 +8,8 @@ import {
   UserNotificationNotificationpayload as UserNotificationEmailPayload,
   UserNotificationNotificationpayload,
   EmailPayloadType,
+  UserNotificationPayload,
+  DriverQuotedPayload,
 } from "@towmycar/common";
 import {
   getEmailContent,
@@ -77,7 +79,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.USER_NOTIFICATION}`,
-    async (payload: DriverNotificationPayload) => {
+    async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_NOTIFICATION,
         payload
@@ -85,7 +87,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       const isAlreadySent = false;
       await NotificationRepository.checkNotificationSent({
         userId: payload.driver.userId,
-        notificationType: NotificationType.DRIVER_NOTIFICATION,
+        notificationType: NotificationType.USER_NOTIFICATION,
         deliveryType: BaseNotificationType.EMAIL,
         breakdownRequestId: payload.breakdownRequestId.toString(),
       });
@@ -110,18 +112,18 @@ export function registerEmailListener(emitter: EventEmitter): void {
         htmlBody: emailContent.htmlBody,
       };
 
-      await sendEmail(NotificationType.DRIVER_QUOTED, emailPayloadType);
+      await sendEmail(NotificationType.USER_NOTIFICATION, emailPayloadType);
     }
   );
   emitter.on(
     `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
-    async (payload: DriverQuotedEventPayload) => {
+    async (payload: DriverQuotedPayload) => {
       const isAlreadySent = false;
       await NotificationRepository.checkNotificationSent({
         userId: payload.driver.userId,
-        notificationType: NotificationType.DRIVER_NOTIFICATION,
+        notificationType: NotificationType.DRIVER_QUOTED,
         deliveryType: BaseNotificationType.EMAIL,
-        breakdownRequestId: payload.requestId.toString(),
+        breakdownRequestId: payload.breakdownRequestId.toString(),
       });
 
       if (isAlreadySent) {
@@ -134,7 +136,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       );
       await NotificationRepository.saveNotification({
         userId: payload?.driver?.userId,
-        breakdownRequestId: payload.requestId,
+        breakdownRequestId: payload.breakdownRequestId,
         title: emailContent.subject,
         message: emailContent.htmlBody,
         baseNotificationType: BaseNotificationType.EMAIL,
@@ -158,7 +160,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       const isAlreadySent = false;
       await NotificationRepository.checkNotificationSent({
         userId: payload.driver.userId,
-        notificationType: NotificationType.DRIVER_NOTIFICATION,
+        notificationType: NotificationType.DRIVER_QUOTATION_UPDATED,
         deliveryType: BaseNotificationType.EMAIL,
         breakdownRequestId: payload.requestId.toString(),
       });
@@ -177,7 +179,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         title: emailContent.subject,
         message: emailContent.htmlBody,
         baseNotificationType: BaseNotificationType.EMAIL,
-        notificationType: NotificationType.DRIVER_QUOTED.toString(),
+        notificationType: NotificationType.DRIVER_QUOTATION_UPDATED.toString(),
         payload: JSON.stringify(payload),
         url: payload.viewRequestLink,
       });
@@ -187,7 +189,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         htmlBody: emailContent.htmlBody,
       };
 
-      await sendEmail(NotificationType.DRIVER_QUOTED, emailPayloadType);
+      await sendEmail(NotificationType.DRIVER_QUOTATION_UPDATED, emailPayloadType);
       // modify payload as push notification expects
     }
   );
