@@ -38,7 +38,7 @@ export enum UserStatus {
   INPROGRESS = "INPROGRESS",
 }
 
-export enum BaseNotificationType {
+export enum DeliveryNotificationType {
   EMAIL = "EMAIL",
   SMS = "SMS",
   PUSH = "PUSH",

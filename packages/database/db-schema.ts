@@ -12,7 +12,10 @@ import {
   unique,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { BaseNotificationType, BreakdownRequestStatus } from "@towmycar/common";
+import {
+  DeliveryNotificationType,
+  BreakdownRequestStatus,
+} from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -254,6 +257,9 @@ export const notifications = pgTable("notifications", {
   baseNotificationType: varchar("base_notification_type", {
     length: 100,
   }),
+  deliveryType: varchar("delivery_type", {
+    length: 100,
+  }),
   notificationType: varchar("notification_type", { length: 100 }).notNull(),
   breakdownRequestId: integer("breakdown_request_id").references(
     () => breakdownRequest.id,
@@ -283,4 +289,4 @@ export type Vehicle = typeof vehicles.$inferSelect;
 export type Chat = typeof chats.$inferSelect;
 export type ServiceRating = typeof serviceRatings.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
-export type Notification = typeof notifications.$inferSelect;
+export type Notifications = typeof notifications.$inferSelect;

@@ -24,7 +24,7 @@ export const driverQuotationUpdatedEmail = (payload: any) => {
   });
 
   return {
-    subject: `Great news! Quotation ready for your Request #${payload.breakdownRequestId}`,
+    subject: `Quotation updated by driver for your Request #${payload.breakdownRequestId}`,
     htmlBody,
   };
 };

@@ -1,59 +1,75 @@
 import { EventEmitter } from "events";
 import {
-  BaseNotificationType,
+  DeliveryNotificationType,
   NotificationPayload,
   NotificationType,
-  UserNotificationEventPayload,
   DriverNotificationPayload,
+  UserNotificationPayload,
+  ListnerPayload,
 } from "@towmycar/common";
 import { SMSNotificationService } from "../service/notification.sms.service";
+import { NotificationRepository } from "../repository/notification.repository";
+
+async function processSMSNotification(
+  notificationType: NotificationType,
+  payload: ListnerPayload
+) {
+  try {
+    const userId = payload.sendToId;
+
+    const isAlreadySent = await NotificationRepository.checkNotificationSent({
+      userId,
+      notificationType,
+      deliveryType: DeliveryNotificationType.SMS,
+      breakdownRequestId: payload.breakdownRequestId,
+    });
+
+    if (isAlreadySent) {
+      console.log(
+        `SMS notification already sent for user/driver: ${userId}, type: ${notificationType}`
+      );
+      return;
+    }
+
+    const smsPayload = SMSNotificationService.generateSMSNotificationPayload(
+      notificationType,
+      payload
+    );
+
+    await SMSNotificationService.sendSMSNotification(notificationType, payload);
+
+    await NotificationRepository.saveNotification({
+      userId: payload.sendToId,
+      breakdownRequestId: payload.breakdownRequestId,
+      baseNotificationType: DeliveryNotificationType.SMS,
+      deliveryType: DeliveryNotificationType.SMS,
+      notificationType: notificationType,
+      payload: JSON.stringify(payload),
+      url: smsPayload.viewLink,
+      title: notificationType,
+      message: smsPayload.message,
+    });
+
+    console.log(`SMS notification sent successfully to ${userId}`);
+  } catch (error) {
+    console.error(
+      `Failed to process ${notificationType} SMS notification for user/driver:`,
+      error
+    );
+  }
+}
 
 export function registerSmsNotificationListener(emitter: EventEmitter): void {
+  // DRIVER_NOTIFICATION handler (array payload)
   emitter.on(
-    `${BaseNotificationType.SMS}:${NotificationType.DRIVER_NOTIFICATION}`,
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_NOTIFICATION}`,
     async (payload: DriverNotificationPayload[]) => {
-      const processPromises = payload.map(async payloadData => {
-        try {
-          const isAlreadySent = false;
-          // await NotificationRepository.checkNotificationSent({
-          //   userId: payloadData.driver.id,
-          //   notificationType: NotificationType.DRIVER_NOTIFICATION,
-          //   deliveryType: BaseNotificationType.SMS,
-          //   breakdownRequestId: payloadData.breakdownRequestId.toString()
-          // });
-
-          if (isAlreadySent) {
-            console.log(
-              `SMS already sent for driver: ${payloadData.driver.userId}`
-            );
-            return;
-          }
-
-          if (!payloadData.driver.phoneNumber) {
-            console.warn(
-              `No phone number available for driver ${payloadData.driver.userId}`
-            );
-            return;
-          }
-
-          await SMSNotificationService.sendSMSNotification(
-            NotificationType.DRIVER_NOTIFICATION,
-            {
-              ...payloadData,
-              viewRequestLink: payloadData.viewRequestLink,
-            }
-          );
-
-          console.log(
-            `SMS notification sent successfully to driver ${payloadData.driver.userId}`
-          );
-        } catch (error) {
-          console.error(
-            `Failed to process SMS for driver ${payloadData.driver.userId}:`,
-            error
-          );
-        }
-      });
+      const processPromises = payload.map(payloadData =>
+        processSMSNotification(
+          NotificationType.DRIVER_NOTIFICATION,
+          payloadData
+        )
+      );
 
       try {
         await Promise.allSettled(processPromises);
@@ -63,94 +79,102 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
     }
   );
 
+  // USER_NOTIFICATION handler
   emitter.on(
-    `${BaseNotificationType.SMS}:${NotificationType.USER_REQUEST}`,
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_NOTIFICATION}`,
+    async (payload: UserNotificationPayload) => {
+      await processSMSNotification(NotificationType.USER_NOTIFICATION, payload);
+    }
+  );
+
+  // USER_REQUEST handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_REQUEST}`,
     async (payload: NotificationPayload) => {
-      try {
-        if (!payload.user?.phoneNumber) {
-          console.warn(
-            `No phone number available for user ${payload.user?.id}`
-          );
-          return;
-        }
-        await SMSNotificationService.sendSMSNotification(
-          NotificationType.USER_REQUEST,
-          payload
-        );
-      } catch (error) {
-        console.error("Failed to send USER_REQUEST SMS:", error);
-      }
+      await processSMSNotification(NotificationType.USER_REQUEST, payload);
     }
   );
 
+  // DRIVER_REGISTERED handler
   emitter.on(
-    `${BaseNotificationType.SMS}:${NotificationType.DRIVER_REGISTERED}`,
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_REGISTERED}`,
     async (payload: NotificationPayload) => {
-      try {
-        if (!payload.user?.phoneNumber) {
-          console.warn(
-            `No phone number available for user ${payload.user?.id}`
-          );
-          return;
-        }
-        await SMSNotificationService.sendSMSNotification(
-          NotificationType.DRIVER_REGISTERED,
-          payload
-        );
-      } catch (error) {
-        console.error("Failed to send DRIVER_REGISTERED SMS:", error);
-      }
+      await processSMSNotification(NotificationType.DRIVER_REGISTERED, payload);
     }
   );
 
+  // USER_CREATED handler
   emitter.on(
-    `${BaseNotificationType.SMS}:${NotificationType.USER_NOTIFICATION}`,
-    async (payload: UserNotificationEventPayload) => {
-      try {
-        if (!payload.user?.phoneNumber) {
-          console.warn(
-            `No phone number available for user ${payload.user?.id}`
-          );
-          return;
-        }
-        await SMSNotificationService.sendSMSNotification(
-          NotificationType.USER_NOTIFICATION,
-          payload as any
-        );
-      } catch (error) {
-        console.error("Failed to send USER_NOTIFICATION SMS:", error);
-      }
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_CREATED}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.USER_CREATED, payload);
     }
   );
 
-  const remainingTypes = [
-    NotificationType.USER_CREATED,
-    NotificationType.USER_ACCEPT,
-    NotificationType.DRIVER_REJECT,
-    NotificationType.DRIVER_QUOTATION_UPDATED,
-    NotificationType.DRIVER_ASSIGNED,
-    NotificationType.DRIVER_QUOTED,
-    NotificationType.DRIVER_ACCEPT,
-    NotificationType.USER_REJECT,
-    NotificationType.RATING_REVIEW,
-  ];
+  // USER_ACCEPT handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_ACCEPT}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.USER_ACCEPT, payload);
+    }
+  );
 
-  remainingTypes.forEach(type => {
-    emitter.on(
-      `${BaseNotificationType.SMS}:${type}`,
-      async (payload: NotificationPayload) => {
-        try {
-          if (!payload.user?.phoneNumber) {
-            console.warn(
-              `No phone number available for user ${payload.user?.id}`
-            );
-            return;
-          }
-          await SMSNotificationService.sendSMSNotification(type, payload);
-        } catch (error) {
-          console.error(`Failed to send ${type} SMS:`, error);
-        }
-      }
-    );
-  });
+  // DRIVER_REJECT handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_REJECT}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.DRIVER_REJECT, payload);
+    }
+  );
+
+  // DRIVER_QUOTATION_UPDATED handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_QUOTATION_UPDATED}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(
+        NotificationType.DRIVER_QUOTATION_UPDATED,
+        payload
+      );
+    }
+  );
+
+  // DRIVER_ASSIGNED handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_ASSIGNED}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.DRIVER_ASSIGNED, payload);
+    }
+  );
+
+  // DRIVER_QUOTED handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_QUOTED}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.DRIVER_QUOTED, payload);
+    }
+  );
+
+  // DRIVER_ACCEPT handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_ACCEPT}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.DRIVER_ACCEPT, payload);
+    }
+  );
+
+  // USER_REJECT handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_REJECT}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.USER_REJECT, payload);
+    }
+  );
+
+  // RATING_REVIEW handler
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.RATING_REVIEW}`,
+    async (payload: NotificationPayload) => {
+      await processSMSNotification(NotificationType.RATING_REVIEW, payload);
+    }
+  );
 }

@@ -80,7 +80,7 @@ export class DriverService {
       requestId
     );
 
-    const driver: UserWithDriver = {
+    const userWithDriver: UserWithDriver = {
       userId: driverDetails.userId,
       email: driverInfo.email,
       firstName: driverInfo.firstName,
@@ -91,7 +91,7 @@ export class DriverService {
         phoneNumber: driverDetails.phoneNumber,
       },
     };
-    const user: UserWithCustomer = {
+    const userWithCustomer: UserWithCustomer = {
       id: customerDetails.id,
       email: customerDetails.email,
       firstName: customerDetails.firstName,
@@ -130,10 +130,10 @@ export class DriverService {
 
       const payload: DriverAcceptedEventPayload = {
         requestId,
-        driver: driver,
+        driver: userWithDriver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         estimation: +data.estimation,
-        user: user,
+        user: userWithCustomer,
         newPrice: +data.estimation,
         description: "",
       };
@@ -151,10 +151,10 @@ export class DriverService {
     if (data.driverStatus === DriverStatus.QUOTED) {
       const payload: DriverQuotedEventPayload = {
         breakdownRequestId: requestId,
-        driver: driver,
+        driver: userWithDriver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         estimation: +data.estimation,
-        user: user,
+        user: userWithCustomer,
         newPrice: +data.estimation,
         description: "",
       };
@@ -165,10 +165,10 @@ export class DriverService {
     } else if (data.driverStatus === DriverStatus.REJECTED) {
       const payload: DriverRejectedEventPayload = {
         requestId,
-        driver: driver,
+        driver: userWithDriver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         estimation: +data.estimation,
-        user: user,
+        user: userWithCustomer,
         newPrice: +data.estimation,
         description: "",
       };
@@ -177,10 +177,10 @@ export class DriverService {
       const token = TokenService.generateUrlSafeToken(requestId, driverId);
       const payload: DriverClosedEventPayload = {
         requestId,
-        driver: driver,
+        driver: userWithDriver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${requestId}?token=${token}`,
         estimation: +data.estimation,
-        user: user,
+        user: userWithCustomer,
         newPrice: +data.estimation,
         description: "",
       };

@@ -23,7 +23,7 @@ import {
 import { logger } from "../utils";
 import { payments } from "@towmycar/database/db-schema";
 import { notifications } from "@towmycar/database/db-schema";
-import { Notification } from "@towmycar/database/db-schema";
+import { Notifications } from "@towmycar/database/db-schema";
 import {
   UserStatus,
   DriverStatus,
@@ -135,7 +135,7 @@ export interface IDriverRepository {
     payment,
     assignmentData,
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void>;
-  getUserNotifications: (userId: number) => Promise<Notification[]>;
+  getUserNotifications: (userId: number) => Promise<Notifications[]>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
 }
@@ -539,7 +539,7 @@ export const DriverRepository: IDriverRepository = {
       email: user.email,
       postcode: customer.postcode,
       vehicleRegistration: customer.mobileNumber,
-      mobileNumber: customer.mobileNumber,
+      mobileNumber: breakdownRequest.mobileNumber,
     })
       .from(breakdownRequest)
       .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
@@ -764,7 +764,7 @@ export const DriverRepository: IDriverRepository = {
         );
     });
   },
-  async getUserNotifications(userId: number): Promise<Notification[]> {
+  async getUserNotifications(userId: number): Promise<Notifications[]> {
     try {
       return await DB.select()
         .from(notifications)

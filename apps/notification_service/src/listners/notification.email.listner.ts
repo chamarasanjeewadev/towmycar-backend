@@ -1,12 +1,13 @@
 import { EventEmitter } from "events";
 import {
-  BaseNotificationType,
+  DeliveryNotificationType,
   DriverQuotedEventPayload,
   NotificationType,
   DriverNotificationPayload,
   EmailPayloadType,
   UserNotificationPayload,
   DriverQuotedPayload,
+  ListnerPayload,
 } from "@towmycar/common";
 import {
   getEmailContent,
@@ -15,7 +16,7 @@ import {
 import { NotificationRepository } from "../repository/notification.repository";
 
 interface CheckAndProcessEmailParams {
-  payload: any;
+  payload: ListnerPayload;
   notificationType: NotificationType;
   userId: number;
   breakdownRequestId: number;
@@ -38,26 +39,14 @@ async function checkAndProcessEmail({
     const isAlreadySent = await NotificationRepository.checkNotificationSent({
       userId,
       notificationType,
-      deliveryType: BaseNotificationType.EMAIL,
-      breakdownRequestId: breakdownRequestId.toString(),
+      deliveryType: DeliveryNotificationType.EMAIL,
+      breakdownRequestId: breakdownRequestId,
     });
 
     if (isAlreadySent) {
       console.log(`Email already sent for user: ${userId}`);
       return false;
     }
-
-    await NotificationRepository.saveNotification({
-      userId,
-      breakdownRequestId,
-      title: emailContent.subject,
-      message: emailContent.htmlBody,
-      baseNotificationType: BaseNotificationType.EMAIL,
-      notificationType: notificationType.toString(),
-      payload: JSON.stringify(payload),
-      url: payload.viewRequestLink,
-    });
-
     const emailPayloadType: EmailPayloadType = {
       recipientEmail,
       subject: emailContent.subject,
@@ -65,6 +54,19 @@ async function checkAndProcessEmail({
     };
 
     await sendEmail(notificationType, emailPayloadType);
+
+    await NotificationRepository.saveNotification({
+      userId,
+      breakdownRequestId,
+      title: emailContent.subject,
+      message: emailContent.htmlBody,
+      baseNotificationType: DeliveryNotificationType.EMAIL,
+      deliveryType: DeliveryNotificationType.EMAIL,
+      notificationType: notificationType,
+      payload: JSON.stringify(payload),
+      url: payload.viewRequestLink,
+    });
+
     return true;
   } catch (error) {
     console.error(`Failed to process email for user ${userId}:`, error);
@@ -74,7 +76,7 @@ async function checkAndProcessEmail({
 
 export function registerEmailListener(emitter: EventEmitter): void {
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_NOTIFICATION}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_NOTIFICATION}`,
     async (payload: DriverNotificationPayload[]) => {
       const processPromises = payload.map(async payload => {
         const emailContent = getEmailContent(
@@ -101,7 +103,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
   );
 
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.USER_NOTIFICATION}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_NOTIFICATION}`,
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_NOTIFICATION,
@@ -119,7 +121,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     }
   );
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
     async (payload: DriverQuotedPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_QUOTED,
@@ -137,8 +139,8 @@ export function registerEmailListener(emitter: EventEmitter): void {
     }
   );
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTATION_UPDATED}`,
-    async (payload: DriverQuotedEventPayload) => {
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTATION_UPDATED}`,
+    async (payload: DriverQuotedPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_QUOTATION_UPDATED,
         payload
@@ -147,7 +149,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_QUOTATION_UPDATED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -157,9 +159,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // USER_REQUEST handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.USER_REQUEST}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_REQUEST}`,
     async (payload: UserNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.USER_REQUEST, payload);
+      const emailContent = getEmailContent(
+        NotificationType.USER_REQUEST,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_REQUEST,
@@ -173,9 +178,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // DRIVER_REGISTERED handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_REGISTERED}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_REGISTERED}`,
     async (payload: DriverNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.DRIVER_REGISTERED, payload);
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_REGISTERED,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_REGISTERED,
@@ -189,9 +197,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // USER_CREATED handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.USER_CREATED}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_CREATED}`,
     async (payload: UserNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.USER_CREATED, payload);
+      const emailContent = getEmailContent(
+        NotificationType.USER_CREATED,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_CREATED,
@@ -205,9 +216,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // USER_ACCEPT handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.USER_ACCEPT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_ACCEPT}`,
     async (payload: UserNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.USER_ACCEPT, payload);
+      const emailContent = getEmailContent(
+        NotificationType.USER_ACCEPT,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_ACCEPT,
@@ -221,9 +235,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // DRIVER_REJECT handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_REJECT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_REJECT}`,
     async (payload: DriverNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.DRIVER_REJECT, payload);
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_REJECT,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_REJECT,
@@ -237,9 +254,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // DRIVER_ASSIGNED handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_ASSIGNED}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_ASSIGNED}`,
     async (payload: DriverNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.DRIVER_ASSIGNED, payload);
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_ASSIGNED,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ASSIGNED,
@@ -253,9 +273,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // DRIVER_ACCEPT handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.DRIVER_ACCEPT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_ACCEPT}`,
     async (payload: DriverNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.DRIVER_ACCEPT, payload);
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_ACCEPT,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ACCEPT,
@@ -269,9 +292,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // USER_REJECT handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.USER_REJECT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_REJECT}`,
     async (payload: UserNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.USER_REJECT, payload);
+      const emailContent = getEmailContent(
+        NotificationType.USER_REJECT,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_REJECT,
@@ -285,9 +311,12 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // RATING_REVIEW handler
   emitter.on(
-    `${BaseNotificationType.EMAIL}:${NotificationType.RATING_REVIEW}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.RATING_REVIEW}`,
     async (payload: UserNotificationPayload) => {
-      const emailContent = getEmailContent(NotificationType.RATING_REVIEW, payload);
+      const emailContent = getEmailContent(
+        NotificationType.RATING_REVIEW,
+        payload
+      );
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.RATING_REVIEW,

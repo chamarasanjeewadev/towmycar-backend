@@ -3,7 +3,7 @@ import { logger } from "./index";
 import { SQS_QUEUE_URL, SMS_CONFIG } from "../config";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
 import {
-  BaseNotificationType,
+  DeliveryNotificationType,
   BreakdownNotificationType,
 } from "@towmycar/common";
 import { EventEmitter } from "stream";
@@ -16,24 +16,24 @@ const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 const queueURL = SQS_QUEUE_URL;
 
 const NOTIFICATION_TYPES = [
-  BaseNotificationType.EMAIL,
-  BaseNotificationType.PUSH,
-  ...(SMS_CONFIG.isEnabled ? [BaseNotificationType.SMS] : []),
+  DeliveryNotificationType.EMAIL,
+  DeliveryNotificationType.PUSH,
+  ...(SMS_CONFIG.isEnabled ? [DeliveryNotificationType.SMS] : []),
 ] as const;
 
 const eventEmitter = new EventEmitter();
 registerEmailListener(eventEmitter);
 registerPushNotificationListener(eventEmitter);
-if (SMS_CONFIG.isEnabled) {
-  registerSmsNotificationListener(eventEmitter);
-}
+// if (SMS_CONFIG.isEnabled) {
+registerSmsNotificationListener(eventEmitter);
+// }
 
 function emitNotifications(
   emitter: EventEmitter,
   subType: string,
   payload: unknown
 ) {
-  NOTIFICATION_TYPES.forEach((type) => {
+  NOTIFICATION_TYPES.forEach(type => {
     emitter.emit(`${type}:${subType}`, payload);
   });
 }

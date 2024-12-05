@@ -22,6 +22,7 @@ import {
   desc,
   sql,
 } from "@towmycar/database";
+import { DeliveryNotificationType } from "@towmycar/common";
 
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
@@ -453,11 +454,14 @@ const createUserFromWebhook = async (
   }
 };
 
-const getUserNotifications = async (userId: number): Promise<Notification[]> => {
+const getUserNotifications = async (
+  userId: number
+): Promise<Notification[]> => {
   try {
     return await DB.select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
+      .where(eq(notifications.deliveryType, DeliveryNotificationType.PUSH))
       .orderBy(desc(notifications.createdAt));
   } catch (error) {
     console.error("Error in getUserNotifications:", error);
@@ -465,7 +469,9 @@ const getUserNotifications = async (userId: number): Promise<Notification[]> => 
   }
 };
 
-const markNotificationAsSeen = async (notificationId: number): Promise<void> => {
+const markNotificationAsSeen = async (
+  notificationId: number
+): Promise<void> => {
   try {
     await DB.update(notifications)
       .set({ isSeen: true })
@@ -481,15 +487,14 @@ const getUnseenNotificationsCount = async (userId: number): Promise<number> => {
     const result = await DB.select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(
-        and(
-          eq(notifications.userId, userId),
-          eq(notifications.isSeen, false)
-        )
+        and(eq(notifications.userId, userId), eq(notifications.isSeen, false))
       );
     return Number(result[0].count) || 0;
   } catch (error) {
     console.error("Error in getUnseenNotificationsCount:", error);
-    throw new DataBaseError(`Failed to get unseen notifications count: ${error}`);
+    throw new DataBaseError(
+      `Failed to get unseen notifications count: ${error}`
+    );
   }
 };
 

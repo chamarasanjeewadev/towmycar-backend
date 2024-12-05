@@ -1,15 +1,10 @@
-import { BaseNotificationType, NotificationType } from "../enums";
+import { NotificationType } from "../enums";
 
-interface Driver {
-  firstName: string;
-  lastName: string;
-}
-
-interface User {
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
-}
+export type ListnerPayload =
+  | NotificationPayload
+  | DriverNotificationPayload
+  | UserNotificationPayload
+  |DriverQuotedPayload
 
 export type NotificationPayload = {
   sendToId: number;
@@ -52,7 +47,6 @@ export type BreakdownNotificationType = {
   payload: DriverNotificationPayload[] | any;
 };
 
-
 export type NearbyDriver = {
   id: number;
   userId: number;
@@ -88,6 +82,7 @@ export interface UserWithDriver {
 }
 
 export interface UserNotificationEventPayload {
+  sendToId: number;
   user: UserWithCustomer;
   requestId: number;
   driver: NearbyDriver;

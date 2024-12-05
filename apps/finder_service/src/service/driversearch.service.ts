@@ -4,17 +4,13 @@ import {
   createGoogleMapsDirectionsLink,
   NearbyDriver,
   NotificationType,
-  registerEmailListener,
-  registerPushNotificationListener,
-  registerSmsNotificationListener,
+  registerNotificationListener,
 } from "@towmycar/common";
 import { EventEmitter } from "events";
 
 // Initialize listeners
 const notificationEmitter = new EventEmitter();
-registerEmailListener(notificationEmitter);
-registerPushNotificationListener(notificationEmitter);
-registerSmsNotificationListener(notificationEmitter);
+registerNotificationListener(notificationEmitter);
 // initializeSmsNotificationListener(notificationEmitter);
 
 // Add User interface (you might want to import this from a shared types file)

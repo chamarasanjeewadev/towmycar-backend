@@ -4,17 +4,17 @@ import {
   gt,
   eq,
   notifications,
-  Notification,
+  Notifications,
   desc,
 } from "@towmycar/database";
 
-import { BaseNotificationType, NotificationType } from "@towmycar/common";
+import { DeliveryNotificationType, NotificationType } from "@towmycar/common";
 
 interface NotificationTrackingInput {
   userId: number;
   notificationType: NotificationType;
-  deliveryType: BaseNotificationType;
-  breakdownRequestId: string;
+  deliveryType: DeliveryNotificationType;
+  breakdownRequestId: number;
   status?: string;
   retryCount?: number;
   lastAttempt?: Date;
@@ -24,32 +24,31 @@ interface NotificationInput {
   userId: number;
   title: string;
   message: string;
-  url?: string;
+  url?: string | null;
   notificationType: string;
-  baseNotificationType: BaseNotificationType;
-  breakdownRequestId?: number;
-  payload?: string;
+  deliveryType: DeliveryNotificationType;
+  baseNotificationType: DeliveryNotificationType;
+  breakdownRequestId?: number | null;
+  payload?: string | null;
 }
 
 export interface NotificationRepositoryType {
   checkNotificationSent: (
     tracking: NotificationTrackingInput
   ) => Promise<boolean>;
-  trackNotification: (
-    tracking: NotificationTrackingInput
-  ) => Promise<Notification>;
+
   updateNotificationStatus: (
     breakdownRequestId: string,
     notificationType: NotificationType,
-    deliveryType: BaseNotificationType,
+    deliveryType: DeliveryNotificationType,
     status: string,
     retryCount?: number
   ) => Promise<void>;
   getFailedNotifications: (
-    deliveryType: BaseNotificationType
-  ) => Promise<Notification[]>;
-  saveNotification: (notification: NotificationInput) => Promise<Notification>;
-  getNotificationsByUserId: (userId: number) => Promise<Notification[]>;
+    deliveryType: DeliveryNotificationType
+  ) => Promise<Notifications[]>;
+  saveNotification: (notification: NotificationInput) => Promise<Notifications>;
+  getNotificationsByUserId: (userId: number) => Promise<Notifications[]>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
 }
 
@@ -64,10 +63,7 @@ const checkNotificationSent = async (
           eq(notifications.userId, tracking.userId),
           eq(notifications.notificationType, tracking.notificationType),
           eq(notifications.baseNotificationType, tracking.deliveryType),
-          eq(
-            notifications.breakdownRequestId,
-            parseInt(tracking.breakdownRequestId)
-          ),
+          eq(notifications.breakdownRequestId, tracking.breakdownRequestId),
           gt(notifications.createdAt, new Date(Date.now() - 3600000))
         )
       )
@@ -80,34 +76,10 @@ const checkNotificationSent = async (
   }
 };
 
-const trackNotification = async (
-  tracking: NotificationTrackingInput
-): Promise<Notification> => {
-  try {
-    const insertData = {
-      userId: tracking.userId,
-      notificationType: tracking.notificationType,
-      breakdownRequestId: parseInt(tracking.breakdownRequestId),
-      status: tracking.status || "SENT",
-      retryCount: tracking.retryCount || 0,
-      lastAttempt: tracking.lastAttempt || new Date(),
-    };
-
-    const [result] = await DB.insert(notifications)
-      //@ts-ignore
-      .values(insertData)
-      .returning();
-    return result;
-  } catch (error) {
-    console.error("Error in trackNotification:", error);
-    throw error;
-  }
-};
-
 const updateNotificationStatus = async (
   breakdownRequestId: string,
   notificationType: NotificationType,
-  deliveryType: BaseNotificationType,
+  deliveryType: DeliveryNotificationType,
   status: string,
   retryCount?: number
 ): Promise<void> => {
@@ -135,8 +107,8 @@ const updateNotificationStatus = async (
 };
 
 const getFailedNotifications = async (
-  deliveryType: BaseNotificationType
-): Promise<Notification[]> => {
+  deliveryType: DeliveryNotificationType
+): Promise<Notifications[]> => {
   try {
     return await DB.select()
       .from(notifications)
@@ -149,20 +121,26 @@ const getFailedNotifications = async (
 
 const saveNotification = async (
   notification: NotificationInput
-): Promise<Notification> => {
+): Promise<Notifications> => {
   try {
     const [result] = await DB.insert(notifications)
-      //@ts-ignore
       .values({
         userId: notification.userId,
-        notificationType: notification.notificationType,
-        baseNotificationType: notification.baseNotificationType.toString(),
-        payload: notification.payload,
         title: notification.title,
         message: notification.message,
-        breakdownRequestId: notification.breakdownRequestId,
-        url: notification.url,
-      })
+        notificationType: notification.notificationType,
+        notificationBaseType: notification.baseNotificationType.toString(),
+        deliveryType: notification.baseNotificationType.toString(),
+        breakdownRequestId: notification.breakdownRequestId ?? null,
+        url: notification.url ?? null,
+        payload: notification.payload ?? null,
+        status: "PENDING",
+        retryCount: 0,
+        isSeen: false,
+        lastAttempt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as typeof notifications.$inferInsert)
       .returning();
     return result;
   } catch (error) {
@@ -173,7 +151,7 @@ const saveNotification = async (
 
 const getNotificationsByUserId = async (
   userId: number
-): Promise<Notification[]> => {
+): Promise<Notifications[]> => {
   try {
     return await DB.select()
       .from(notifications)
@@ -201,7 +179,6 @@ const markNotificationAsSeen = async (
 
 export const NotificationRepository: NotificationRepositoryType = {
   checkNotificationSent,
-  trackNotification,
   updateNotificationStatus,
   getFailedNotifications,
   saveNotification,

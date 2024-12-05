@@ -1,4 +1,4 @@
-import { NotificationPayload, NotificationType } from "@towmycar/common";
+import { ListnerPayload, NotificationType } from "@towmycar/common";
 import { getSMSProvider } from "../utils/sms/smsProviderFactory";
 
 const smsProvider = getSMSProvider();
@@ -20,97 +20,97 @@ async function sendGenericSMS(
   }
 }
 
-async function sendSMSNotification(
+function generateSMSNotificationPayload(
   type: NotificationType,
-  payload: NotificationPayload
-): Promise<void> {
+  payload: ListnerPayload
+): { message: string; viewLink?: string } {
   switch (type) {
     case NotificationType.DRIVER_ASSIGNED:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "A driver has been assigned to your request",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "A driver has been assigned to your request",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.DRIVER_REGISTERED:
-      await sendGenericSMS(
-        payload.driver.phoneNumber,
-        "Your driver registration has been received",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "Your driver registration has been received",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.USER_REQUEST:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "Your breakdown assistance request has been received",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "Your breakdown assistance request has been received",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.DRIVER_QUOTATION_UPDATED:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "A driver has updated their quotation for your request",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "A driver has updated their quotation for your request",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.DRIVER_QUOTED:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "A new quote is available for your breakdown request",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "A new quote is available for your breakdown request",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.USER_ACCEPT:
     case NotificationType.DRIVER_ACCEPT:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "Your request has been accepted",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "Your request has been accepted",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.USER_REJECT:
     case NotificationType.DRIVER_REJECT:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "There has been an update to your request",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "There has been an update to your request",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.DRIVER_NOTIFICATION:
-      await sendGenericSMS(
-        payload.driver.phoneNumber,
-        "A new breakdown request is available in your area",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "A new breakdown request is available in your area",
+        viewLink: payload.viewRequestLink
+      };
 
     case NotificationType.RATING_REVIEW:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "You have received a new rating and review",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "You have received a new rating and review",
+        viewLink: payload.viewRequestLink
+      };
 
     default:
-      await sendGenericSMS(
-        payload.user.phoneNumber,
-        "You have a new notification",
-        payload.viewRequestLink
-      );
-      break;
+      return {
+        message: "You have a new notification",
+        viewLink: payload.viewRequestLink
+      };
   }
+}
+
+async function sendSMSNotification(
+  type: NotificationType,
+  payload: ListnerPayload
+): Promise<void> {
+  const notificationPayload = generateSMSNotificationPayload(type, payload);
+  const phoneNumber = payload.driver?.phoneNumber || payload.user?.phoneNumber;
+
+  if (!phoneNumber) {
+    console.error('No phone number provided for SMS notification');
+    return;
+  }
+
+  await sendGenericSMS(
+    phoneNumber,
+    notificationPayload.message,
+    notificationPayload.viewLink
+  );
 
   console.log(`SMS notification sent for type: ${type}`, payload);
 }
 
 export const SMSNotificationService = {
   sendSMSNotification,
+  generateSMSNotificationPayload,
 };
