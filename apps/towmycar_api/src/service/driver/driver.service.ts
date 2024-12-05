@@ -150,7 +150,7 @@ export class DriverService {
 
     if (data.driverStatus === DriverStatus.QUOTED) {
       const payload: DriverQuotedEventPayload = {
-        requestId,
+        breakdownRequestId: requestId,
         driver: driver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         estimation: +data.estimation,

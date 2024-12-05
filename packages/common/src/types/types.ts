@@ -19,7 +19,7 @@ export type NotificationPayload = {
   user: UserWithCustomer;
   googleMapsLink: string | null;
   viewRequestLink: string;
-  createdAt: Date;
+  createdAt?: Date;
 };
 
 export interface PushNotificationPayload {
@@ -110,7 +110,7 @@ export interface UserNotificationNotificationpayload {
 }
 
 export interface DriverQuotedEventPayload {
-  requestId: number;
+  breakdownRequestId: number;
   driver: UserWithDriver;
   user: UserWithCustomer;
   newPrice: number;

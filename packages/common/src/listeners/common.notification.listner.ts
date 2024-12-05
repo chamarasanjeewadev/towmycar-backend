@@ -82,7 +82,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
       const driverQuotedPlayload: DriverQuotedPayload = {
         sendToId: payload.user.id,
         driver: payload.driver,
-        breakdownRequestId: payload.requestId,
+        breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
         price: payload.newPrice,
@@ -103,7 +103,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
       const driverQuotedPlayload: DriverQuotedPayload = {
         sendToId: payload.user.id,
         driver: payload.driver,
-        breakdownRequestId: payload.requestId,
+        breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
         price: payload.newPrice,

@@ -7,8 +7,6 @@ import {
 } from "../../config";
 import {
   registerNotificationListener,
-  registerPushNotificationListener,
-  registerSmsNotificationListener,
   sendSNS,
 } from "@towmycar/common";
 import { APIError, BaseError, ERROR_CODES } from "../../utils/error/errors";
@@ -18,8 +16,6 @@ import { CloseBreakdownParams } from "./../../types/types";
 
 const notificationEmitter = new EventEmitter();
 registerNotificationListener(notificationEmitter);
-registerPushNotificationListener(notificationEmitter);
-registerSmsNotificationListener(notificationEmitter);
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,

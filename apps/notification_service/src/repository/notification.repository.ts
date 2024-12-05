@@ -63,6 +63,7 @@ const checkNotificationSent = async (
         and(
           eq(notifications.userId, tracking.userId),
           eq(notifications.notificationType, tracking.notificationType),
+          eq(notifications.baseNotificationType, tracking.deliveryType),
           eq(
             notifications.breakdownRequestId,
             parseInt(tracking.breakdownRequestId)

@@ -8,14 +8,11 @@ import { userCreatedEmail } from "../templates/userCreatedEmail";
 import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
-  BaseNotificationType,
   DriverNotificationPayload,
   EmailPayloadType,
   NotificationType,
-  UserNotificationNotificationpayload,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
-import { NotificationRepository } from "repository/notification.repository";
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
@@ -76,7 +73,10 @@ export const sendEmail = async (
 };
 
 // Update the getEmailContent function
-export function getEmailContent(type: NotificationType, payload: any) {
+export function getEmailContent(
+  type: NotificationType,
+  payload: any
+){
   switch (type) {
     case NotificationType.USER_REQUEST:
       return userRequestEmail(payload);

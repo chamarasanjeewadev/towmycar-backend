@@ -2,9 +2,9 @@ import { createBaseTemplate } from "./baseTemplate";
 
 export const driverQuotationUpdatedEmail = (payload: any) => {
   const content = `
-    <h1>Great news! Quotation ready for your request</h1>
+    <h1>Quotation Updated by driver</h1>
     <p>Hello ${payload?.user?.firstName ??'Valued Customer'},</p>
-    <p>Good news! A driver has provided a quotation for your breakdown request #${payload.requestId}.</p>
+    <p>Good news! A driver has provided a quotation for your breakdown request #${payload.breakdownRequestId}.</p>
     <h2>Quotation details:</h2>
     <ul>
       <li><strong>Price:</strong> $${payload.newPrice}</li>
@@ -24,7 +24,7 @@ export const driverQuotationUpdatedEmail = (payload: any) => {
   });
 
   return {
-    subject: `Great news! Quotation ready for your Request #${payload.requestId}`,
+    subject: `Great news! Quotation ready for your Request #${payload.breakdownRequestId}`,
     htmlBody,
   };
 };

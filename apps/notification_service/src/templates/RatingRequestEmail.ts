@@ -9,7 +9,7 @@ interface RatingRequestEmailProps {
 export function RatingRequestEmail({
   requestId,
   link,
-}: RatingRequestEmailProps): Partial<EmailPayloadType> {
+}: RatingRequestEmailProps)  {
   const content = `
     <h1>Rate Your TowMyCar Experience</h1>
     <p>Dear valued customer,</p>
