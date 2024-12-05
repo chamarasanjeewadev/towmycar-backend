@@ -15,12 +15,6 @@ AWS.config.update({ region: process.env.REGION });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 const queueURL = SQS_QUEUE_URL;
 
-const NOTIFICATION_TYPES = [
-  DeliveryNotificationType.EMAIL,
-  DeliveryNotificationType.PUSH,
-  ...(SMS_CONFIG.isEnabled ? [DeliveryNotificationType.SMS] : []),
-] as const;
-
 const eventEmitter = new EventEmitter();
 registerEmailListener(eventEmitter);
 registerPushNotificationListener(eventEmitter);
@@ -33,9 +27,10 @@ function emitNotifications(
   subType: string,
   payload: unknown
 ) {
-  NOTIFICATION_TYPES.forEach(type => {
-    emitter.emit(`${type}:${subType}`, payload);
-  });
+  emitter.emit(`${DeliveryNotificationType.EMAIL}:${subType}`, payload);
+  emitter.emit(`${DeliveryNotificationType.PUSH}:${subType}`, payload);
+  //SMS_CONFIG.isEnabled &&
+    emitter.emit(`${DeliveryNotificationType.SMS}:${subType}`, payload);
 }
 
 async function processMessage(message: AWS.SQS.Message) {

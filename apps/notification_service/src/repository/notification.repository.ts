@@ -129,8 +129,8 @@ const saveNotification = async (
         title: notification.title,
         message: notification.message,
         notificationType: notification.notificationType,
-        notificationBaseType: notification.baseNotificationType.toString(),
-        deliveryType: notification.baseNotificationType.toString(),
+        notificationBaseType: "default value",
+        deliveryType: notification?.deliveryType?.toString() ?? "default value",
         breakdownRequestId: notification.breakdownRequestId ?? null,
         url: notification.url ?? null,
         payload: notification.payload ?? null,
@@ -155,7 +155,12 @@ const getNotificationsByUserId = async (
   try {
     return await DB.select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.deliveryType, DeliveryNotificationType.PUSH)
+        )
+      )
       .orderBy(desc(notifications.createdAt));
   } catch (error) {
     console.error("Error in getNotificationsByUserId:", error);
