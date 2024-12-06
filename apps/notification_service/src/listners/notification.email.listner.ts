@@ -197,7 +197,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_REJECTED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
@@ -295,7 +295,7 @@ async function checkAndProcessEmail({
       userId,
       notificationType,
       deliveryType: DeliveryNotificationType.EMAIL,
-      breakdownRequestId: breakdownRequestId,
+      breakdownRequestId: payload.breakdownRequestId,
     });
 
     if (isAlreadySent) {

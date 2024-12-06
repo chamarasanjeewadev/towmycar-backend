@@ -80,10 +80,7 @@ export function getEmailContent(type: NotificationType, payload: any) {
     case NotificationType.DRIVER_NOTIFICATION:
       return driverNotificationEmail(payload as DriverNotificationPayload);
     case NotificationType.RATING_REVIEW:
-      return RatingRequestEmail({
-        requestId: payload.breakdownRequestId,
-        link: payload.viewRequestLink,
-      });
+      return RatingRequestEmail(payload);
     default:
       throw new Error(`Invalid email notification type: ${type}`);
   }

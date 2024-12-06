@@ -24,7 +24,10 @@ import { CloseDriverAssignmentParams } from "./../../types/types";
 import { CustomError, ERROR_CODES } from "./../../../src/utils";
 import EventEmitter from "events";
 import { BreakdownRequestService } from "../user/userBreakdownRequest.service";
-import { mapToUserWithDriver, mapToUserWithCustomer } from '@towmycar/common/src/mappers/user.mapper';
+import {
+  mapToUserWithDriver,
+  mapToUserWithCustomer,
+} from "@towmycar/common/src/mappers/user.mapper";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -111,7 +114,7 @@ export class DriverService {
       );
 
       const payload: DriverAcceptedEventPayload = {
-        requestId,
+        breakdownRequestId: requestId,
         driver: userWithDriver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         estimation: +data.estimation,
@@ -146,7 +149,7 @@ export class DriverService {
       );
     } else if (data.driverStatus === DriverStatus.REJECTED) {
       const payload: DriverRejectedEventPayload = {
-        requestId,
+        breakdownRequestId: requestId,
         driver: userWithDriver,
         viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
         estimation: +data.estimation,
@@ -154,21 +157,20 @@ export class DriverService {
         newPrice: +data.estimation,
         description: "",
       };
-      this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
-    } else if (data.driverStatus === DriverStatus.CLOSED) {
-      const token = TokenService.generateUrlSafeToken(requestId, driverId);
-      const payload: DriverClosedEventPayload = {
-        requestId,
-        driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${requestId}?token=${token}`,
-        estimation: +data.estimation,
-        user: userWithCustomer,
-        newPrice: +data.estimation,
-        description: "",
-      };
+      this.notificationEmitter.emit(NotificationType.DRIVER_REJECTED, payload);
+    }
+    // else if (data.driverStatus === DriverStatus.CLOSED) {
+    //   const token = TokenService.generateUrlSafeToken(requestId, driverId);
+    //   const payload: DriverClosedEventPayload = {
+    //     breakdownRequestId: requestId,
+    //     driver: userWithDriver,
+    //     viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+    //     user: userWithCustomer,
+    //   };
 
-      this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
-    } else {
+    //   this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
+    // }
+    else {
       throw new Error("Invalid status or estimation amount");
     }
 
@@ -197,6 +199,29 @@ export class DriverService {
     await DriverRepository.closeBreakdownRequestAndRequestRating(
       closeBreakdownAssignment
     );
+
+    const driverInfo = await DriverRepository.getDriverByRequestId(
+      closeBreakdownAssignment?.requestId
+    );
+    const customerDetails = await DriverRepository.getCustomerByRequestId(
+      closeBreakdownAssignment?.requestId
+    );
+
+    const userWithDriver = mapToUserWithDriver(driverInfo);
+    const userWithCustomer = mapToUserWithCustomer(customerDetails);
+
+    const token = TokenService.generateUrlSafeToken(
+      closeBreakdownAssignment?.requestId,
+      closeBreakdownAssignment?.driverId
+    );
+    const payload: DriverClosedEventPayload = {
+      breakdownRequestId: closeBreakdownAssignment?.requestId,
+      driver: userWithDriver,
+      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${closeBreakdownAssignment?.requestId}?i?token=${token}`,
+      user: userWithCustomer,
+    };
+
+    this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
     // TODO: Send notifications to customers
   }
 

@@ -92,7 +92,7 @@ export interface UserWithDriver {
 export interface UserNotificationEventPayload {
   sendToId: number;
   user: UserWithCustomer;
-  requestId: number;
+  breakdownRequestId: number;
   driver: NearbyDriver;
   location: Location;
   toLocation: Location;
@@ -103,7 +103,7 @@ export interface UserNotificationEventPayload {
 export interface UserNotificationNotificationpayload {
   sendTo: number;
   user: UserWithCustomer;
-  requestId: number;
+  breakdownRequestId: number;
   driver: NearbyDriver;
   location: Location;
   toLocation: Location;
@@ -130,7 +130,7 @@ export interface UserAcceptedEventPayload {
 }
 
 export interface DriverAcceptedEventPayload {
-  requestId: number;
+  breakdownRequestId: number;
   driver: UserWithDriver;
   user: UserWithCustomer;
   newPrice: number;
@@ -140,7 +140,7 @@ export interface DriverAcceptedEventPayload {
 }
 
 export interface DriverRejectedEventPayload {
-  requestId: number;
+  breakdownRequestId: number;
   driver: UserWithDriver;
   user: UserWithCustomer;
   newPrice: number;
@@ -150,18 +150,15 @@ export interface DriverRejectedEventPayload {
 }
 
 export interface DriverClosedEventPayload {
-  requestId: number;
+  breakdownRequestId: number;
   driver: UserWithDriver;
   user: UserWithCustomer;
-  newPrice: number;
-  estimation: number;
-  description: string;
   viewRequestLink: string;
 }
 
 export interface DriverNotifyEventPayload {
   drivers: NearbyDriver[];
-  requestId: number;
+  breakdownRequestId: number;
   user: UserWithCustomer; // Updated type
   location: Location;
   toLocation: Location;
@@ -201,12 +198,8 @@ export interface UserCreatedPayload extends BaseNotificationPayload {
 }
 
 // User Accept
-export interface UserAcceptedPayload extends BaseNotificationPayload {
-  
-}
-export interface UserRejectedPayload extends BaseNotificationPayload {
-  
-}
+export interface UserAcceptedPayload extends BaseNotificationPayload {}
+export interface UserRejectedPayload extends BaseNotificationPayload {}
 
 // Driver Reject
 export interface DriverRejectPayload extends BaseNotificationPayload {

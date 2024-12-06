@@ -153,8 +153,8 @@ export function generatePushNotificationPayload(
     case NotificationType.DRIVER_REJECTED:
       return {
         userId: payload.sendToId,
-        title: `Request Status Update ${requestId}`,
-        message: "There has been an update to your request",
+        title: `Request Rejected ${requestId}`,
+        message: "Your request has been rejected",
         url: payload?.viewRequestLink,
       };
 

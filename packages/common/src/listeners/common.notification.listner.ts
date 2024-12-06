@@ -12,6 +12,7 @@ import {
   UserAcceptedPayload,
   UserAcceptedEventPayload,
   UserRejectedPayload,
+  DriverClosedEventPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -23,7 +24,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         sendToId: driver.userId,
         driver: driver,
         location: payload.location,
-        breakdownRequestId: payload.requestId,
+        breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
         createdAt: payload.createdAt,
@@ -47,7 +48,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         sendToId: payload.user.id,
         driver: payload.driver,
         location: payload.location,
-        breakdownRequestId: payload.requestId,
+        breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
         createdAt: payload.createdAt,
@@ -209,10 +210,10 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     });
   });
 
-  emitter.on(NotificationType.RATING_REVIEW, async payload => {
+  emitter.on(NotificationType.DRIVER_CLOSED, async (payload:DriverClosedEventPayload) => {
     const notificationPayload = {
       ...payload,
-      sendToId: payload.driver.userId,
+      sendToId: payload.user.id,
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {

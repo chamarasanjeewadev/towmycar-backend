@@ -1,6 +1,7 @@
+import { BaseNotificationPayload, DriverAcceptedEventPayload } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
-export const driverQuotationUpdatedEmail = (payload: any) => {
+export const driverQuotationUpdatedEmail = (payload: DriverAcceptedEventPayload) => {
   const content = `
     <h1>Quotation Updated by driver</h1>
     <p>Hello ${payload?.user?.firstName ??'Valued Customer'},</p>

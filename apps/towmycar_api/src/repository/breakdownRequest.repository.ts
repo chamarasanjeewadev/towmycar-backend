@@ -20,12 +20,16 @@ import {
   isNotNull,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
-import { BreakdownRequestStatus, DriverStatus ,UserStatus} from "@towmycar/common";
 import {
-  ConflictError,
-  DataBaseError,
-} from "../utils/error";
-import { BreakdownAssignmentDetails, CloseBreakdownParams } from "./../types/types";
+  BreakdownRequestStatus,
+  DriverStatus,
+  UserStatus,
+} from "@towmycar/common";
+import { ConflictError, DataBaseError } from "../utils/error";
+import {
+  BreakdownAssignmentDetails,
+  CloseBreakdownParams,
+} from "./../types/types";
 import { logger } from "../utils";
 
 // Add this type definition
@@ -59,8 +63,6 @@ type BreakdownRequestWithUserDetails = {
     };
   }[];
 };
-
-
 
 // Add this interface near the top with other type definitions
 interface DriverProfile {
@@ -496,6 +498,7 @@ const closeBreakdownAndUpdateRating = async ({
       // Update breakdown assignment status
       await tx
         .update(breakdownAssignment)
+        //@ts-ignore
         .set({
           //@ts-ignore
           userStatus: UserStatus.CLOSED,
@@ -518,27 +521,6 @@ const closeBreakdownAndUpdateRating = async ({
         );
       }
 
-      // Find the accepted driver for this request
-      // const acceptedAssignment = await tx
-      //   .select({
-      //     driverId: breakdownAssignment.driverId,
-      //   })
-      //   .from(breakdownAssignment)
-      //   .where(
-      //     and(
-      //       eq(breakdownAssignment.requestId, requestId),
-      //       eq(breakdownAssignment.driverStatus, DriverStatus.ACCEPTED),
-      //       or(
-      //         eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
-      //         eq(breakdownAssignment.userStatus, UserStatus.CLOSED)
-      //       )
-      //     )
-      //   )
-      //   .limit(1);
-
-      // const driverId = acceptedAssignment[0]?.driverId ?? null;
-
-      // Insert service rating
       //@ts-ignore
       await tx.insert(serviceRatings).values({
         requestId,

@@ -1,19 +1,17 @@
+import { BaseNotificationPayload, DriverNotificationPayload } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
-export const driverAcceptEmail = (payload: any) => {
+export const driverAcceptEmail = (payload: BaseNotificationPayload) => {
   const content = `
     <h1>Great news! A driver is willing to assist you</h1>
-    <p>Hello ${payload.firstName},</p>
-    <p>Great news! A driver has reviewed your breakdown request #${payload.requestId} and is willing to assist you.</p>
+    <p>Hello ${payload?.user?.firstName},</p>
+    <p>Great news! A driver has reviewed your breakdown request #${payload.breakdownRequestId} and is willing to assist you.</p>
     
     <h2>Driver Details:</h2>
     <ul>
-      <li><strong>Name:</strong> ${payload.driverName}</li>
-      <li><strong>Phone:</strong> ${payload.driverPhone}</li>
-      <li><strong>Email:</strong> ${payload.driverEmail}</li>
-      <li><strong>Vehicle:</strong> ${payload.vehicleModel}</li>
-      <li><strong>License Plate:</strong> ${payload.vehiclePlateNumber}</li>
-      <li><strong>Estimated cost:</strong> ${payload.estimation}</li>
+      <li><strong>Name:</strong> ${payload?.driver?.firstName}</li>
+      <li><strong>Phone:</strong> ${payload?.driver?.phoneNumber}</li>
+      <li><strong>Email:</strong> ${payload?.driver?.email}</li>
     </ul>
     
     <p>To proceed with the service, please review and accept the quotation provided by the driver. Once you accept, the driver will be on their way to assist you.</p>
@@ -28,7 +26,7 @@ export const driverAcceptEmail = (payload: any) => {
   const htmlBody = createBaseTemplate({ content });
 
   return {
-    subject: `Great news! A driver is willing to assist you - Request #${payload.requestId}`,
+    subject: `Great news! A driver is willing to assist you - Request #${payload.breakdownRequestId}`,
     htmlBody,
   };
 };
