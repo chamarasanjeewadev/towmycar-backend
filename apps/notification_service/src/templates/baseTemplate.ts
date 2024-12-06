@@ -112,9 +112,9 @@ export function createBaseTemplate({
         <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #FFF7E6;">
           <tr>
             <td>
-              <div class="main-header" style="background-color: #FFF7E6;">
-                <a href="https://towmycar.vercel.app">
-                  <h1 style="background-color: #FFF7E6;">TowMyCar</h1>
+              <div class="main-header" style="background-color: #FFF7E6; text-align: center;">
+                <a href="https://towmycar.vercel.app" style="display: block; text-align: center;">
+                  <h1 style="background-color: #FFF7E6; margin: 0;">TowMyCar</h1>
                 </a>
               </div>
             </td>
@@ -149,7 +149,7 @@ export function createBaseTemplate({
   </div>
   <div class="footer" style="background-color: #FFF7E6; text-align: center; padding: 20px 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
     <p>© ${new Date().getFullYear()} TowMyCar. All rights reserved.</p>
-    <p>If you have any questions, please contact our support team at support@towmycar.com</p>
+    <p>If you have any questions, please contact our support team at support@towmycar.uk</p>
   </div>
 </body>
 

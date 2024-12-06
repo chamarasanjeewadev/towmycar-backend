@@ -13,29 +13,13 @@ import {
   NotificationType,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
+import { userRejectedEmail } from "../templates/userRejectedEmail";
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
 
-export const sendEmail = async (
-  type: NotificationType,
-  payload: EmailPayloadType
-) => {
+export const sendEmail = async (payload: EmailPayloadType) => {
   try {
-    // console.log("payload in sendEmail", type, payload);
-    // const emailContent = getEmailContent(type, payload);
-
-    // await NotificationRepository.saveNotification({
-    //   userId: payload?.driver?.userId,
-    //   breakdownRequestId: payload.breakdownRequestId,
-    //   title: emailContent.subject,
-    //   message: emailContent.htmlBody,
-    //   baseNotificationType: BaseNotificationType.EMAIL,
-    //   notificationType: type.toString(),
-    //   payload: JSON.stringify(payload),
-    //   url: payload.viewRequestLink,
-    // });
-
     const params = {
       Source: "towmycar.uk@gmail.com",
       Destination: {
@@ -73,18 +57,17 @@ export const sendEmail = async (
 };
 
 // Update the getEmailContent function
-export function getEmailContent(
-  type: NotificationType,
-  payload: any
-){
+export function getEmailContent(type: NotificationType, payload: any) {
   switch (type) {
     case NotificationType.USER_REQUEST:
       return userRequestEmail(payload);
-    case NotificationType.DRIVER_ACCEPT:
+    case NotificationType.DRIVER_ACCEPTED:
       return driverAcceptEmail(payload);
-    case NotificationType.USER_ACCEPT:
+    case NotificationType.USER_ACCEPTED:
       return userAcceptEmail(payload);
-    case NotificationType.DRIVER_REJECT:
+    case NotificationType.USER_REJECTED:
+      return userRejectedEmail(payload);
+    case NotificationType.DRIVER_REJECTED:
       return driverRejectEmail(payload);
     case NotificationType.DRIVER_QUOTATION_UPDATED:
       return driverQuotationUpdatedEmail(payload);

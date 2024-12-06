@@ -3,6 +3,7 @@ import {
   BreakdownNotificationType,
   DriverNotificationPayload,
   DriverQuotedPayload,
+  ListnerPayload,
 } from "../types/types";
 import { NotificationType } from "../enums";
 
@@ -40,10 +41,7 @@ export const sendNotification = async (
   topicArn: string,
   message: {
     subType: NotificationType;
-    payload:
-      | DriverNotificationPayload[]
-      | DriverNotificationPayload
-      | DriverQuotedPayload;
+    payload: ListnerPayload;
   }
 ) => {
   const snsParams = {

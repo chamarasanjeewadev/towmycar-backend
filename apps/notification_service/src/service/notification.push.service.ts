@@ -25,7 +25,6 @@ export interface PushNotificationResult {
 }
 
 async function sendGenericPushNotification(
-  notificationType: NotificationType,
   payload: PushNotificationPayload
 ): Promise<PushNotificationResult> {
   const { userId, title, message, url } = payload;
@@ -40,23 +39,11 @@ async function sendGenericPushNotification(
   }
 
   try {
-    const notification = await NotificationRepository.saveNotification({
-      userId,
-      title,
-      message,
-      deliveryType: DeliveryNotificationType.PUSH,
-      baseNotificationType: DeliveryNotificationType.PUSH,
-      notificationType: notificationType.toString(),
-      payload: JSON.stringify(payload),
-      url,
-    });
-
     const tokens = await FcmRepository.getFcmTokensByUserId(userId);
 
     if (tokens.length === 0) {
       return {
         success: false,
-        notificationId: notification.id,
         error: `No active FCM tokens found for user ${userId}`,
         sentTo: [],
         failedTokens: [],
@@ -91,7 +78,6 @@ async function sendGenericPushNotification(
 
     return {
       success: successfulTokens.length > 0,
-      notificationId: notification.id,
       sentTo: successfulTokens,
       failedTokens,
     };
@@ -109,11 +95,15 @@ export function generatePushNotificationPayload(
   type: NotificationType,
   payload: ListnerPayload
 ): PushNotificationPayload {
+  const requestId = payload.breakdownRequestId
+    ? `(Request #${payload.breakdownRequestId})`
+    : "";
+
   switch (type) {
     case NotificationType.DRIVER_ASSIGNED:
       return {
         userId: payload.sendToId,
-        title: "Driver Assigned",
+        title: `Driver Assigned ${requestId}`,
         message: "A driver has been assigned to your request",
         url: payload?.viewRequestLink,
       };
@@ -121,7 +111,7 @@ export function generatePushNotificationPayload(
     case NotificationType.DRIVER_REGISTERED:
       return {
         userId: payload?.driver?.userId,
-        title: "Registration Complete",
+        title: `Registration Complete ${requestId}`,
         message: "Your driver registration has been received",
         url: payload?.viewRequestLink,
       };
@@ -129,7 +119,7 @@ export function generatePushNotificationPayload(
     case NotificationType.USER_REQUEST:
       return {
         userId: payload.sendToId,
-        title: "New Request",
+        title: `New Request ${requestId}`,
         message: "Your breakdown assistance request has been received",
         url: payload?.viewRequestLink,
       };
@@ -137,7 +127,7 @@ export function generatePushNotificationPayload(
     case NotificationType.DRIVER_QUOTATION_UPDATED:
       return {
         userId: payload?.driver?.userId,
-        title: "Quotation Updated",
+        title: `Quotation Updated ${requestId}`,
         message: "A driver has updated their quotation for your request",
         url: payload?.viewRequestLink,
       };
@@ -145,25 +135,25 @@ export function generatePushNotificationPayload(
     case NotificationType.DRIVER_QUOTED:
       return {
         userId: payload.sendToId,
-        title: "New Quote Available",
+        title: `New Quote Available ${requestId}`,
         message: "A new quote is available for your breakdown request",
         url: payload?.viewRequestLink,
       };
 
-    case NotificationType.USER_ACCEPT:
-    case NotificationType.DRIVER_ACCEPT:
+    case NotificationType.USER_ACCEPTED:
+    case NotificationType.DRIVER_ACCEPTED:
       return {
         userId: payload?.sendToId,
-        title: "Request Accepted",
+        title: `Request Accepted ${requestId}`,
         message: "Your request has been accepted",
         url: payload?.viewRequestLink,
       };
 
-    case NotificationType.USER_REJECT:
-    case NotificationType.DRIVER_REJECT:
+    case NotificationType.USER_REJECTED:
+    case NotificationType.DRIVER_REJECTED:
       return {
         userId: payload.sendToId,
-        title: "Request Status Update",
+        title: `Request Status Update ${requestId}`,
         message: "There has been an update to your request",
         url: payload?.viewRequestLink,
       };
@@ -171,7 +161,7 @@ export function generatePushNotificationPayload(
     case NotificationType.DRIVER_NOTIFICATION:
       return {
         userId: payload?.driver?.userId,
-        title: "New Breakdown Request",
+        title: `New Breakdown Request ${requestId}`,
         message: "A new breakdown request is available in your area",
         url: payload?.viewRequestLink,
       };
@@ -179,7 +169,7 @@ export function generatePushNotificationPayload(
     case NotificationType.RATING_REVIEW:
       return {
         userId: payload.sendToId,
-        title: "New Rating & Review",
+        title: `New Rating & Review ${requestId}`,
         message: "You have received a new rating and review",
         url: payload?.viewRequestLink,
       };
@@ -187,21 +177,14 @@ export function generatePushNotificationPayload(
     default:
       return {
         userId: payload.sendToId,
-        title: "Notification",
+        title: `Notification ${requestId}`,
         message: "You have a new notification",
         url: payload?.viewRequestLink,
       };
   }
 }
 
-async function sendPushNotification(
-  type: NotificationType,
-  pushPayload: PushNotificationPayload
-): Promise<PushNotificationResult> {
-  return sendGenericPushNotification(type, pushPayload);
-}
-
 export const UserNotificationService = {
-  sendPushNotification,
+  sendGenericPushNotification,
   generatePushNotificationPayload,
 };

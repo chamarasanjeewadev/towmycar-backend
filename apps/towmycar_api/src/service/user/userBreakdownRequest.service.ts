@@ -5,14 +5,13 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import {
-  registerNotificationListener,
-  sendSNS,
-} from "@towmycar/common";
+import { registerNotificationListener, sendSNS } from "@towmycar/common";
 import { APIError, BaseError, ERROR_CODES } from "../../utils/error/errors";
 import { NotificationType, UserStatus } from "@towmycar/common";
 import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
+import { DriverRepository } from "./../../repository/driver.repository";
+import { mapToUserWithCustomer, mapToUserWithDriver } from "@towmycar/common/src/mappers/user.mapper";
 
 const notificationEmitter = new EventEmitter();
 registerNotificationListener(notificationEmitter);
@@ -102,16 +101,27 @@ const updateUserStatusInBreakdownAssignment = async (
   if (updatedAssignment) {
     let notificationType: NotificationType;
     if (userStatus === UserStatus.ACCEPTED) {
-      notificationType = NotificationType.USER_ACCEPT;
+      notificationType = NotificationType.USER_ACCEPTED;
     } else if (userStatus === UserStatus.REJECTED) {
-      notificationType = NotificationType.USER_REJECT;
+      notificationType = NotificationType.USER_REJECTED;
     } else {
       // If status is PENDING or any other status, we don't send an email
       return true;
     }
+    //TODO move to common service
+    const driverInfo = await DriverRepository.getDriverByRequestId(updatedAssignment.requestId);
+    const customerDetails = await DriverRepository.getCustomerByRequestId(
+      updatedAssignment.requestId
+    );
 
+    const userWithDriver = mapToUserWithDriver(driverInfo);
+    const userWithCustomer = mapToUserWithCustomer(customerDetails);
+
+    // send notification to driver
     notificationEmitter.emit(notificationType, {
       requestId: updatedAssignment.requestId,
+      driver: userWithDriver,
+      user: userWithCustomer,
       userStatus,
       userId,
       viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/requests/${assignmentId}`,

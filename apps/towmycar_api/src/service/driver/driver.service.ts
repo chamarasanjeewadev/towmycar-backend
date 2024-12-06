@@ -1,3 +1,4 @@
+import { driver } from "./../../../../../packages/database/db-schema";
 import { user } from "./../../../../../node_modules/@towmycar/database/db-schema";
 import { DriverProfileDtoType } from "../../dto/driver.dto";
 import {
@@ -23,6 +24,7 @@ import { CloseDriverAssignmentParams } from "./../../types/types";
 import { CustomError, ERROR_CODES } from "./../../../src/utils";
 import EventEmitter from "events";
 import { BreakdownRequestService } from "../user/userBreakdownRequest.service";
+import { mapToUserWithDriver, mapToUserWithCustomer } from '@towmycar/common/src/mappers/user.mapper';
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -68,40 +70,20 @@ export class DriverService {
     data: UpdateAssignmentData
   ) {
     // Fetch driver details
-    const driverDetails = await DriverRepository.getDriverById(driverId);
+    // const driverDetails = await DriverRepository.getDriverById(driverId);
 
-    if (!driverDetails) {
-      throw new Error(`Driver with id ${driverId} not found`);
-    }
+    // if (!driverDetails) {
+    //   throw new Error(`Driver with id ${driverId} not found`);
+    // }
 
     // Fetch user details
     const driverInfo = await DriverRepository.getDriverByRequestId(requestId);
-    const customerDetails = await DriverRepository.getUserByRequestId(
+    const customerDetails = await DriverRepository.getCustomerByRequestId(
       requestId
     );
 
-    const userWithDriver: UserWithDriver = {
-      userId: driverDetails.userId,
-      email: driverInfo.email,
-      firstName: driverInfo.firstName,
-      lastName: driverInfo.lastName || undefined,
-      phoneNumber: driverDetails.phoneNumber || undefined,
-      driver: {
-        id: driverDetails.id,
-        phoneNumber: driverDetails.phoneNumber,
-      },
-    };
-    const userWithCustomer: UserWithCustomer = {
-      id: customerDetails.id,
-      email: customerDetails.email,
-      firstName: customerDetails.firstName,
-      lastName: customerDetails.lastName,
-      phoneNumber: customerDetails.mobileNumber || undefined,
-      customer: {
-        id: customerDetails.id,
-        phoneNumber: customerDetails.mobileNumber,
-      },
-    };
+    const userWithDriver = mapToUserWithDriver(driverInfo);
+    const userWithCustomer = mapToUserWithCustomer(customerDetails);
 
     if (!driverInfo) {
       throw new Error(`User not found for request ${requestId}`);
@@ -137,7 +119,7 @@ export class DriverService {
         newPrice: +data.estimation,
         description: "",
       };
-      this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPT, payload);
+      this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
       return true;
     }
 

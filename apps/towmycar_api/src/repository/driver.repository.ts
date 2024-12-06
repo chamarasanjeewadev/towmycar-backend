@@ -28,6 +28,7 @@ import {
   UserStatus,
   DriverStatus,
   BreakdownRequestStatus,
+  DeliveryNotificationType,
 } from "@towmycar/common";
 
 interface UpdateAssignmentData {
@@ -91,17 +92,14 @@ export interface IDriverRepository {
   update(id: number, data: Partial<DriverProfileDtoType>): Promise<Driver>;
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
   getDriverById(id: number): Promise<Driver | null>;
-  getUserByRequestId(requestId: number): Promise<
-    | (Partial<Customer> & {
-        firstName: string;
-        lastName: string;
-        email: string;
-        postcode: string;
-        vehicleRegistration: string;
-        mobileNumber: string;
-      })
-    | null
-  >;
+  getCustomerByRequestId(requestId: number): Promise<{
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    postcode: string | null;
+    mobileNumber: string;
+  } | null>;
   updateDriver(
     driverId: number,
     updateData: Partial<Driver>
@@ -109,6 +107,8 @@ export interface IDriverRepository {
   getDriverProfileById(userId: number): Promise<any | null>;
   getDriverByRequestId(requestId: number): Promise<
     | (Partial<Driver> & {
+        driverId: number;
+        userId: number;
         firstName: string;
         lastName: string;
         email: string;
@@ -403,7 +403,6 @@ export const DriverRepository: IDriverRepository = {
           "This assignment is no longer available for update."
         );
       }
-
       // Proceed with the update if no accepted assignment exists
       const updatedRows = await tx
         .update(breakdownAssignment)
@@ -521,24 +520,21 @@ export const DriverRepository: IDriverRepository = {
     return foundDriver || null;
   },
 
-  async getUserByRequestId(requestId: number): Promise<
-    | (Partial<Customer> & {
-        firstName: string;
-        lastName: string;
-        email: string;
-        postcode: string;
-        vehicleRegistration: string;
-        mobileNumber: string;
-      })
-    | null
-  > {
+  async getCustomerByRequestId(requestId: number): Promise<{
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    postcode: string | null;
+    mobileNumber: string;
+  } | null> {
     const result = await DB.select({
       id: customer.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       postcode: customer.postcode,
-      vehicleRegistration: customer.mobileNumber,
+
       mobileNumber: breakdownRequest.mobileNumber,
     })
       .from(breakdownRequest)
@@ -564,6 +560,8 @@ export const DriverRepository: IDriverRepository = {
   async getDriverByRequestId(requestId: number): Promise<
     | (Partial<Driver> & {
         firstName: string;
+        driverId: number;
+        userId: number;
         lastName: string;
         email: string;
         phoneNumber: string;
@@ -574,7 +572,8 @@ export const DriverRepository: IDriverRepository = {
     | null
   > {
     const result = await DB.select({
-      id: driver.id,
+      driverId: driver.id,
+      userId: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -764,11 +763,17 @@ export const DriverRepository: IDriverRepository = {
         );
     });
   },
+
   async getUserNotifications(userId: number): Promise<Notifications[]> {
     try {
       return await DB.select()
         .from(notifications)
-        .where(eq(notifications.userId, userId))
+        .where(
+          and(
+            eq(notifications.userId, userId),
+            eq(notifications.deliveryType, DeliveryNotificationType.PUSH)
+          )
+        )
         .orderBy(desc(notifications.createdAt));
     } catch (error) {
       logger.error("Error in getUserNotifications:", error);

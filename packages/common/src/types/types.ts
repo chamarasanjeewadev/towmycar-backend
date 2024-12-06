@@ -1,10 +1,18 @@
 import { NotificationType } from "../enums";
 
 export type ListnerPayload =
-  | NotificationPayload
-  | DriverNotificationPayload
+  // | DriverNotificationPayload[]
   | UserNotificationPayload
-  |DriverQuotedPayload
+  | DriverQuotedPayload
+  | UserAcceptedPayload
+  | DriverRegisteredPayload
+  | UserRequestPayload
+  | UserCreatedPayload
+  | DriverRejectPayload
+  | DriverAssignedPayload
+  | DriverAcceptPayload
+  | UserRejectPayload
+  | RatingReviewPayload;
 
 export type NotificationPayload = {
   sendToId: number;
@@ -114,6 +122,13 @@ export interface DriverQuotedEventPayload {
   viewRequestLink: string;
 }
 
+export interface UserAcceptedEventPayload {
+  breakdownRequestId: number;
+  driver: UserWithDriver;
+  user: UserWithCustomer;
+  viewRequestLink: string;
+}
+
 export interface DriverAcceptedEventPayload {
   requestId: number;
   driver: UserWithDriver;
@@ -160,6 +175,8 @@ export interface BaseNotificationPayload {
   sendToId: number;
   breakdownRequestId: number;
   viewRequestLink: string;
+  user: UserWithCustomer;
+  driver: UserWithDriver;
   createdAt?: Date;
 }
 
@@ -184,11 +201,11 @@ export interface UserCreatedPayload extends BaseNotificationPayload {
 }
 
 // User Accept
-export interface UserAcceptPayload extends BaseNotificationPayload {
-  user: UserWithCustomer;
-  driver: UserWithDriver;
-  price: number;
-  estimation: number;
+export interface UserAcceptedPayload extends BaseNotificationPayload {
+  
+}
+export interface UserRejectedPayload extends BaseNotificationPayload {
+  
 }
 
 // Driver Reject
@@ -265,30 +282,10 @@ export interface UserRejectPayload extends BaseNotificationPayload {
 
 // Rating Review
 export interface RatingReviewPayload extends BaseNotificationPayload {
-  reviewer: UserWithCustomer | UserWithDriver;
-  reviewee: UserWithCustomer | UserWithDriver;
+  user: UserWithCustomer;
+  driver: UserWithDriver;
   rating: number;
   review?: string;
 }
 
 // Type mapping for all notification types
-export type NotificationPayloadMap = {
-  [NotificationType.DRIVER_REGISTERED]: DriverRegisteredPayload;
-  [NotificationType.USER_REQUEST]: UserRequestPayload;
-  [NotificationType.USER_CREATED]: UserCreatedPayload;
-  [NotificationType.USER_ACCEPT]: UserAcceptPayload;
-  [NotificationType.DRIVER_REJECT]: DriverRejectPayload;
-  [NotificationType.DRIVER_CLOSED]: DriverClosedPayload;
-  [NotificationType.DRIVER_QUOTATION_UPDATED]: DriverQuotationUpdatedPayload;
-  [NotificationType.DRIVER_ASSIGNED]: DriverAssignedPayload;
-  [NotificationType.DRIVER_QUOTED]: DriverQuotedPayload;
-  [NotificationType.DRIVER_ACCEPT]: DriverAcceptPayload;
-  [NotificationType.DRIVER_NOTIFICATION]: DriverNotificationPayload;
-  [NotificationType.USER_NOTIFICATION]: UserNotificationPayload;
-  [NotificationType.USER_REJECT]: UserRejectPayload;
-  [NotificationType.RATING_REVIEW]: RatingReviewPayload;
-};
-
-// Helper type to get payload type for specific notification
-export type NotificationPayloadType<T extends NotificationType> =
-  NotificationPayloadMap[T];

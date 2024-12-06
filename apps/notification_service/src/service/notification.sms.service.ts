@@ -24,67 +24,71 @@ function generateSMSNotificationPayload(
   type: NotificationType,
   payload: ListnerPayload
 ): { message: string; viewLink?: string } {
+  const requestId = payload.breakdownRequestId
+    ? `(Request #${payload.breakdownRequestId})`
+    : "";
+
   switch (type) {
     case NotificationType.DRIVER_ASSIGNED:
       return {
-        message: "A driver has been assigned to your request",
-        viewLink: payload.viewRequestLink
+        message: `A driver has been assigned to your request ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.DRIVER_REGISTERED:
       return {
-        message: "Your driver registration has been received",
-        viewLink: payload.viewRequestLink
+        message: `Your driver registration has been received ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.USER_REQUEST:
       return {
-        message: "Your breakdown assistance request has been received",
-        viewLink: payload.viewRequestLink
+        message: `Your breakdown assistance request has been received ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.DRIVER_QUOTATION_UPDATED:
       return {
-        message: "A driver has updated their quotation for your request",
-        viewLink: payload.viewRequestLink
+        message: `A driver has updated their quotation for your request ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.DRIVER_QUOTED:
       return {
-        message: "A new quote is available for your breakdown request",
-        viewLink: payload.viewRequestLink
+        message: `A new quote is available for your breakdown request ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
-    case NotificationType.USER_ACCEPT:
-    case NotificationType.DRIVER_ACCEPT:
+    case NotificationType.USER_ACCEPTED:
+    case NotificationType.DRIVER_ACCEPTED:
       return {
-        message: "Your request has been accepted",
-        viewLink: payload.viewRequestLink
+        message: `Your request has been accepted ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
-    case NotificationType.USER_REJECT:
-    case NotificationType.DRIVER_REJECT:
+    case NotificationType.USER_REJECTED:
+    case NotificationType.DRIVER_REJECTED:
       return {
-        message: "There has been an update to your request",
-        viewLink: payload.viewRequestLink
+        message: `There has been an update to your request ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.DRIVER_NOTIFICATION:
       return {
-        message: "A new breakdown request is available in your area",
-        viewLink: payload.viewRequestLink
+        message: `A new breakdown request is available in your area ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.RATING_REVIEW:
       return {
-        message: "You have received a new rating and review",
-        viewLink: payload.viewRequestLink
+        message: `You have received a new rating and review ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
 
     default:
       return {
-        message: "You have a new notification",
-        viewLink: payload.viewRequestLink
+        message: `You have a new notification ${requestId}`,
+        viewLink: payload.viewRequestLink,
       };
   }
 }
@@ -97,7 +101,7 @@ async function sendSMSNotification(
   const phoneNumber = payload.driver?.phoneNumber || payload.user?.phoneNumber;
 
   if (!phoneNumber) {
-    console.error('No phone number provided for SMS notification');
+    console.error("No phone number provided for SMS notification");
     return;
   }
 

@@ -1,13 +1,13 @@
 import { EventEmitter } from "events";
 import {
   DeliveryNotificationType,
-  DriverQuotedEventPayload,
   NotificationType,
   DriverNotificationPayload,
   EmailPayloadType,
   UserNotificationPayload,
   DriverQuotedPayload,
   ListnerPayload,
+  UserRejectedPayload,
 } from "@towmycar/common";
 import {
   getEmailContent,
@@ -25,53 +25,6 @@ interface CheckAndProcessEmailParams {
     htmlBody: string;
   };
   recipientEmail: string;
-}
-
-async function checkAndProcessEmail({
-  payload,
-  notificationType,
-  userId,
-  breakdownRequestId,
-  emailContent,
-  recipientEmail,
-}: CheckAndProcessEmailParams) {
-  try {
-    const isAlreadySent = await NotificationRepository.checkNotificationSent({
-      userId,
-      notificationType,
-      deliveryType: DeliveryNotificationType.EMAIL,
-      breakdownRequestId: breakdownRequestId,
-    });
-
-    if (isAlreadySent) {
-      console.log(`Email already sent for user: ${userId}`);
-      return false;
-    }
-    const emailPayloadType: EmailPayloadType = {
-      recipientEmail,
-      subject: emailContent.subject,
-      htmlBody: emailContent.htmlBody,
-    };
-
-    await sendEmail(notificationType, emailPayloadType);
-
-    await NotificationRepository.saveNotification({
-      userId,
-      breakdownRequestId,
-      title: emailContent.subject,
-      message: emailContent.htmlBody,
-      baseNotificationType: DeliveryNotificationType.EMAIL,
-      deliveryType: DeliveryNotificationType.EMAIL,
-      notificationType: notificationType,
-      payload: JSON.stringify(payload),
-      url: payload.viewRequestLink,
-    });
-
-    return true;
-  } catch (error) {
-    console.error(`Failed to process email for user ${userId}:`, error);
-    return false;
-  }
 }
 
 export function registerEmailListener(emitter: EventEmitter): void {
@@ -168,7 +121,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_REQUEST,
-        userId: payload.user.id,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -206,7 +159,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_CREATED,
-        userId: payload.user.id,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -216,34 +169,34 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // USER_ACCEPT handler
   emitter.on(
-    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_ACCEPT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_ACCEPTED}`,
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
-        NotificationType.USER_ACCEPT,
+        NotificationType.USER_ACCEPTED,
         payload
       );
       await checkAndProcessEmail({
         payload,
-        notificationType: NotificationType.USER_ACCEPT,
-        userId: payload.user.id,
+        notificationType: NotificationType.USER_ACCEPTED,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
-        recipientEmail: payload.user.email,
+        recipientEmail: payload.driver.email,
       });
     }
   );
 
   // DRIVER_REJECT handler
   emitter.on(
-    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_REJECT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_REJECTED}`,
     async (payload: DriverNotificationPayload) => {
       const emailContent = getEmailContent(
-        NotificationType.DRIVER_REJECT,
+        NotificationType.DRIVER_REJECTED,
         payload
       );
       await checkAndProcessEmail({
         payload,
-        notificationType: NotificationType.DRIVER_REJECT,
+        notificationType: NotificationType.DRIVER_REJECTED,
         userId: payload.driver.userId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
@@ -273,15 +226,15 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // DRIVER_ACCEPT handler
   emitter.on(
-    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_ACCEPT}`,
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_ACCEPTED}`,
     async (payload: DriverNotificationPayload) => {
       const emailContent = getEmailContent(
-        NotificationType.DRIVER_ACCEPT,
+        NotificationType.DRIVER_ACCEPTED,
         payload
       );
       await checkAndProcessEmail({
         payload,
-        notificationType: NotificationType.DRIVER_ACCEPT,
+        notificationType: NotificationType.DRIVER_ACCEPTED,
         userId: payload.driver.userId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
@@ -292,16 +245,16 @@ export function registerEmailListener(emitter: EventEmitter): void {
 
   // USER_REJECT handler
   emitter.on(
-    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_REJECT}`,
-    async (payload: UserNotificationPayload) => {
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.USER_REJECTED}`,
+    async (payload: UserRejectedPayload) => {
       const emailContent = getEmailContent(
-        NotificationType.USER_REJECT,
+        NotificationType.USER_REJECTED,
         payload
       );
       await checkAndProcessEmail({
         payload,
-        notificationType: NotificationType.USER_REJECT,
-        userId: payload.user.id,
+        notificationType: NotificationType.USER_REJECTED,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -320,11 +273,59 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.RATING_REVIEW,
-        userId: payload.user.id,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
       });
     }
   );
+}
+
+async function checkAndProcessEmail({
+  payload,
+  notificationType,
+  userId,
+  breakdownRequestId,
+  emailContent,
+  recipientEmail,
+}: CheckAndProcessEmailParams) {
+  try {
+    const isAlreadySent = await NotificationRepository.checkNotificationSent({
+      userId,
+      notificationType,
+      deliveryType: DeliveryNotificationType.EMAIL,
+      breakdownRequestId: breakdownRequestId,
+    });
+
+    if (isAlreadySent) {
+      console.log(`Email already sent for user: ${userId}`);
+      return false;
+    }
+    const emailPayload: EmailPayloadType = {
+      recipientEmail,
+      subject: emailContent.subject,
+      htmlBody: emailContent.htmlBody,
+    };
+
+    const result = await sendEmail(emailPayload);
+    if (!result) {
+      await NotificationRepository.saveNotification({
+        userId,
+        breakdownRequestId,
+        title: emailContent.subject,
+        message: emailContent.htmlBody,
+        deliveryType: DeliveryNotificationType.EMAIL,
+        notificationType: notificationType,
+        payload: JSON.stringify(payload),
+        url: payload.viewRequestLink,
+      });
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error(`Failed to process email for user ${userId}:`, error);
+    return false;
+  }
 }

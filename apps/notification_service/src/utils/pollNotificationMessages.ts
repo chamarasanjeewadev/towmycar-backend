@@ -18,9 +18,9 @@ const queueURL = SQS_QUEUE_URL;
 const eventEmitter = new EventEmitter();
 registerEmailListener(eventEmitter);
 registerPushNotificationListener(eventEmitter);
-// if (SMS_CONFIG.isEnabled) {
-registerSmsNotificationListener(eventEmitter);
-// }
+if (SMS_CONFIG.isEnabled) {
+  registerSmsNotificationListener(eventEmitter);
+}
 
 function emitNotifications(
   emitter: EventEmitter,
@@ -29,8 +29,10 @@ function emitNotifications(
 ) {
   emitter.emit(`${DeliveryNotificationType.EMAIL}:${subType}`, payload);
   emitter.emit(`${DeliveryNotificationType.PUSH}:${subType}`, payload);
-  //SMS_CONFIG.isEnabled &&
+  console.log("sms config...", SMS_CONFIG);
+  if (!!SMS_CONFIG.isEnabled) {
     emitter.emit(`${DeliveryNotificationType.SMS}:${subType}`, payload);
+  }
 }
 
 async function processMessage(message: AWS.SQS.Message) {
@@ -80,7 +82,7 @@ export const pollMessagesFromSQS = async () => {
     logger.error("Error receiving messages", err);
   }
 
-  setTimeout(pollMessagesFromSQS, 5000);
+  setTimeout(pollMessagesFromSQS, 15000);
 };
 
 export const handler: SQSHandler = async (

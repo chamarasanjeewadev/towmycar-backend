@@ -9,44 +9,32 @@ import {
   DriverNotificationPayload,
   UserNotificationPayload,
   DriverQuotedPayload,
+  UserAcceptedPayload,
+  UserAcceptedEventPayload,
+  UserRejectedPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.DRIVER_NOTIFICATION,
     async (payload: DriverNotifyEventPayload) => {
-      const snsNotificationPayload = payload?.drivers.map(driver => {
-        const userWithDriver: UserWithDriver = {
-          userId: driver.userId,
-          email: driver.email,
-          firstName: driver.firstName,
-          lastName: driver.lastName,
-          phoneNumber: driver.phoneNumber,
-          driver: {
-            id: driver.id,
-            phoneNumber: driver.phoneNumber,
-          },
-        };
+      const snsNotificationPayload = payload?.drivers.map(driver => ({
+        ...payload,
+        sendToId: driver.userId,
+        driver: driver,
+        location: payload.location,
+        breakdownRequestId: payload.requestId,
+        user: payload.user,
+        viewRequestLink: payload.viewRequestLink,
+        createdAt: payload.createdAt,
+        googleMapsLink: payload.googleMapsLink,
+      }));
 
-        const snsPayload: DriverNotificationPayload = {
-          sendToId: driver.userId,
-          driver: userWithDriver,
-          location: payload.location,
-          breakdownRequestId: payload.requestId,
-          user: payload.user,
-          viewRequestLink: payload.viewRequestLink,
-          createdAt: payload.createdAt,
-          googleMapsLink: payload.googleMapsLink,
-        };
-
-        return snsPayload;
-      });
-      // modify payload for email
       await sendSNSNotification(
         process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
         {
           subType: NotificationType.DRIVER_NOTIFICATION,
-          payload: snsNotificationPayload,
+          payload: snsNotificationPayload as any,
         }
       );
     }
@@ -120,72 +108,116 @@ export function registerNotificationListener(emitter: EventEmitter): void {
   );
 
   emitter.on(NotificationType.DRIVER_REGISTERED, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.driver.userId,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.DRIVER_REGISTERED,
-      payload,
+      payload: notificationPayload,
     });
   });
 
   emitter.on(NotificationType.USER_REQUEST, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.USER_REQUEST,
-      payload,
+      payload: notificationPayload,
     });
   });
 
   emitter.on(NotificationType.USER_CREATED, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.USER_CREATED,
-      payload,
+      payload: notificationPayload,
     });
   });
 
-  emitter.on(NotificationType.USER_ACCEPT, async payload => {
+  emitter.on(
+    NotificationType.USER_ACCEPTED,
+    async (payload: UserAcceptedEventPayload) => {
+      const userAcceptedPlayload: UserAcceptedPayload = {
+        ...payload,
+        sendToId: payload.driver.userId,
+      };
+
+      await sendSNSNotification(
+        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+        {
+          subType: NotificationType.USER_ACCEPTED,
+          payload: userAcceptedPlayload,
+        }
+      );
+    }
+  );
+
+  emitter.on(NotificationType.USER_REJECTED, async payload => {
+    const userRejectedPlayload: UserRejectedPayload = {
+      ...payload,
+      sendToId: payload.driver.userId,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.USER_ACCEPT,
-      payload,
+      subType: NotificationType.USER_REJECTED,
+      payload: userRejectedPlayload,
     });
   });
 
-  emitter.on(NotificationType.DRIVER_REJECT, async payload => {
+  emitter.on(NotificationType.DRIVER_REJECTED, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.DRIVER_REJECT,
-      payload,
+      subType: NotificationType.DRIVER_REJECTED,
+      payload: notificationPayload,
     });
   });
 
   emitter.on(NotificationType.DRIVER_ASSIGNED, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.DRIVER_ASSIGNED,
-      payload,
+      payload: notificationPayload,
     });
   });
 
-  emitter.on(NotificationType.DRIVER_QUOTED, async payload => {
-    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.DRIVER_QUOTED,
-      payload,
-    });
-  });
+  emitter.on(NotificationType.DRIVER_ACCEPTED, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
 
-  emitter.on(NotificationType.DRIVER_ACCEPT, async payload => {
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.DRIVER_ACCEPT,
-      payload,
-    });
-  });
-
-  emitter.on(NotificationType.USER_REJECT, async payload => {
-    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.USER_REJECT,
-      payload,
+      subType: NotificationType.DRIVER_ACCEPTED,
+      payload: notificationPayload,
     });
   });
 
   emitter.on(NotificationType.RATING_REVIEW, async payload => {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.driver.userId,
+    };
+
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.RATING_REVIEW,
-      payload,
+      payload: notificationPayload,
     });
   });
 }

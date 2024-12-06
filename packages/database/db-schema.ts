@@ -254,9 +254,7 @@ export const notifications = pgTable("notifications", {
   userId: integer("user_id")
     .references(() => user.id, { onDelete: "cascade" })
     .notNull(),
-  baseNotificationType: varchar("base_notification_type", {
-    length: 100,
-  }),
+
   deliveryType: varchar("delivery_type", {
     length: 100,
   }),

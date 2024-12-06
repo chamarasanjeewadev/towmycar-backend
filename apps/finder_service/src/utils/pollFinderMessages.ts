@@ -85,8 +85,8 @@ export const pollMessagesFromSQS = async () => {
     logger.error("Error stack:", (err as Error).stack);
   }
 
-  logger.info("Scheduling next poll in 5 seconds");
-  setTimeout(pollMessagesFromSQS, 15000);
+  logger.info("Scheduling next poll in 2 minutes");
+  setTimeout(pollMessagesFromSQS, 120000);
 };
 
 export const handler = async (

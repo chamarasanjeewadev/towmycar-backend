@@ -27,7 +27,6 @@ interface NotificationInput {
   url?: string | null;
   notificationType: string;
   deliveryType: DeliveryNotificationType;
-  baseNotificationType: DeliveryNotificationType;
   breakdownRequestId?: number | null;
   payload?: string | null;
 }
@@ -62,9 +61,8 @@ const checkNotificationSent = async (
         and(
           eq(notifications.userId, tracking.userId),
           eq(notifications.notificationType, tracking.notificationType),
-          eq(notifications.baseNotificationType, tracking.deliveryType),
+          eq(notifications.deliveryType, tracking.deliveryType),
           eq(notifications.breakdownRequestId, tracking.breakdownRequestId),
-          gt(notifications.createdAt, new Date(Date.now() - 3600000))
         )
       )
       .limit(1);

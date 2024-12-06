@@ -6,58 +6,13 @@ import {
   DriverNotificationPayload,
   UserNotificationPayload,
   ListnerPayload,
+  UserRejectedPayload,
+  UserAcceptedEventPayload,
+  UserAcceptedPayload,
 } from "@towmycar/common";
 import { SMSNotificationService } from "../service/notification.sms.service";
 import { NotificationRepository } from "../repository/notification.repository";
-
-async function processSMSNotification(
-  notificationType: NotificationType,
-  payload: ListnerPayload
-) {
-  try {
-    const userId = payload.sendToId;
-
-    const isAlreadySent = await NotificationRepository.checkNotificationSent({
-      userId,
-      notificationType,
-      deliveryType: DeliveryNotificationType.SMS,
-      breakdownRequestId: payload.breakdownRequestId,
-    });
-
-    if (isAlreadySent) {
-      console.log(
-        `SMS notification already sent for user/driver: ${userId}, type: ${notificationType}`
-      );
-      return;
-    }
-
-    const smsPayload = SMSNotificationService.generateSMSNotificationPayload(
-      notificationType,
-      payload
-    );
-
-    await SMSNotificationService.sendSMSNotification(notificationType, payload);
-
-    await NotificationRepository.saveNotification({
-      userId: payload.sendToId,
-      breakdownRequestId: payload.breakdownRequestId,
-      baseNotificationType: DeliveryNotificationType.SMS,
-      deliveryType: DeliveryNotificationType.SMS,
-      notificationType: notificationType,
-      payload: JSON.stringify(payload),
-      url: smsPayload.viewLink,
-      title: notificationType,
-      message: smsPayload.message,
-    });
-
-    console.log(`SMS notification sent successfully to ${userId}`);
-  } catch (error) {
-    console.error(
-      `Failed to process ${notificationType} SMS notification for user/driver:`,
-      error
-    );
-  }
-}
+import { shouldCheckDuplicate } from "../utils/notification.utils";
 
 export function registerSmsNotificationListener(emitter: EventEmitter): void {
   // DRIVER_NOTIFICATION handler (array payload)
@@ -113,17 +68,17 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
 
   // USER_ACCEPT handler
   emitter.on(
-    `${DeliveryNotificationType.SMS}:${NotificationType.USER_ACCEPT}`,
-    async (payload: NotificationPayload) => {
-      await processSMSNotification(NotificationType.USER_ACCEPT, payload);
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_ACCEPTED}`,
+    async (payload: UserAcceptedPayload) => {
+      await processSMSNotification(NotificationType.USER_ACCEPTED, payload);
     }
   );
 
   // DRIVER_REJECT handler
   emitter.on(
-    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_REJECT}`,
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_REJECTED}`,
     async (payload: NotificationPayload) => {
-      await processSMSNotification(NotificationType.DRIVER_REJECT, payload);
+      await processSMSNotification(NotificationType.DRIVER_REJECTED, payload);
     }
   );
 
@@ -156,17 +111,17 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
 
   // DRIVER_ACCEPT handler
   emitter.on(
-    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_ACCEPT}`,
+    `${DeliveryNotificationType.SMS}:${NotificationType.DRIVER_ACCEPTED}`,
     async (payload: NotificationPayload) => {
-      await processSMSNotification(NotificationType.DRIVER_ACCEPT, payload);
+      await processSMSNotification(NotificationType.DRIVER_ACCEPTED, payload);
     }
   );
 
   // USER_REJECT handler
   emitter.on(
-    `${DeliveryNotificationType.SMS}:${NotificationType.USER_REJECT}`,
-    async (payload: NotificationPayload) => {
-      await processSMSNotification(NotificationType.USER_REJECT, payload);
+    `${DeliveryNotificationType.SMS}:${NotificationType.USER_REJECTED}`,
+    async (payload: UserRejectedPayload) => {
+      await processSMSNotification(NotificationType.USER_REJECTED, payload);
     }
   );
 
@@ -177,4 +132,52 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
       await processSMSNotification(NotificationType.RATING_REVIEW, payload);
     }
   );
+}
+
+async function processSMSNotification(
+  notificationType: NotificationType,
+  payload: ListnerPayload
+) {
+  try {
+    const userId = payload.sendToId;
+
+    if (shouldCheckDuplicate(notificationType)) {
+      const isAlreadySent = await NotificationRepository.checkNotificationSent({
+        userId,
+        notificationType,
+        deliveryType: DeliveryNotificationType.SMS,
+        breakdownRequestId: payload.breakdownRequestId,
+      });
+
+      if (isAlreadySent) {
+        console.log(
+          `SMS notification already sent for user/driver: ${userId}, type: ${notificationType}`
+        );
+        return;
+      }
+    }
+
+    const smsPayload = SMSNotificationService.generateSMSNotificationPayload(
+      notificationType,
+      payload
+    );
+
+    await NotificationRepository.saveNotification({
+      userId: payload.sendToId,
+      breakdownRequestId: payload.breakdownRequestId,
+      deliveryType: DeliveryNotificationType.SMS,
+      notificationType: notificationType,
+      payload: JSON.stringify(payload),
+      url: smsPayload.viewLink,
+      title: notificationType,
+      message: smsPayload.message,
+    });
+
+    console.log(`SMS notification sent successfully to ${userId}`);
+  } catch (error) {
+    console.error(
+      `Failed to process ${notificationType} SMS notification for user/driver:`,
+      error
+    );
+  }
 }
