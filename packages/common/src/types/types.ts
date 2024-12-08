@@ -79,7 +79,7 @@ export interface UserWithCustomer {
 }
 export interface UserWithDriver {
   userId: number;
-  email: string;
+  email?: string;
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
@@ -282,3 +282,57 @@ export interface RatingReviewPayload extends BaseNotificationPayload {
 }
 
 // Type mapping for all notification types
+export interface BreakdownAssignmentDetails {
+  id: number;
+  requestId: number;
+  driverStatus: string;
+  userStatus: string;
+  estimation: string;
+  explanation: string;
+  updatedAt: Date;
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  };
+  createdAt: string;
+  userRequest: {
+    id: number;
+    customerId: number;
+    status: string;
+    description: string | null;
+    regNo: string | null;
+    weight: number | null;
+    address: string;
+    createdAt: string;
+    updatedAt: string;
+    make: string | null;
+    makeModel: string | null;
+    mobileNumber: string | null;
+    requestType: string;
+  };
+  driver: {
+    id: number;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    imageUrl: string | null;
+    vehicleType: string;
+    regNo: string;
+    phoneNumber:string;
+    vehicleRegistration: string;
+    licenseNumber: string;
+    serviceRadius: number;
+    workingHours: string;
+    experienceYears: number;
+    insuranceDetails: string;
+    primaryLocation: string;
+  };
+  customer: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    imageUrl: string | null;
+    mobileNumber: string | null;
+  };
+}

@@ -109,7 +109,7 @@ const updateUserStatusInBreakdownAssignment = async (
       return true;
     }
     //TODO move to common service
-    const driverInfo = await DriverRepository.getDriverByRequestId(updatedAssignment.requestId);
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(updatedAssignment.driverId, updatedAssignment.requestId);
     const customerDetails = await DriverRepository.getCustomerByRequestId(
       updatedAssignment.requestId
     );

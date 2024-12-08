@@ -93,35 +93,6 @@ export const saveFcmToken = async (
 };
 
 // Add this new function
-// export const createClerkUser = async (email: string, role: string = 'customer') => {
-//   try {
-//     const user = await Clerk.users.create({
-//       emailAddress: email,
-//       publicMetadata: {
-//         role: role,
-//       },
-//     });
-//     return user;
-//   } catch (error) {
-//     console.error("Error creating Clerk user:", error);
-//     throw error;
-//   }
-// };
-// keep this for future reference removed creaeUser
-// const emailSnsResult = await sendNotification(
-//   process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
-//   {
-//     type: EmailNotificationType.USER_CREATED_EMAIL,
-//     payload: {
-//       firstName: input.username,
-//       lastName: input.username,
-//       email: input.email,
-//       viewRequestLink: `http://localhost:5173/user/profile`,
-//     },
-//   }
-// );
-
-// Add this new function
 export const createUserFromWebhook = async (
   userData: UserData,
   repo: UserRepositoryType

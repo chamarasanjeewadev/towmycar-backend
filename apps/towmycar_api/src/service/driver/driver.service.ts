@@ -80,7 +80,7 @@ export class DriverService {
     // }
 
     // Fetch user details
-    const driverInfo = await DriverRepository.getDriverByRequestId(requestId);
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(driverId,requestId);
     const customerDetails = await DriverRepository.getCustomerByRequestId(
       requestId
     );
@@ -200,7 +200,7 @@ export class DriverService {
       closeBreakdownAssignment
     );
 
-    const driverInfo = await DriverRepository.getDriverByRequestId(
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(closeBreakdownAssignment?.driverId,
       closeBreakdownAssignment?.requestId
     );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
@@ -217,7 +217,7 @@ export class DriverService {
     const payload: DriverClosedEventPayload = {
       breakdownRequestId: closeBreakdownAssignment?.requestId,
       driver: userWithDriver,
-      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${closeBreakdownAssignment?.requestId}?i?token=${token}`,
+      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${closeBreakdownAssignment?.requestId}?token=${token}`,
       user: userWithCustomer,
     };
 

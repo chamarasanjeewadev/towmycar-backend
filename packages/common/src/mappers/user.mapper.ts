@@ -1,4 +1,4 @@
-import { UserWithDriver, UserWithCustomer } from '../types/types';
+import { UserWithDriver, UserWithCustomer, BreakdownAssignmentDetails } from '../types/types';
 
 interface DriverInfo {
   userId: number;
@@ -17,16 +17,16 @@ interface CustomerInfo {
   mobileNumber?: string;
 }
 
-export function mapToUserWithDriver(driverInfo: DriverInfo): UserWithDriver {
+export function mapToUserWithDriver(driverInfo: BreakdownAssignmentDetails): UserWithDriver {
   return {
-    userId: driverInfo.userId,
-    email: driverInfo.email,
-    firstName: driverInfo.firstName,
-    lastName: driverInfo.lastName || undefined,
-    phoneNumber: driverInfo.phoneNumber || undefined,
+    userId: driverInfo.id,
+    email: driverInfo.driver?.email??"",
+    firstName: driverInfo.driver?.firstName || undefined,
+    lastName: driverInfo.driver?.lastName || undefined,
+    phoneNumber: driverInfo.driver?.phoneNumber || undefined,
     driver: {
-      id: driverInfo.driverId,
-      phoneNumber: driverInfo.phoneNumber,
+      id: driverInfo.driver?.id,
+      phoneNumber: driverInfo.driver?.phoneNumber,
     },
   };
 }

@@ -65,7 +65,7 @@ const findAndNotifyNearbyDrivers = async (
       // may be we need to check if the emitted record is successfyll resolved before deleting
       notificationEmitter.emit(NotificationType.DRIVER_NOTIFICATION, {
         drivers: nearbyDrivers,
-        requestId,
+        breakdownRequestId: requestId,
         user,
         location: request?.location,
         toLocation: request.toLocation,

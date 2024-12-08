@@ -33,7 +33,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: DriverNotificationPayload[]) => {
       const processPromises = payload.map(async payload => {
         const emailContent = getEmailContent(
-          NotificationType.USER_NOTIFICATION,
+          NotificationType.DRIVER_NOTIFICATION,
           payload
         );
 

@@ -92,6 +92,7 @@ export interface BreakdownAssignmentDetails {
     imageUrl: string | null;
     vehicleType: string;
     regNo: string;
+    phoneNumber:string;
     vehicleRegistration: string;
     licenseNumber: string;
     serviceRadius: number;

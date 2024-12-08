@@ -321,6 +321,7 @@ export const DriverRepository: IDriverRepository = {
         imageUrl: driverUser.imageUrl,
         vehicleType: driver.vehicleType,
         regNo: driver.vehicleRegistration,
+        phoneNumber:driver .phoneNumber,
         vehicleRegistration: driver.vehicleRegistration,
         licenseNumber: driver.licenseNumber,
         serviceRadius: driver.serviceRadius,
@@ -689,8 +690,8 @@ export const DriverRepository: IDriverRepository = {
             //@ts-ignore
             driverStatus: DriverStatus.CLOSED.toString(),
             updatedAt: new Date(),
-            reason: reason,
-            iscompleted: markAsCompleted,
+            reasonToClose: reason,
+            isCompleted: markAsCompleted,
           })
           .where(
             and(
@@ -713,6 +714,7 @@ export const DriverRepository: IDriverRepository = {
             .set({
               //@ts-ignore
               status: BreakdownRequestStatus.CLOSED,
+       
               updatedAt: new Date(),
             })
             .where(eq(breakdownRequest.id, requestId));

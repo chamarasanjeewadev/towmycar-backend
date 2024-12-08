@@ -14,7 +14,7 @@ export const userRejectedEmail = (payload: any) => {
   const htmlBody = createBaseTemplate({ content });
 
   return {
-    subject: `User Accepted Quotation for Request #${payload.requestId}`,
+    subject: `User Rejected your Quotation for Request #${payload.requestId}`,
     htmlBody,
   };
 };

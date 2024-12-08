@@ -7,7 +7,6 @@ import {
   UserNotificationPayload,
   ListnerPayload,
   UserRejectedPayload,
-  UserAcceptedEventPayload,
   UserAcceptedPayload,
 } from "@towmycar/common";
 import { SMSNotificationService } from "../service/notification.sms.service";
@@ -161,6 +160,7 @@ async function processSMSNotification(
       notificationType,
       payload
     );
+    SMSNotificationService.sendSMSNotification(notificationType, payload);
 
     await NotificationRepository.saveNotification({
       userId: payload.sendToId,
