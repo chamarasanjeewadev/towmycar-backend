@@ -1,0 +1,17 @@
+name: Log Messages on Branch Push
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  log-messages:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print branch message
+        run: |
+          echo "Console log: Triggered on branch push."
+          echo "Console log: Branch name is ${{ github.ref_name }}."
