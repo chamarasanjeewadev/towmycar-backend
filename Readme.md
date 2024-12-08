@@ -1,13 +1,16 @@
 ## emails to be sent
+
 ## users
+
 -- When user registers ( email verification)- sent email
 -- User creates breakdown request
-     ---email to each driver in the area
-     ---email to user saying request has been created or not
+---email to each driver in the area
+---email to user saying request has been created or not
 -- User accepts breakdown request
 -- user Rejects breakdown request
 
 ## drivers
+
 -- When driver registers (email verification)
 -- When driver gets a breakdown request
 -- When driver quotes a breakdown request
@@ -21,24 +24,43 @@ To manage your Docker containers and clear persisted data, you can use the provi
 
 - To stop the Docker containers:
 
-    ```sh
-    make down
-    ```
+  ```sh
+  make down
+  ```
 
 - To clear the persisted data:
 
-    ```sh
-    make clear-data
-    ```
+  ```sh
+  make clear-data
+  ```
 
 - To start the Docker containers:
 
-    ```sh
-    make up
-    ```
+  ```sh
+  make up
+  ```
 
 - To restart the Docker containers with clean data:
 
-    ```sh
-    make restart
-    ```
+        ```sh
+        make restart
+        ```
+
+
+CREATE EXTENSION IF EXISTS postgis CASCADE;
+
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+LJ06YXB- NO WEIGHT 
+LY57HXU- NO WEIGHT 1075
+
+S600ANU 2500
+AD19LZN 1950
+BD07XAA 1180
+
+cdk bootstrap --profile tow-my-car-dev-account  
+
+AWS_PROFILE=tow-my-car-dev-account yarn run deploy:dev 
+
+
+CREATE EXTENSION IF NOT EXISTS postgis;

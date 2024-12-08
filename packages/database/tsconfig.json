@@ -2,13 +2,14 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "commonjs",
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "outDir": "./dist"
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["db-schema.ts", "index.ts"],
-  "exclude": ["node_modules"]
+  "include": ["*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

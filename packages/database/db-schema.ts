@@ -9,8 +9,13 @@ import {
   numeric,
   uuid,
   boolean,
+  unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
-import { UserStatus } from "./enums";
+import {
+  DeliveryNotificationType,
+  BreakdownRequestStatus,
+} from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -49,6 +54,7 @@ export const driver = pgTable("driver", {
     .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
+  address: text("address"),
   stripeId: varchar("stripe_id", { length: 255 }), // Stripe customer ID
   stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }), // New field for Stripe payment method ID
   phoneNumber: varchar("phone_number", { length: 20 }),
@@ -62,6 +68,7 @@ export const driver = pgTable("driver", {
     srid: 4326,
   }),
   workingHours: varchar("working_hours", { length: 100 }),
+  maxWeight: integer("max_weight"),
   experienceYears: integer("experience_years"),
   insuranceDetails: text("insurance_details"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -77,10 +84,20 @@ export const breakdownRequest = pgTable("breakdown_request", {
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
   regNo: varchar("reg_no", { length: 20 }),
+  mobileNumber: varchar("mobile_number", { length: 20 }),
+  make: varchar("make", { length: 200 }),
+  model: varchar("model", { length: 200 }),
   weight: numeric("weight", { precision: 10, scale: 2 }),
+
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
+  toAddress: text("to_address"),
   userLocation: geometry("user_location", {
+    type: "point",
+    mode: "xy",
+    srid: 4326,
+  }).notNull(),
+  userToLocation: geometry("user_to_location", {
     type: "point",
     mode: "xy",
     srid: 4326,
@@ -88,44 +105,63 @@ export const breakdownRequest = pgTable("breakdown_request", {
   description: varchar("description", { length: 255 }),
   status: varchar("status", { length: 20 })
     .notNull()
-    .default(UserStatus.PENDING),
+    .default(BreakdownRequestStatus.WAITING),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // New FCM tokens table
-export const fcmTokens = pgTable("fcm_tokens", {
-  id: serial("id").primaryKey().notNull(),
-  userId: integer("user_id")
-    .references(() => user.id, { onDelete: "cascade" })
-    .notNull(),
-  token: text("token").notNull(),
-  browserInfo: text("browser_info"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-});
+export const fcmTokens = pgTable(
+  "fcm_tokens",
+  {
+    id: serial("id").primaryKey().notNull(),
+    userId: integer("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
+      .notNull(),
+    token: text("token").notNull(),
+    browserInfo: text("browser_info"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  table => ({
+    // Adding the unique constraint
+    requestDriverUnique: unique().on(table.userId, table.token),
+  })
+);
 
 // Updated breakdownAssignment table
-export const breakdownAssignment = pgTable("breakdown_assignment", {
-  id: serial("id").primaryKey().notNull(),
-  requestId: integer("request_id")
-    .references(() => breakdownRequest.id, { onDelete: "cascade" })
-    .notNull(),
-  driverId: integer("driver_id")
-    .references(() => driver.id, { onDelete: "cascade" })
-    .notNull(),
-  driverStatus: varchar("driver_status", { length: 20 }),
-  userStatus: varchar("user_status", { length: 20 }),
-  estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
-  explanation: text("estimate_explanation"),
-  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const breakdownAssignment = pgTable(
+  "breakdown_assignment",
+  {
+    id: serial("id").primaryKey().notNull(),
+    requestId: integer("request_id")
+      .references(() => breakdownRequest.id, { onDelete: "cascade" })
+      .notNull(),
+    driverId: integer("driver_id")
+      .references(() => driver.id, { onDelete: "cascade" })
+      .notNull(),
+    driverStatus: varchar("driver_status", { length: 20 }),
+    reasonToClose: text("reason_to_close"),
+    isCompleted: boolean("is_completed").default(false).notNull(),
+    userStatus: varchar("user_status", { length: 20 }),
+    estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
+    explanation: text("estimate_explanation"),
+    assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    paymentId: integer("payment_id").references(() => payments.id, {
+      onDelete: "set null",
+    }),
+  },
+  table => ({
+    // Adding the unique constraint
+    requestDriverUnique: unique().on(table.requestId, table.driverId),
+  })
+);
 
 // New vehicles table
 export const vehicles = pgTable("vehicles", {
@@ -165,15 +201,6 @@ export const chats = pgTable("chats", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export type User = typeof user.$inferSelect;
-export type Customer = typeof customer.$inferSelect;
-export type Driver = typeof driver.$inferSelect;
-export type BreakdownRequest = typeof breakdownRequest.$inferSelect;
-export type BreakdownAssignment = typeof breakdownAssignment.$inferSelect;
-export type FcmToken = typeof fcmTokens.$inferSelect;
-export type Vehicle = typeof vehicles.$inferSelect;
-export type Chat = typeof chats.$inferSelect;
-
 // New table for ratings and feedback
 export const serviceRatings = pgTable("service_ratings", {
   id: serial("id").primaryKey().notNull(),
@@ -188,9 +215,9 @@ export const serviceRatings = pgTable("service_ratings", {
   }),
   customerRating: integer("customer_rating"),
   customerFeedback: text("customer_feedback"),
-  driverRating: integer("driver_rating"),
-  driverFeedback: text("driver_feedback"),
-  serviceProvided: boolean('serviceProvided').default(false),
+  siteRating: integer("site_rating"),
+  siteFeedback: text("site_feedback"),
+  serviceProvided: boolean("serviceProvided").default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -199,5 +226,65 @@ export const serviceRatings = pgTable("service_ratings", {
     .notNull(),
 });
 
-// Add the new type at the end of the file
+// Add this new table for payment tracking
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey().notNull(),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", {
+    length: 255,
+  }).notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull(),
+  driverId: integer("driver_id")
+    .references(() => driver.id, { onDelete: "cascade" })
+    .notNull(),
+  requestId: integer("request_id")
+    .references(() => breakdownRequest.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey().notNull(),
+  userId: integer("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull(),
+
+  deliveryType: varchar("delivery_type", {
+    length: 100,
+  }),
+  notificationType: varchar("notification_type", { length: 100 }).notNull(),
+  breakdownRequestId: integer("breakdown_request_id").references(
+    () => breakdownRequest.id,
+    { onDelete: "cascade" }
+  ),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  url: text("url"),
+  payload: jsonb("payload").default({}).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  isSeen: boolean("is_seen").default(false).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING, SENT, FAILED
+});
+
+export type User = typeof user.$inferSelect;
+export type Customer = typeof customer.$inferSelect;
+export type Driver = typeof driver.$inferSelect;
+export type BreakdownRequest = typeof breakdownRequest.$inferSelect;
+export type BreakdownAssignment = typeof breakdownAssignment.$inferSelect;
+export type FcmToken = typeof fcmTokens.$inferSelect;
+export type Vehicle = typeof vehicles.$inferSelect;
+export type Chat = typeof chats.$inferSelect;
 export type ServiceRating = typeof serviceRatings.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
+export type Notifications = typeof notifications.$inferSelect;

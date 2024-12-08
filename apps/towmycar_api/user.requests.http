@@ -1,0 +1,191 @@
+@port = 9001
+
+### Create User
+POST http://localhost:{{port}}/user/user
+Content-Type: application/json
+
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "postcode": "12345",
+    "vehicleRegistration": "ABC123",
+    "mobileNumber": "1234567890"
+}
+
+
+### Create User
+POST http://localhost:{{port}}/user/register
+Content-Type: application/json
+
+{
+  "email": "test5@breakdown.com",
+  "username": "test5user",
+  "password": "test1234",
+    "userType": "user"
+}
+
+###
+
+
+### Create Breakdown Request
+POST http://localhost:{{port}}/breakdownrequest
+Content-Type: application/json
+Authorization: Bearer <your-token-if-required>
+
+{
+  "userId": "2",
+  "requestType": "Flat Tire",
+  "location": "Main Street, City Center",
+  "description": "Left front tire is flat"
+}
+
+###
+
+POST http://localhost:{{port}}/combined-breakdown-request
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "test@breakdown.com",
+  "postcode": "54321",
+  "vehicleRegistration": "XYZ789",
+  "mobileNumber": "9876543210",
+  "requestType": "Engine Failure",
+  "location": "Highway 101, Mile Marker 50",
+  "description": "Engine suddenly stopped working"
+}
+
+# {
+#   "breakdownRequestId": "req5678",
+#   "status": "Breakdown reported successfully."
+# }
+
+### Get all breakdown requests with user details
+GET http://localhost:{{port}}/list?page=1&limit=10
+Content-Type: application/json
+
+### Register Driver (if not already present)
+
+### Get user's breakdown assignments
+GET http://localhost:{{port}}/user/1/assignments
+Content-Type: application/json
+
+### Get user's specific breakdown assignment
+GET http://localhost:{{port}}/user/11/assignments/8
+Content-Type: application/json
+
+### Update user's breakdown assignment status
+PATCH http://localhost:{{port}}/user/11/assignment/8/status
+Content-Type: application/json
+
+{
+  "userStatus": "accepted"
+}
+
+### Update driver's breakdown assignment status
+PATCH http://localhost:{{port}}/user/assignment/7/status
+Content-Type: application/json
+
+{
+  "userStatus": "accepted"
+}
+
+### Save FCM Token
+POST http://localhost:{{port}}/user/fcm-token
+Content-Type: application/json
+Authorization: Bearer <your-jwt-token-here>
+
+{
+  "userId": 1,
+  "token": "your-fcm-token2-here3",
+  "browserInfo": "Optional browser information"
+}
+
+### Get user profile by email
+GET http://localhost:{{port}}/user/profile?email=user1@gmail.com
+Content-Type: application/json
+Authorization: Bearer <your-jwt-token-here>
+
+### Call Webhook
+POST https://989a-82-14-209-151.ngrok-free.app/user/webhook
+Content-Type: application/json
+svix-id: your-svix-id-here
+svix-timestamp: your-svix-timestamp-here
+svix-signature: your-svix-signature-here
+
+{
+  "data": {
+    "id": "example-webhook-id",
+    "object": "event",
+    "type": "user.created",
+    "data": {
+      "id": "user_2eD9Ns2Ix1evMTDCHyYFP8JBpmH",
+      "object": "user",
+      "username": "test_user",
+      "email": "test@example.com",
+      "created_at": 1679647500495,
+      "updated_at": 1679647500495
+    }
+  },
+  "object": "event"
+}
+
+POST https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles
+Content-Type: application/json
+x-api-key: AntSFFGFiT7FeqsH2ISlS1ltsRrwTYWw9bY1dSX3
+
+{
+  "registrationNumber": "FE13FEP"
+}
+
+
+LJ06YXB- NO WEIGHT 
+LY57HXU- NO WEIGHT 1075
+
+S600ANU 2500
+AD19LZN 1950
+BD07XAA 1180
+
+### Verify Vehicle Registration (DVLA API)
+POST https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles
+Content-Type: application/json
+x-api-key: {{$dotenv VEHICLE_REGISTRATION_API_KEY}}
+
+{
+  "registrationNumber": "SA12JVN"
+}
+
+### Verify Vehicle Registration (CheckCarDetails API)
+GET https://api.checkcardetails.co.uk/vehicledata/ukvehicledata?apikey={{$dotenv VEHICLE_REGISTRATION_API_KEY}}&vrm=S600ANU
+Content-Type: application/json
+
+### Geocode Address
+GET https://maps.googleapis.com/maps/api/geocode/json?address=8+holne+chase,plymouth,UK&key=AIzaSyC1akDZ3ixo0oqsyIQB5565ZM4r-9hDGp0
+
+### Create Anonymous Breakdown Request
+POST https://z7supi5fdw3gp5evgamxo4eifm0lghya.lambda-url.us-east-1.on.aws/user/anonymous-breakdown-request
+Content-Type: application/json
+
+{
+  "firstName": "Anonymous",
+  "lastName": "User",
+  "email": "anonymous@example.com",
+  "postcode": "AB123CD",
+  "vehicleRegistration": "XYZ789",
+  "mobileNumber": "0123456789",
+  "requestType": "Battery Issue",
+  "location": "Park Avenue, City Center",
+  "description": "Car won't start, possibly due to a dead battery"
+}
+
+###
+### Get User Profile
+GET https://z7supi5fdw3gp5evgamxo4eifm0lghya.lambda-url.us-east-1.on.aws/user/profile
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18ybjlLd3V2b2NyUnNzZXJuRE5Yd09oMGNaRUYiLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJleHAiOjE3Mjg2NDMwOTEsImlhdCI6MTcyODY0MzAzMSwiaXNzIjoiaHR0cHM6Ly9yZWxheGVkLW1pZGdlLTMxLmNsZXJrLmFjY291bnRzLmRldiIsIm5iZiI6MTcyODY0MzAyMSwic2lkIjoic2Vzc18ybjlPbnQ0VjVYRjJrQ3liZTdTeHNFNkJnYkIiLCJzdWIiOiJ1c2VyXzJuOU9ubnYxUU9kN0dIMUhFazlaWW1mUEc2UyJ9.h1Qyj4y2a7pxpngdvmNwGQB9s8UTSwRuADaB8KQnsM676Fn__k52thIFhUmSA1Bk0UpfZY8UiQmj_hWDFcJ9-oOo909kd1xi0tnmpRMASNS7LrNTwDCRyUZQj6FFB1E89Nk_eQsJD1zIii9EMn-PQtUUeuMMYLCfz39FVfGAVvWBe2kbqjdEbytY_BOnJCTZmy5R0synpQM8gIDmFX_YXeYrDHxcWi0HsbRG00pyq7rFe5yO9snBAiFtYrkFZAsdpGqpeDGIR32VPllE0goU4n-EuvW_NsKITAddo4jng_FhUuIHloTmD0Ld2R0NWh4L0WnUFJyPDTgPAQ7nw3AkRw
+
+
+### Google Places Autocomplete API
+GET https://maps.googleapis.com/maps/api/place/autocomplete/json?input=holne%20chase&types=address&key={{$dotenv GOOGLE_MAPS_API_KEY}}

@@ -1,0 +1,28 @@
+{
+  "name": "cdk",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "cdk": "bin/cdk.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "deploy:dev": "cdk deploy --context env=development",
+    "deploy:staging": "cdk deploy --context env=staging",
+    "deploy:prod": "cdk deploy --context env=production",
+    "deploy:custom": "cdk deploy --context env=staging --profile custom-profile"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.133.0",
+    "constructs": "^10.0.0",
+    "@aws-cdk/aws-apigatewayv2-alpha": "^2.0.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.0.0-alpha.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

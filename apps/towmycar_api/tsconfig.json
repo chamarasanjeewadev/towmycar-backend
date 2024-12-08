@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": false,
+    "esModuleInterop": true,
+    "baseUrl": "."
+    // "paths": {
+    //   "@towmycar/common": ["common/src"]
+    // }
+    // "paths": {
+    //   "@towmycar/database": ["../../packages/database"]
+    // }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

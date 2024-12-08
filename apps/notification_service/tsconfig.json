@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "CommonJS",
+    "rootDir": "src",
+    "baseUrl": "src",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "5.0",
+   
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noEmitOnError": false, // Allow emitting output files even if there are errors
+    "allowJs": true, // Allow JavaScript files
+    "checkJs": false // Disable checking JavaScript files
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts", "dist"]
+}
