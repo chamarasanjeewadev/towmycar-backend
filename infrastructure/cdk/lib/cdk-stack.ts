@@ -16,12 +16,25 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import * as dotenv from "dotenv";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 
-// Load environment variables
-const envPath = path.join(__dirname, "../../../apps/towmycar_api/.env");
-dotenv.config({ path: envPath });
+function loadServiceEnvFile(servicePath: string, environment: string): void {
+  const envFile = environment === "production" ? ".env.prod" : ".env.dev";
+  const envPath = path.join(
+    __dirname,
+    `../../../apps/${servicePath}/${envFile}`
+  );
+  dotenv.config({ path: envPath });
+}
+
+function loadEnvironmentVariables(environment: string): void {
+  // Load environment variables for each service
+  loadServiceEnvFile("towmycar_api", environment);
+  loadServiceEnvFile("finder_service", environment);
+  loadServiceEnvFile("notification_service", environment);
+}
 
 interface CdkStackProps extends cdk.StackProps {
   description: string;
+  environment: string;
 }
 
 export class CdkStack extends cdk.Stack {
@@ -40,6 +53,12 @@ export class CdkStack extends cdk.Stack {
 
   constructor(scope: cdk.App, id: string, props: CdkStackProps) {
     super(scope, id, props);
+
+    // Use environment from props instead of trying to access app
+    const environment = props.environment;
+
+    // Load the appropriate environment variables
+    loadEnvironmentVariables(environment);
 
     this.createQueuesAndTopics();
     this.setupSNStoSQSSubscriptions();
@@ -179,7 +198,8 @@ export class CdkStack extends cdk.Stack {
         TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
         TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
         ENABLE_SMS: process.env.ENABLE_SMS || "false",
-        NODE_TLS_REJECT_UNAUTHORIZED: process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0",
+        NODE_TLS_REJECT_UNAUTHORIZED:
+          process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0",
       },
     });
   }
@@ -192,7 +212,7 @@ export class CdkStack extends cdk.Stack {
     // Finder Function permissions
     this.breakdownRequestQueue.grantConsumeMessages(this.finderFunction);
     this.sendNotificationTopic.grantPublish(this.finderFunction);
-    
+
     // Add SQS event source to finder function
     this.finderFunction.addEventSource(
       new lambdaEventSources.SqsEventSource(this.breakdownRequestQueue, {
@@ -203,20 +223,20 @@ export class CdkStack extends cdk.Stack {
 
     // Notification Function permissions
     this.sendNotificationQueue.grantConsumeMessages(this.notificationFunction);
-    
+
     // Grant SES permissions to notification function
     this.notificationFunction.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: [
-          'ses:SendEmail',
-          'ses:SendRawEmail',
-          'ses:SendTemplatedEmail'
+          "ses:SendEmail",
+          "ses:SendRawEmail",
+          "ses:SendTemplatedEmail",
         ],
-        resources: ['*'] // You can restrict this to specific SES ARNs if needed
+        resources: ["*"], // You can restrict this to specific SES ARNs if needed
       })
     );
-    
+
     // Add SQS event source to notification function
     this.notificationFunction.addEventSource(
       new lambdaEventSources.SqsEventSource(this.sendNotificationQueue, {

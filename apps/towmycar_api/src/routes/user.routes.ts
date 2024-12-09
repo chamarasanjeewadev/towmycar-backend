@@ -72,19 +72,28 @@ function validateSvixHeaders(headers: any) {
 }
 
 async function handleUserCreated(evt: any, res: Response) {
-  const userData = evt.data;
-  const userInfo = await service.createUserFromWebhook(userData, repo);
-  const stripeCustomerId = await createStripeCustomerIfDriver(
-    userInfo,
-    userData
-  );
-  await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
+  try {
+    const userData = evt.data;
+    const userInfo = await service.createUserFromWebhook(userData, repo);
+    const stripeCustomerId = await createStripeCustomerIfDriver(
+      userInfo,
+      userData
+    );
+    await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
 
-  return res.status(200).json({
-    success: true,
-    message:
-      "User created, processed, and Stripe customer created successfully",
-  });
+    return res.status(200).json({
+      success: true,
+      message:
+        "User created, processed, and Stripe customer created successfully",
+    });
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error processing webhook",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
@@ -106,31 +115,36 @@ async function updateClerkUser(
   userInfo: any,
   stripeCustomerId: string | undefined
 ) {
-  const params = {
-    userInfo: {
-      ...userInfo,
-      ...(stripeCustomerId && { stripeCustomerId }),
-    },
-  };
-
-  const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
-  console.log("updatedUser.....", updatedUser);
-
-  if (userInfo?.userId) {
-    await clerkClient.users.updateUserMetadata(clerkUserId, {
-      privateMetadata: {
-        userInfo: {
-          ...userInfo,
-          ...(stripeCustomerId && { stripeCustomerId }),
-        },
+  try {
+    const params = {
+      userInfo: {
+        ...userInfo,
+        ...(stripeCustomerId && { stripeCustomerId }),
       },
-      publicMetadata: {
-        userInfo: {
-          ...userInfo,
-          ...(stripeCustomerId && { stripeCustomerId }),
+    };
+
+    const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
+    console.log("updatedUser.....", updatedUser);
+
+    if (userInfo?.userId) {
+      await clerkClient.users.updateUserMetadata(clerkUserId, {
+        privateMetadata: {
+          userInfo: {
+            ...userInfo,
+            ...(stripeCustomerId && { stripeCustomerId }),
+          },
         },
-      },
-    });
+        publicMetadata: {
+          userInfo: {
+            ...userInfo,
+            ...(stripeCustomerId && { stripeCustomerId }),
+          },
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error updating user metadata:", error);
+    throw error;
   }
 }
 
@@ -400,8 +414,6 @@ router.get(
     }
   }
 );
-
-
 
 // Add this new route for marking notifications as seen
 router.patch(

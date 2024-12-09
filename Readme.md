@@ -64,3 +64,17 @@ AWS_PROFILE=tow-my-car-dev-account yarn run deploy:dev
 
 
 CREATE EXTENSION IF NOT EXISTS postgis;
+
+to turn off rds ssl 
+Go to the Amazon RDS Console.
+Navigate to Databases > Your RDS Instance.
+Under Configuration, note the Parameter Group.
+Edit the parameter group:
+Search for rds.force_ssl.
+Set it to 0 (if you want to allow non-SSL connections).
+After changing the parameter group, reboot your RDS instance to apply the changes.
+
+ if experienced parameter group issue
+ https://stackoverflow.com/questions/76899023/rds-while-connection-error-no-pg-hba-conf-entry-for-host
+
+ https://www.checkcardetails.co.uk/api/vehicledata

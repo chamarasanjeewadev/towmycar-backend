@@ -10,9 +10,13 @@
   ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
+    "db:generate:prod": "dotenv -e .env.prod -- drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:push:prod": "dotenv -e .env.prod -- drizzle-kit push",
     "db:migrate": "tsx ./migration.ts",
+    "db:migrate:prod": "dotenv -e .env.prod -- tsx ./migration.ts",
     "db:studio": "drizzle-kit studio --port 6000",
+    "db:studio:prod": "dotenv -e .env.prod -- drizzle-kit studio --port 6000",
     "build": "tsc",
     "prepublishOnly": "yarn build"
   },
@@ -26,6 +30,7 @@
     "pg": "^8.12.0"
   },
   "devDependencies": {
+    "dotenv-cli": "^7.4.4",
     "drizzle-kit": "^0.25.0",
     "tsx": "^4.19.0"
   }

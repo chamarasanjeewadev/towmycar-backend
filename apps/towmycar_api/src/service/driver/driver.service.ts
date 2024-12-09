@@ -1,5 +1,3 @@
-import { driver } from "./../../../../../packages/database/db-schema";
-import { user } from "./../../../../../node_modules/@towmycar/database/db-schema";
 import { DriverProfileDtoType } from "../../dto/driver.dto";
 import {
   IDriverRepository,
@@ -16,8 +14,6 @@ import {
   DriverStatus,
   registerNotificationListener,
   TokenService,
-  UserWithCustomer,
-  UserWithDriver,
 } from "@towmycar/common";
 import { NotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
