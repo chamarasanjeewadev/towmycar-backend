@@ -17,7 +17,7 @@ import * as dotenv from "dotenv";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 
 function loadServiceEnvFile(servicePath: string, environment: string): void {
-  const envFile = environment === "production" ? ".env.prod" : ".env.dev";
+  const envFile = environment === "prod" ? ".env.prod" : ".env.dev";
   const envPath = path.join(
     __dirname,
     `../../../apps/${servicePath}/${envFile}`
@@ -174,6 +174,12 @@ export class CdkStack extends cdk.Stack {
         TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
         TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
         ENABLE_SMS: process.env.ENABLE_SMS || "false",
+        PUSHER_APP_ID: process.env.PUSHER_APP_ID || "",
+        PUSHER_APP_KEY: process.env.PUSHER_APP_KEY || "",
+        PUSHER_APP_SECRET: process.env.PUSHER_APP_SECRET || "",
+        PUSHER_APP_CLUSTER: process.env.PUSHER_APP_CLUSTER || "",
+        GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || "",
+        RATING_SECRET_KEY: process.env.RATING_SECRET_KEY || "",
       },
     });
 

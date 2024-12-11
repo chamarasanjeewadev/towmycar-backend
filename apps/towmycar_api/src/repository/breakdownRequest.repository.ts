@@ -18,6 +18,8 @@ import {
   desc,
   count,
   isNotNull,
+  SQL,
+ Column,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import {
@@ -132,6 +134,25 @@ export type BreakdownRequestRepositoryType = {
   ) => Promise<DriverProfile | null>;
 };
 
+// Add these utility functions after the imports
+function maskText(text: SQL<string> | Column<any, any, any>, visibleChars: number = 3): SQL<string> {
+  return sql<string>`CASE 
+    WHEN ${text} IS NULL THEN NULL
+    ELSE CONCAT(SUBSTRING(${text}, 1, ${visibleChars}), REPEAT('*', GREATEST(LENGTH(${text}) - ${visibleChars}, 0)))
+  END`;
+}
+
+function maskSensitiveData(
+  text: SQL<string> |Column<any, any, any>, 
+  isVisible: SQL<boolean>, 
+  visibleChars: number = 3
+): SQL<string> {
+  return sql<string>`CASE 
+    WHEN ${isVisible} THEN ${text}
+    ELSE ${maskText(text, visibleChars)}
+  END`;
+}
+
 const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
   try {
     const breakdownData: Omit<BreakdownRequest, "id"> = {
@@ -139,6 +160,8 @@ const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
       requestType: data.requestType,
       address: data.address,
       toAddress: data.toAddress,
+      postCode:data.postCode,
+      toPostCode:data.toPostCode,
       make: data.make,
       model: data.makeModel,
       mobileNumber: data.mobileNumber,
@@ -246,8 +269,8 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
                 'email', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.email} ELSE NULL END,
-                'firstName', ${driverUser.firstName},
-                'lastName', ${driverUser.lastName},
+                'firstName', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.firstName} ELSE NULL END,
+                'lastName', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.lastName} ELSE NULL END,
                 'phoneNumber', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END,
                 'imageUrl', ${driverUser.imageUrl}
               )
@@ -397,12 +420,16 @@ const getBreakdownAssignmentsByRequestId = async (
     updatedAt: breakdownAssignment.updatedAt,
     driver: {
       id: driver.id,
-      email: sql<string>`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.email} ELSE NULL END`,
-      phoneNumber: sql<string>`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END`,
-      firstName: driverUser.firstName,
-      lastName: driverUser.lastName,
-      imageUrl: driverUser.imageUrl,
+      email: maskSensitiveData(driverUser.email, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
+      phoneNumber: maskSensitiveData(driver.phoneNumber, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
+      firstName: maskSensitiveData(driverUser.firstName, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
+      lastName: maskSensitiveData(driverUser.lastName, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
+      imageUrl: sql<string>`CASE 
+        WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.imageUrl} 
+        ELSE NULL 
+      END`
     },
+
     customer: {
       id: customer.id,
       firstName: user.firstName,
@@ -603,11 +630,14 @@ const getBreakdownRequestById = async (
               'updatedAt', ${breakdownAssignment.updatedAt},
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
-                'email', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.email} ELSE NULL END,
-                'firstName', ${user.firstName},
-                'lastName', ${user.lastName},
-                'phoneNumber', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END,
-                'imageUrl', ${user.imageUrl}
+                'email', ${maskSensitiveData(user.email, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'firstName', ${maskSensitiveData(user.firstName, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'lastName', ${maskSensitiveData(user.lastName, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'phoneNumber', ${maskSensitiveData(driver.phoneNumber, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'imageUrl', CASE 
+                  WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.imageUrl} 
+                  ELSE NULL 
+                END
               )
             )
           ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL),
@@ -712,17 +742,14 @@ const getDriverProfile = async (
     // Get driver basic info with conditional contact details
     const driverInfo = await DB.select({
       id: driver.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: sql<string>`CASE 
-        WHEN ${isAccepted} THEN ${user.email}
+      firstName: maskSensitiveData(user.firstName, sql`${isAccepted}`),
+      lastName: maskSensitiveData(user.lastName, sql`${isAccepted}`),
+      email: maskSensitiveData(user.email, sql`${isAccepted}`),
+      phoneNumber: maskSensitiveData(driver.phoneNumber, sql`${isAccepted}`),
+      imageUrl: sql<string>`CASE 
+        WHEN ${isAccepted} THEN ${user.imageUrl}
         ELSE NULL 
       END`,
-      phoneNumber: sql<string>`CASE 
-        WHEN ${isAccepted} THEN ${driver.phoneNumber}
-        ELSE NULL 
-      END`,
-      imageUrl: user.imageUrl,
     })
       .from(driver)
       .innerJoin(user, eq(driver.userId, user.id))

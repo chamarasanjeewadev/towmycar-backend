@@ -4,25 +4,28 @@ import * as cdk from "aws-cdk-lib";
 import { CdkStack } from "../lib/cdk-stack";
 import { getEnvironmentConfig } from "../config/environments";
 import * as AWS from "aws-sdk";
+import { getAWSCredentials } from "../config/aws-credentials";
+
 
 const app = new cdk.App();
-const environment = app.node.tryGetContext("env") || "development";
+const environment = app.node.tryGetContext("env") || "dev";
 
-// Get the environment configuration
-const envConfig = getEnvironmentConfig(environment);
 
-// Get profile name based on environment
 const getProfileName = (env: string): string => {
   switch (env) {
-    case 'production':
+    case 'prod':
       return 'towmycar-prod';
     case 'staging':
       return 'towmycar-staging';
-    case 'development':
+    case 'dev':
     default:
       return 'towmycar-dev';
   }
 };
+
+// Get the environment configuration
+const envConfig = getEnvironmentConfig(environment);
+
 
 // Use AWS credentials from profile
 const credentials = new AWS.SharedIniFileCredentials({
@@ -36,7 +39,7 @@ AWS.config.update({
 });
 
 const stackName = `towmycar-${envConfig.stage}`;
-
+console.log(environment, envConfig);
 new CdkStack(app, stackName, {
   env: {
     account: envConfig.account,

@@ -1,6 +1,4 @@
 import {
-  NotificationPayload,
-  createGoogleMapsLink,
   DriverNotificationPayload,
   formatDate,
 } from "@towmycar/common";

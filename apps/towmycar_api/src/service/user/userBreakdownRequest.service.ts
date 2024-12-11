@@ -38,7 +38,7 @@ const CreateBreakdownRequest = async (
         longitude: combinedInput.userToLocation.longitude,
       },
     };
-
+console.log("breakdownRequestData", breakdownRequestData);
     const createdRequest =
       await BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData

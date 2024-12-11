@@ -78,3 +78,16 @@ After changing the parameter group, reboot your RDS instance to apply the change
  https://stackoverflow.com/questions/76899023/rds-while-connection-error-no-pg-hba-conf-entry-for-host
 
  https://www.checkcardetails.co.uk/api/vehicledata
+
+
+ deploy to cdk
+ production
+ yarn deploy:prod for production
+ cdk will pick all .env.prod files to publish
+ need to have aws profile named tow-my-car-prod
+
+
+ development
+ yarn deploy:dev for development
+ cdk will pick all .env.dev files to publish
+ need to have aws profile named tow-my-car-dev (todo)

@@ -13,6 +13,7 @@
     "db:generate:prod": "dotenv -e .env.prod -- drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:push:prod": "dotenv -e .env.prod -- drizzle-kit push",
+    "db:pull:prod": "dotenv -e .env.prod -- drizzle-kit pull",
     "db:migrate": "tsx ./migration.ts",
     "db:migrate:prod": "dotenv -e .env.prod -- tsx ./migration.ts",
     "db:studio": "drizzle-kit studio --port 6000",

@@ -7,15 +7,11 @@ import {
   serial,
   geometry,
   numeric,
-  uuid,
   boolean,
   unique,
   jsonb,
 } from "drizzle-orm/pg-core";
-import {
-  DeliveryNotificationType,
-  BreakdownRequestStatus,
-} from "@towmycar/common";
+import { BreakdownRequestStatus } from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -88,7 +84,8 @@ export const breakdownRequest = pgTable("breakdown_request", {
   make: varchar("make", { length: 200 }),
   model: varchar("model", { length: 200 }),
   weight: numeric("weight", { precision: 10, scale: 2 }),
-
+  postCode: varchar("post_code", { length: 20 }),
+  toPostCode: varchar("to_post_code", { length: 20 }),
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
   toAddress: text("to_address"),
