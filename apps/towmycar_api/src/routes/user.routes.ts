@@ -4,14 +4,14 @@ import * as repository from "../repository/user.repository";
 import { UserRegisterInput } from "../dto/userRequest.dto";
 import { UserRepository } from "../repository/user.repository";
 import { saveFcmToken } from "../service/user/user.service";
-import { fcmTokenSchema, FcmTokenInput } from "../dto/fcmToken.dto";
+import { FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import axios from "axios";
 import Stripe from "stripe";
 import { Driver } from "@towmycar/database";
 import { DriverRepository } from "../repository/driver.repository";
-import { CustomError, ERROR_CODES } from "../utils";
+import { CustomError, ERROR_CODES } from "@towmycar/common";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 
 const router = express.Router();

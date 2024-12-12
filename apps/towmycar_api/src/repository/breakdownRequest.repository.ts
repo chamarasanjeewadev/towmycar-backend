@@ -19,7 +19,7 @@ import {
   count,
   isNotNull,
   SQL,
- Column,
+  Column,
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import {
@@ -27,12 +27,12 @@ import {
   DriverStatus,
   UserStatus,
 } from "@towmycar/common";
-import { ConflictError, DataBaseError } from "../utils/error";
+import { ConflictError, DataBaseError } from "@towmycar/common";
 import {
   BreakdownAssignmentDetails,
   CloseBreakdownParams,
 } from "./../types/types";
-import { logger } from "../utils";
+import { logger } from "@towmycar/common";
 
 // Add this type definition
 type BreakdownRequestWithUserDetails = {
@@ -135,7 +135,10 @@ export type BreakdownRequestRepositoryType = {
 };
 
 // Add these utility functions after the imports
-function maskText(text: SQL<string> | Column<any, any, any>, visibleChars: number = 3): SQL<string> {
+function maskText(
+  text: SQL<string> | Column<any, any, any>,
+  visibleChars: number = 3
+): SQL<string> {
   return sql<string>`CASE 
     WHEN ${text} IS NULL THEN NULL
     ELSE CONCAT(SUBSTRING(${text}, 1, ${visibleChars}), REPEAT('*', GREATEST(LENGTH(${text}) - ${visibleChars}, 0)))
@@ -143,8 +146,8 @@ function maskText(text: SQL<string> | Column<any, any, any>, visibleChars: numbe
 }
 
 function maskSensitiveData(
-  text: SQL<string> |Column<any, any, any>, 
-  isVisible: SQL<boolean>, 
+  text: SQL<string> | Column<any, any, any>,
+  isVisible: SQL<boolean>,
   visibleChars: number = 3
 ): SQL<string> {
   return sql<string>`CASE 
@@ -160,8 +163,8 @@ const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
       requestType: data.requestType,
       address: data.address,
       toAddress: data.toAddress,
-      postCode:data.postCode,
-      toPostCode:data.toPostCode,
+      postCode: data.postCode,
+      toPostCode: data.toPostCode,
       make: data.make,
       model: data.makeModel,
       mobileNumber: data.mobileNumber,
@@ -420,14 +423,26 @@ const getBreakdownAssignmentsByRequestId = async (
     updatedAt: breakdownAssignment.updatedAt,
     driver: {
       id: driver.id,
-      email: maskSensitiveData(driverUser.email, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
-      phoneNumber: maskSensitiveData(driver.phoneNumber, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
-      firstName: maskSensitiveData(driverUser.firstName, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
-      lastName: maskSensitiveData(driverUser.lastName, sql`${breakdownAssignment.paymentId} IS NOT NULL`),
+      email: maskSensitiveData(
+        driverUser.email,
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+      ),
+      phoneNumber: maskSensitiveData(
+        driver.phoneNumber,
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+      ),
+      firstName: maskSensitiveData(
+        driverUser.firstName,
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+      ),
+      lastName: maskSensitiveData(
+        driverUser.lastName,
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+      ),
       imageUrl: sql<string>`CASE 
         WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.imageUrl} 
         ELSE NULL 
-      END`
+      END`,
     },
 
     customer: {
@@ -630,12 +645,26 @@ const getBreakdownRequestById = async (
               'updatedAt', ${breakdownAssignment.updatedAt},
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
-                'email', ${maskSensitiveData(user.email, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
-                'firstName', ${maskSensitiveData(user.firstName, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
-                'lastName', ${maskSensitiveData(user.lastName, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
-                'phoneNumber', ${maskSensitiveData(driver.phoneNumber, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'email', ${maskSensitiveData(
+                  user.email,
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                )},
+                'firstName', ${maskSensitiveData(
+                  user.firstName,
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                )},
+                'lastName', ${maskSensitiveData(
+                  user.lastName,
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                )},
+                'phoneNumber', ${maskSensitiveData(
+                  driver.phoneNumber,
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                )},
                 'imageUrl', CASE 
-                  WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.imageUrl} 
+                  WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${
+        user.imageUrl
+      } 
                   ELSE NULL 
                 END
               )

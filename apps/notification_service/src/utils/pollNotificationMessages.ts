@@ -1,5 +1,5 @@
 import AWS from "aws-sdk";
-import { logger } from "./index";
+import { logger } from "@towmycar/common";
 import { SQS_QUEUE_URL, SMS_CONFIG } from "../config";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
 import {

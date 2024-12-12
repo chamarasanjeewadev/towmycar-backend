@@ -14,7 +14,7 @@ import {
   sendEmail,
 } from "../service/notification.email.service";
 import { NotificationRepository } from "../repository/notification.repository";
-
+import { logger } from "@towmycar/common";
 interface CheckAndProcessEmailParams {
   payload: ListnerPayload;
   notificationType: NotificationType;
@@ -309,7 +309,7 @@ async function checkAndProcessEmail({
     };
 
     const result = await sendEmail(emailPayload);
-    if (!result) {
+    if (result) {
       await NotificationRepository.saveNotification({
         userId,
         breakdownRequestId,
@@ -326,6 +326,7 @@ async function checkAndProcessEmail({
     return false;
   } catch (error) {
     console.error(`Failed to process email for user ${userId}:`, error);
+    logger.error(`Failed to process email for user ${userId}:`, error);
     return false;
   }
 }

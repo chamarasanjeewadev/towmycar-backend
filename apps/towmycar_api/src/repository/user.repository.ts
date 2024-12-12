@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { DataBaseError, ERROR_CODES } from "./../utils/error/errors";
+import { DataBaseError, ERROR_CODES } from "@towmycar/common";
 import {
   UserRequestInput,
   UserRegisterInput,

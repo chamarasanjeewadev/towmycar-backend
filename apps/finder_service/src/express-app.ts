@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { httpLogger  } from "./utils";
+import { httpLogger  } from "@towmycar/common";
 
 const app = express();
 app.use(cors());

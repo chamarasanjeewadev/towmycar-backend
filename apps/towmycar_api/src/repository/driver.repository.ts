@@ -14,13 +14,13 @@ import {
   sql,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError } from "../utils/error/errors";
+import { NotFoundError, DataBaseError } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import {
   BreakdownAssignmentDetails,
   CloseDriverAssignmentParams,
 } from "./../types/types";
-import { logger } from "../utils";
+import { logger } from "@towmycar/common";
 import { payments } from "@towmycar/database/db-schema";
 import { notifications } from "@towmycar/database/db-schema";
 import { Notifications } from "@towmycar/database/db-schema";

@@ -1,6 +1,6 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SMSProvider } from "../../../types/types";
-import { logger } from "../../../utils";
+import { logger } from "@towmycar/common";
 
 export class SNSProvider implements SMSProvider {
   private client: SNSClient;

@@ -17,7 +17,7 @@ import {
 } from "@towmycar/common";
 import { NotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
-import { CustomError, ERROR_CODES } from "./../../../src/utils";
+import { CustomError, ERROR_CODES } from "@towmycar/common";
 import EventEmitter from "events";
 import { BreakdownRequestService } from "../user/userBreakdownRequest.service";
 import {
@@ -76,7 +76,10 @@ export class DriverService {
     // }
 
     // Fetch user details
-    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(driverId,requestId);
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      driverId,
+      requestId
+    );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
       requestId
     );
@@ -196,7 +199,8 @@ export class DriverService {
       closeBreakdownAssignment
     );
 
-    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(closeBreakdownAssignment?.driverId,
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      closeBreakdownAssignment?.driverId,
       closeBreakdownAssignment?.requestId
     );
     const customerDetails = await DriverRepository.getCustomerByRequestId(

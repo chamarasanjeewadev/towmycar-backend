@@ -1,19 +1,6 @@
-import winston from "winston";
 import { Request, Response, NextFunction } from "express";
-import { BaseError, CustomError, APIError } from "../utils";
+import { BaseError, CustomError, APIError,logger } from "@towmycar/common";
 
-// Step 1: Set Up Winston for Logging
-const logger = winston.createLogger({
-  level: "error",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "error.log" }),
-  ],
-});
 
 export const errorMiddleware = (
   err: BaseError | CustomError | APIError | Error,
@@ -26,11 +13,6 @@ export const errorMiddleware = (
   let message = "Something went wrong";
   let code = "";
 
-  // if (err instanceof BaseError) {
-  //   statusCode = err.statusCode;
-  //   message = err.message;
-  //   errorCode = err.name;
-  //   code=err.code
   if (err instanceof CustomError) {
     statusCode = err.statusCode;
     message = err.message;

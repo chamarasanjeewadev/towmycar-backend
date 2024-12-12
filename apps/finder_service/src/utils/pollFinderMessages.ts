@@ -2,7 +2,7 @@ import AWS from "aws-sdk";
 import { DriverSearchService } from "../service/driversearch.service";
 import { SQSEvent, Callback } from "aws-lambda";
 import { Context } from "vm";
-import { logger } from "./logger";
+import { logger } from "@towmycar/common";
 
 // Configure the region and credentials (if not already configured globally)
 AWS.config.update({ region: process.env.REGION });
