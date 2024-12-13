@@ -5,9 +5,8 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { registerNotificationListener, sendSNS } from "@towmycar/common";
-import { APIError, BaseError, ERROR_CODES } from "@towmycar/common";
-import { NotificationType, UserStatus } from "@towmycar/common";
+import { registerNotificationListener, sendSNS,BaseError,ERROR_CODES,NotificationType, UserStatus,APIError  } from "@towmycar/common";
+import { } from "@towmycar/common";
 import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
 import { DriverRepository } from "./../../repository/driver.repository";
@@ -41,7 +40,6 @@ const CreateBreakdownRequest = async (
         longitude: combinedInput.userToLocation.longitude,
       },
     };
-    console.log("breakdownRequestData", breakdownRequestData);
     const createdRequest =
       await BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData

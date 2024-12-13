@@ -4,8 +4,17 @@ import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import { combinedAuthMiddleware } from "../middleware/combinedAuth";
-import { RequestIdParamSchema, DriverIdParamSchema, AssignmentIdParamSchema, RatingSchema } from "../dto/breakdownRequest.dto";
-import { AnonymousBreakdownRequestSchema, UserStatusSchema, OptionalRequestIdParamSchema } from "../dto/breakdownRequest.dto";
+import {
+  RequestIdParamSchema,
+  DriverIdParamSchema,
+  AssignmentIdParamSchema,
+  RatingSchema,
+} from "../dto/breakdownRequest.dto";
+import {
+  AnonymousBreakdownRequestSchema,
+  UserStatusSchema,
+  OptionalRequestIdParamSchema,
+} from "../dto/breakdownRequest.dto";
 
 const router = express.Router();
 
@@ -14,14 +23,16 @@ router.post(
   "/anonymous-breakdown-request",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const validatedData = AnonymousBreakdownRequestSchema.parse({ body: req.body });
-      
+      const validatedData = AnonymousBreakdownRequestSchema.parse({
+        body: req.body,
+      });
+
       const response =
         await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
           validatedData.body as BreakdownRequestInput
         );
 
-      return res.status(200).json(response);
+      return res.status(200).json(response?.breakdownRequestResult);
     } catch (error) {
       next(error);
     }
@@ -33,8 +44,10 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { requestId } = RequestIdParamSchema.parse({ requestId: req.params.requestId });
-      
+      const { requestId } = RequestIdParamSchema.parse({
+        requestId: req.params.requestId,
+      });
+
       const assignments =
         await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
           requestId
@@ -69,7 +82,7 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const {  customerId } = req.userInfo;
+      const { customerId } = req.userInfo;
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
       const { requests, totalCount } =
@@ -99,8 +112,8 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { requestId } = OptionalRequestIdParamSchema.parse({ 
-        requestId: req.params.requestId 
+      const { requestId } = OptionalRequestIdParamSchema.parse({
+        requestId: req.params.requestId,
       });
 
       const assignments =
@@ -120,8 +133,8 @@ router.patch(
   async (req: Request, res: Response, next: NextFunction) => {
     const { userId } = req.userInfo;
     try {
-      const { assignmentId } = AssignmentIdParamSchema.parse({ 
-        assignmentId: req.params.assignmentId 
+      const { assignmentId } = AssignmentIdParamSchema.parse({
+        assignmentId: req.params.assignmentId,
       });
       const { userStatus } = UserStatusSchema.parse(req.body);
 
@@ -133,9 +146,13 @@ router.patch(
         );
 
       if (updated) {
-        res.status(200).json({ message: "Assignment status updated successfully" });
+        res
+          .status(200)
+          .json({ message: "Assignment status updated successfully" });
       } else {
-        res.status(404).json({ error: "Assignment not found or update failed" });
+        res
+          .status(404)
+          .json({ error: "Assignment not found or update failed" });
       }
     } catch (error) {
       next(error);
@@ -148,7 +165,9 @@ router.post(
   combinedAuthMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { requestId } = RequestIdParamSchema.parse({ requestId: req.params.requestId });
+      const { requestId } = RequestIdParamSchema.parse({
+        requestId: req.params.requestId,
+      });
       const ratingData = RatingSchema.parse(req.body);
       const driverId = req.tokenData?.driverId;
 
@@ -158,7 +177,9 @@ router.post(
         driverId,
       });
 
-      res.status(200).json({ message: "Breakdown request closed and rated successfully" });
+      res
+        .status(200)
+        .json({ message: "Breakdown request closed and rated successfully" });
     } catch (error) {
       next(error);
     }
@@ -171,8 +192,8 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { requestId } = RequestIdParamSchema.parse({ 
-        requestId: req.params.requestId 
+      const { requestId } = RequestIdParamSchema.parse({
+        requestId: req.params.requestId,
       });
 
       const breakdownRequest =
@@ -193,8 +214,8 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { driverId } = DriverIdParamSchema.parse({ 
-        driverId: req.params.driverId 
+      const { driverId } = DriverIdParamSchema.parse({
+        driverId: req.params.driverId,
       });
 
       const ratingCount =
@@ -213,8 +234,12 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { requestId } = RequestIdParamSchema.parse({ requestId: req.params.requestId });
-      const { driverId } = DriverIdParamSchema.parse({ driverId: req.params.driverId });
+      const { requestId } = RequestIdParamSchema.parse({
+        requestId: req.params.requestId,
+      });
+      const { driverId } = DriverIdParamSchema.parse({
+        driverId: req.params.driverId,
+      });
       const { page, pageSize } = PaginationQuerySchema.parse(req.query);
 
       const driverProfile =

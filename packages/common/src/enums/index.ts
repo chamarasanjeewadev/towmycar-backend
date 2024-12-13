@@ -21,6 +21,8 @@ export enum NotificationType {
   USER_NOTIFICATION = "USER_NOTIFICATION",
   USER_REJECTED = "USER_REJECTED",
   RATING_REVIEW = "RATING_REVIEW",
+  DRIVER_CHAT_INITIATED = "DRIVER_CHAT_INITIATED",
+  USER_CHAT_INITIATED = "USER_CHAT_INITIATED",
 }
 
 export enum DriverStatus {
@@ -55,4 +57,9 @@ export enum SmsNotificationType {
   DRIVER_ASSIGNED = "DRIVER_ASSIGNED",
   REQUEST_STATUS_UPDATE = "REQUEST_STATUS_UPDATE",
   PAYMENT_CONFIRMATION = "PAYMENT_CONFIRMATION",
+}
+
+export enum MessageSender {
+  Driver = "driver",
+  Customer = "customer",
 }

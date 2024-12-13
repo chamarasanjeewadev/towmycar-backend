@@ -40,7 +40,7 @@ export function driverNotificationEmail(payload: DriverNotificationPayload) {
     
     <p>Thank you for your dedication to helping drivers in need.</p>
 
-    <div style="text-align: center;">
+    <div style="text-align: center; button">
       <a href="${
         payload.viewRequestLink
       }" class="button">View and Accept Request</a>

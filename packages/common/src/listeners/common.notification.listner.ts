@@ -13,6 +13,8 @@ import {
   UserAcceptedEventPayload,
   UserRejectedPayload,
   DriverClosedEventPayload,
+  ChatNotificationPayload,
+  ChatNotificationEventPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -221,4 +223,32 @@ export function registerNotificationListener(emitter: EventEmitter): void {
       payload: notificationPayload,
     });
   });
+
+  emitter.on(NotificationType.DRIVER_CHAT_INITIATED, async (payload:ChatNotificationEventPayload) => {
+    const chatPayload = {
+      ...payload,
+      sendToId: payload?.user.id,
+      breakdownRequestId: payload.breakdownRequestId,
+      viewRequestLink: "",
+    };
+
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.DRIVER_CHAT_INITIATED,
+      payload: chatPayload,
+    });
+  });
+  emitter.on(NotificationType.USER_CHAT_INITIATED, async (payload:ChatNotificationEventPayload) => {
+    const chatPayload = {
+      ...payload,
+      breakdownRequestId: payload.breakdownRequestId,
+      viewRequestLink: "",
+      sendToId: payload.driver.userId,
+    };
+
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.USER_CHAT_INITIATED,
+      payload: chatPayload,
+    });
+  });
+
 }

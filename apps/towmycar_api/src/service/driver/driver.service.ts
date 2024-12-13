@@ -30,6 +30,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20", // Use the latest API version
 });
 
+const MINIMUM_PAYMENT_AMOUNT = 50; // $0.50 in cents (minimum allowed by Stripe for USD)
+
 interface UpdateAssignmentData {
   driverStatus: string;
   estimation?: string;
@@ -241,7 +243,8 @@ export class DriverService {
       );
     }
 
-    const amount = Math.round(estimation * 100); // Convert to cents
+    // Convert estimation to cents and ensure it meets minimum
+    const amount = MINIMUM_PAYMENT_AMOUNT
 
     try {
       const paymentIntent = await stripe.paymentIntents.create({
@@ -255,7 +258,7 @@ export class DriverService {
 
       if (paymentIntent.status !== "succeeded") {
         throw new CustomError(
-          ERROR_CODES.PAYMENT_FAILED,
+          ERROR_CODES.INVALID_PAYMENT_AMOUNT,
           400,
           "Payment failed"
         );
@@ -278,7 +281,9 @@ export class DriverService {
       throw new CustomError(
         ERROR_CODES.PAYMENT_FAILED,
         400,
-        "Payment processing failed. Please try again or contact support."
+        error instanceof CustomError 
+          ? error.message 
+          : "Payment processing failed. Please try again or contact support."
       );
     }
   }

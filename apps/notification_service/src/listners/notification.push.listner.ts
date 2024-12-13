@@ -7,6 +7,7 @@ import {
   DriverQuotedPayload,
   ListnerPayload,
   UserRejectedPayload,
+  ChatNotificationPayload,
 } from "@towmycar/common";
 import { UserNotificationService } from "../service/notification.push.service";
 import { NotificationRepository } from "../repository/notification.repository";
@@ -124,6 +125,18 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.RATING_REVIEW}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.RATING_REVIEW, payload);
+    }
+  );
+  emitter.on(
+    `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_CHAT_INITIATED}`,
+    async (payload: ChatNotificationPayload) => {
+      await processNotification(NotificationType.RATING_REVIEW, payload);
+    }
+  );
+  emitter.on(
+    `${DeliveryNotificationType.PUSH}:${NotificationType.USER_CHAT_INITIATED}`,
+    async (payload: ChatNotificationPayload) => {
+      await processNotification(NotificationType.USER_CHAT_INITIATED, payload);
     }
   );
 }

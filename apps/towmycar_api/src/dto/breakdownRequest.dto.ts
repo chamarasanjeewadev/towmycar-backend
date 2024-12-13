@@ -7,8 +7,8 @@ export const BreakdownRequestSchema = z.object({
   requestType: z.string(),
   address: z.string(),
   toAddress: z.string(),
-  postCode: z.string(),
-  toPostCode: z.string(),
+  postCode: z.string().nullable().optional(),
+  toPostCode: z.string().nullable().optional(),
   make: z.string(),
   makeModel: z.string(),
   regNo: z.string(),
@@ -35,8 +35,8 @@ export interface BreakdownRequestInput {
   requestType: string;
   address: string;
   toAddress: string;
-  postCode:string;
-  toPostCode:string;
+  postCode: string;
+  toPostCode: string;
   make: string;
   makeModel: string;
   regNo: string;

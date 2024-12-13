@@ -1,11 +1,48 @@
 import { ChatRepository } from "../../repository/chat.repository";
 import { Chat } from "@towmycar/database";
-
+import { mapToUserWithCustomer, mapToUserWithDriver, MessageSender, NotificationType, registerNotificationListener } from "@towmycar/common";
+import EventEmitter from "events";
+import {
+  IDriverRepository,
+  DriverRepository,
+} from "../../repository/driver.repository";
 export const getChatsForRequest = async (
   requestId: number
 ): Promise<Chat[]> => {
   try {
     return await ChatRepository.getChatsForRequest(requestId);
+  } catch (error) {
+    console.error("Error in getChatsForRequest:", error);
+    throw new Error("Failed to retrieve chats for request");
+  }
+};
+
+export const SendNewChatPushNotification = async ({driverId,requestId,sender}:{driverId:number,requestId:number,sender:MessageSender}) => {
+ const result= await getChatBySenderRequestAndDriver(driverId,requestId,sender);
+ if(!result){
+  const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+    driverId,
+    requestId
+  );
+  const customerDetails = await DriverRepository.getCustomerByRequestId(
+    requestId
+  );
+
+  const userWithDriver = mapToUserWithDriver(driverInfo);
+  const userWithCustomer = mapToUserWithCustomer(customerDetails);
+  const notificationEmitter = new EventEmitter()
+ registerNotificationListener(notificationEmitter);
+ const notificationType=sender===MessageSender.Driver?NotificationType.DRIVER_CHAT_INITIATED:NotificationType.USER_CHAT_INITIATED
+ notificationEmitter.emit(notificationType, {
+   userWithDriver,userWithCustomer,requestId,sender});
+ }
+}
+
+export const getChatBySenderRequestAndDriver = async (
+  requestId: number,driverId:number,sender:MessageSender
+): Promise<Chat[]> => {
+  try {
+    return await ChatRepository.getChatBySenderRequestAndDriver(requestId,driverId,sender);
   } catch (error) {
     console.error("Error in getChatsForRequest:", error);
     throw new Error("Failed to retrieve chats for request");

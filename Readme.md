@@ -91,3 +91,9 @@ After changing the parameter group, reboot your RDS instance to apply the change
  yarn deploy:dev for development
  cdk will pick all .env.dev files to publish
  need to have aws profile named tow-my-car-dev (todo)
+
+
+ if Insufficient permissions from clerk occurs
+ might be due to credentials issue for environemnts
+ if runs locally might be because webhook is not running
+ might be due to webhook api is wrong....

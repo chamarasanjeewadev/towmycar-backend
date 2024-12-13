@@ -40,7 +40,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         await checkAndProcessEmail({
           payload,
           notificationType: NotificationType.DRIVER_NOTIFICATION,
-          userId: payload.driver.userId,
+          userId: payload.sendToId,
           breakdownRequestId: payload.breakdownRequestId,
           emailContent,
           recipientEmail: payload.driver.email,
@@ -66,7 +66,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_NOTIFICATION,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -84,7 +84,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_QUOTED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -140,7 +140,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_REGISTERED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
@@ -216,7 +216,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ASSIGNED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
@@ -235,7 +235,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ACCEPTED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
