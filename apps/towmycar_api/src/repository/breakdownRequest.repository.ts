@@ -23,13 +23,13 @@ import {
 } from "@towmycar/database";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import {
+  BreakdownAssignmentDetails,
   BreakdownRequestStatus,
   DriverStatus,
   UserStatus,
 } from "@towmycar/common";
 import { ConflictError, DataBaseError } from "@towmycar/common";
 import {
-  BreakdownAssignmentDetails,
   CloseBreakdownParams,
 } from "./../types/types";
 import { logger } from "@towmycar/common";

@@ -1,11 +1,12 @@
 import { ChatRepository } from "../../repository/chat.repository";
-import { Chat } from "@towmycar/database";
-import { mapToUserWithCustomer, mapToUserWithDriver, MessageSender, NotificationType, registerNotificationListener } from "@towmycar/common";
+import { Chat, payments } from "@towmycar/database";
+import { logger, mapToUserWithCustomer, mapToUserWithDriver, MessageSender, NotificationType, registerNotificationListener } from "@towmycar/common";
 import EventEmitter from "events";
 import {
   IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
+import { VIEW_REQUEST_BASE_URL } from "../../config";
 export const getChatsForRequest = async (
   requestId: number
 ): Promise<Chat[]> => {
@@ -18,8 +19,9 @@ export const getChatsForRequest = async (
 };
 
 export const SendNewChatPushNotification = async ({driverId,requestId,sender}:{driverId:number,requestId:number,sender:MessageSender}) => {
- const result= await getChatBySenderRequestAndDriver(driverId,requestId,sender);
- if(!result){
+  try{
+ const result= await getChatBySenderRequestAndDriver(requestId,driverId,sender);
+if(!result.length){
   const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
     driverId,
     requestId
@@ -32,10 +34,18 @@ export const SendNewChatPushNotification = async ({driverId,requestId,sender}:{d
   const userWithCustomer = mapToUserWithCustomer(customerDetails);
   const notificationEmitter = new EventEmitter()
  registerNotificationListener(notificationEmitter);
+const viewRequestLink=sender===MessageSender.Driver?`${VIEW_REQUEST_BASE_URL}/user/requests/chat?requestId=${requestId}&driverId=${driverId}`:`${VIEW_REQUEST_BASE_URL}/driver/requests/chat?requestId=${requestId}`
  const notificationType=sender===MessageSender.Driver?NotificationType.DRIVER_CHAT_INITIATED:NotificationType.USER_CHAT_INITIATED
- notificationEmitter.emit(notificationType, {
-   userWithDriver,userWithCustomer,requestId,sender});
- }
+ const payload={
+  driver:userWithDriver,user:userWithCustomer,breakdownRequestId:requestId,sender, 
+  viewRequestLink
+};
+ notificationEmitter.emit(notificationType, payload);
+}
+}catch(error){
+  logger.error("Error in sending new chat push notification:", error);
+  console.log("Error in sending new chat push notification:", error);
+}
 }
 
 export const getChatBySenderRequestAndDriver = async (

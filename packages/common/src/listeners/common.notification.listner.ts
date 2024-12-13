@@ -3,17 +3,14 @@ import {
   sendNotification as sendSNSNotification,
   DriverNotifyEventPayload,
   NotificationType,
-  UserWithDriver,
   DriverQuotedEventPayload,
   UserNotificationNotificationpayload,
-  DriverNotificationPayload,
   UserNotificationPayload,
   DriverQuotedPayload,
   UserAcceptedPayload,
   UserAcceptedEventPayload,
   UserRejectedPayload,
   DriverClosedEventPayload,
-  ChatNotificationPayload,
   ChatNotificationEventPayload,
 } from "@towmycar/common";
 
@@ -219,7 +216,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.RATING_REVIEW,
+      subType: NotificationType.DRIVER_CLOSED,
       payload: notificationPayload,
     });
   });
@@ -228,8 +225,6 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     const chatPayload = {
       ...payload,
       sendToId: payload?.user.id,
-      breakdownRequestId: payload.breakdownRequestId,
-      viewRequestLink: "",
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
@@ -241,8 +236,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     const chatPayload = {
       ...payload,
       breakdownRequestId: payload.breakdownRequestId,
-      viewRequestLink: "",
-      sendToId: payload.driver.userId,
+      sendToId: payload.driver?.userId,
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {

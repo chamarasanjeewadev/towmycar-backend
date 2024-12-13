@@ -460,8 +460,7 @@ const getUserNotifications = async (
   try {
     return await DB.select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .where(eq(notifications.deliveryType, DeliveryNotificationType.PUSH))
+      .where(and(eq(notifications.userId, userId),eq(notifications.deliveryType, DeliveryNotificationType.PUSH)))
       .orderBy(desc(notifications.createdAt));
   } catch (error) {
     console.error("Error in getUserNotifications:", error);

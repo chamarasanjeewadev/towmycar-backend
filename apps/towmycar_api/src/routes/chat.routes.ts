@@ -55,7 +55,7 @@ router.post("/send-message", async (req: Request, res: Response) => {
         sender,
       }
     );
-    ChatService.SendNewChatPushNotification({driverId,requestId,sender});
+    await ChatService.SendNewChatPushNotification({driverId,requestId,sender});
   
     console.log(
       `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${pusherEventName}`

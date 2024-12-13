@@ -163,6 +163,7 @@ export interface DriverClosedEventPayload {
 
 export interface ChatNotificationEventPayload {
   breakdownRequestId: number;
+  viewRequestLink: string;
   driver: UserWithDriver;
   user: UserWithCustomer;
   sender:MessageSender;
@@ -330,6 +331,7 @@ export interface BreakdownAssignmentDetails {
   };
   driver: {
     id: number;
+    userId:number;
     firstName: string | null;
     lastName: string | null;
     email: string | null;

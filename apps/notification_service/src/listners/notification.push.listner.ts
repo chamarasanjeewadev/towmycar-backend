@@ -130,7 +130,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_CHAT_INITIATED}`,
     async (payload: ChatNotificationPayload) => {
-      await processNotification(NotificationType.RATING_REVIEW, payload);
+      await processNotification(NotificationType.DRIVER_CHAT_INITIATED, payload);
     }
   );
   emitter.on(

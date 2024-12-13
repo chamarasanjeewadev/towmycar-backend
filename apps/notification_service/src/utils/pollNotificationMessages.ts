@@ -56,6 +56,13 @@ async function processMessage(message: AWS.SQS.Message) {
   } catch (error) {
     logger.error("Error processing message:", error);
     throw error;
+  }finally {
+    await sqs
+    .deleteMessage({
+      QueueUrl: queueURL!,
+      ReceiptHandle: message.ReceiptHandle ?? "",
+    })
+    .promise();
   }
 }
 

@@ -14,10 +14,9 @@ import {
   sql,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError } from "@towmycar/common";
+import { NotFoundError, DataBaseError, BreakdownAssignmentDetails } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import {
-  BreakdownAssignmentDetails,
   CloseDriverAssignmentParams,
 } from "./../types/types";
 import { logger } from "@towmycar/common";
@@ -95,6 +94,7 @@ export interface IDriverRepository {
   getDriverById(id: number): Promise<Driver | null>;
   getCustomerByRequestId(requestId: number): Promise<{
     id: number;
+    userId:number;
     firstName: string;
     lastName: string;
     email: string;
@@ -342,6 +342,7 @@ export const DriverRepository: IDriverRepository = {
       },
       driver: {
         id: driver.id,
+        userId:driverUser.id,
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
         email: maskSensitiveData(
@@ -562,6 +563,7 @@ export const DriverRepository: IDriverRepository = {
 
   async getCustomerByRequestId(requestId: number): Promise<{
     id: number;
+    userId:number;
     firstName: string;
     lastName: string;
     email: string;
@@ -571,6 +573,7 @@ export const DriverRepository: IDriverRepository = {
     try {
       const result = await DB.select({
         id: customer.id,
+        userId: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,

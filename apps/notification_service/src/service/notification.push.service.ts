@@ -172,6 +172,20 @@ export function generatePushNotificationPayload(
         title: `New Rating & Review ${requestId}`,
         message: "You have received a new rating and review",
         url: payload?.viewRequestLink,
+      } 
+      case NotificationType.DRIVER_CHAT_INITIATED:
+      return {
+        userId: payload.sendToId,
+        title: `New Chat for ${requestId}`,
+        message: "You have received a new Chat message",
+        url: payload?.viewRequestLink,
+      };
+      case NotificationType.USER_CHAT_INITIATED:
+      return {
+        userId: payload.sendToId,
+        title: `New Chat for ${requestId}`,
+        message: "You have received a new Chat message",
+        url: payload?.viewRequestLink,
       };
 
     default:
