@@ -64,3 +64,36 @@ AWS_PROFILE=tow-my-car-dev-account yarn run deploy:dev
 
 
 CREATE EXTENSION IF NOT EXISTS postgis;
+
+to turn off rds ssl 
+Go to the Amazon RDS Console.
+Navigate to Databases > Your RDS Instance.
+Under Configuration, note the Parameter Group.
+Edit the parameter group:
+Search for rds.force_ssl.
+Set it to 0 (if you want to allow non-SSL connections).
+After changing the parameter group, reboot your RDS instance to apply the changes.
+
+ if experienced parameter group issue
+ https://stackoverflow.com/questions/76899023/rds-while-connection-error-no-pg-hba-conf-entry-for-host
+
+ https://www.checkcardetails.co.uk/api/vehicledata
+
+
+ deploy to cdk
+ production
+ yarn deploy:prod for production
+ cdk will pick all .env.prod files to publish
+ need to have aws profile named tow-my-car-prod
+
+
+ development
+ yarn deploy:dev for development
+ cdk will pick all .env.dev files to publish
+ need to have aws profile named tow-my-car-dev (todo)
+
+
+ if Insufficient permissions from clerk occurs
+ might be due to credentials issue for environemnts
+ if runs locally might be because webhook is not running
+ might be due to webhook api is wrong....

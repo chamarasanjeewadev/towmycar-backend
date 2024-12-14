@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { httpLogger, HandleErrorWithLogger } from "./utils";
+import { httpLogger } from "@towmycar/common";
 
 const app = express();
 
@@ -43,9 +43,6 @@ app.use((err: ErrorWithStatus, _: Request, res: Response, next: NextFunction) =>
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
-
-app.use(HandleErrorWithLogger);
-console.log("app is configured...");
 
 // Add unhandled rejection handler
 process.on('unhandledRejection', (reason: any) => {

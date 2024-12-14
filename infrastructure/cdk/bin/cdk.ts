@@ -1,24 +1,37 @@
-#!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import { CdkStack } from '../lib/cdk-stack';
-import { environments } from '../config/environments';
+// #!/usr/bin/env node
+// import 'source-map-support/register';
+// import * as cdk from 'aws-cdk-lib';
+// import { CdkStack } from '../lib/cdk-stack';
+// import { getEnvironmentConfig } from '../config/environments';
+// import { getAWSCredentials } from '../config/aws-credentials';
+// console.log('Environment:', process.env.NODE_ENV);
+// const app = new cdk.App();
+// const environment = app.node.tryGetContext('env') || 'development';
 
-const app = new cdk.App();
+// // Ensure NODE_ENV is set
+// if (!process.env.NODE_ENV) {
+//   process.env.NODE_ENV = environment;
+// }
 
-// Get environment from context or default to 'development'
-const targetEnv = app.node.tryGetContext('env') || 'development';
+// const envConfig = getEnvironmentConfig(environment);
+// const awsCredentials = getAWSCredentials(environment);
 
-if (!environments[targetEnv]) {
-  throw new Error(`Invalid environment: ${targetEnv}. Valid environments are: ${Object.keys(environments).join(', ')}`);
-}
+// // Configure AWS SDK
+// process.env.AWS_ACCESS_KEY_ID = awsCredentials.accessKeyId;
+// process.env.AWS_SECRET_ACCESS_KEY = awsCredentials.secretAccessKey;
+// process.env.AWS_REGION = awsCredentials.region;
 
-const envConfig = environments[targetEnv];
+// const stackName = `towmycar-${envConfig.stage}`;
 
-new CdkStack(app, `TowMyCar-${targetEnv}`, {
-  env: {
-    account: envConfig.account,
-    region: envConfig.region,
-  },
-  description: `TowMyCar stack for ${targetEnv} environment`,
-});
+// new CdkStack(app, stackName, {
+//   env: {
+//     account: envConfig.account,
+//     region: envConfig.region,
+//   },
+//   environment,
+//   description: `TowMyCar ${envConfig.stage} environment stack`,
+//   tags: {
+//     Environment: envConfig.stage,
+//     Project: 'TowMyCar',
+//   },
+// });

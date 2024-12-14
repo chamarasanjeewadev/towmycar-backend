@@ -1,5 +1,5 @@
 import AWS from "aws-sdk";
-import { logger } from "./index";
+import { logger } from "@towmycar/common";
 import { SQS_QUEUE_URL, SMS_CONFIG } from "../config";
 import { SQSEvent, SQSHandler, Context, Callback } from "aws-lambda";
 import {
@@ -56,6 +56,13 @@ async function processMessage(message: AWS.SQS.Message) {
   } catch (error) {
     logger.error("Error processing message:", error);
     throw error;
+  }finally {
+    await sqs
+    .deleteMessage({
+      QueueUrl: queueURL!,
+      ReceiptHandle: message.ReceiptHandle ?? "",
+    })
+    .promise();
   }
 }
 

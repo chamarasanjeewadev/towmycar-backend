@@ -8,9 +8,33 @@ type ChatRepositoryType = {
     driverId: number,
     requestId: number
   ) => Promise<Chat[]>;
+  getChatBySenderRequestAndDriver :  (
+    requestId: number,driverId:number,sender:MessageSender
+  )=> Promise<Chat[]> ;
 };
 
+
 export const ChatRepository: ChatRepositoryType = {
+
+   async getChatBySenderRequestAndDriver(
+    requestId: number,driverId:number,sender:MessageSender
+  ): Promise<Chat[]>  {
+    try {
+      const result = await DB.select()
+        .from(chats)
+        .where(and(eq(chats.requestId, requestId),
+        eq(chats.driverId, driverId),
+        eq(chats.sender, sender)
+      ))
+        .orderBy(chats.sentAt);
+  
+      return result;
+    } catch (error) {
+      console.error("Error in getChatsForRequest:", error);
+      throw new DatabaseError(`Failed to get chats for request: ${error}`);
+    }
+  },
+  
   async getChatsForRequest(requestId: number): Promise<Chat[]> {
     try {
       const result = await DB.select()

@@ -3,16 +3,16 @@ import {
   sendNotification as sendSNSNotification,
   DriverNotifyEventPayload,
   NotificationType,
-  UserWithDriver,
   DriverQuotedEventPayload,
   UserNotificationNotificationpayload,
-  DriverNotificationPayload,
   UserNotificationPayload,
   DriverQuotedPayload,
   UserAcceptedPayload,
   UserAcceptedEventPayload,
   UserRejectedPayload,
   DriverClosedEventPayload,
+  ChatNotificationEventPayload,
+  DriverQuotationUpdatedPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -89,13 +89,14 @@ export function registerNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.DRIVER_QUOTATION_UPDATED,
     async (payload: DriverQuotedEventPayload) => {
-      const driverQuotedPlayload: DriverQuotedPayload = {
+      const driverQuotedPlayload: DriverQuotationUpdatedPayload = {
         sendToId: payload.user.id,
         driver: payload.driver,
         breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
-        price: payload.newPrice,
+        previousPrice: 0,//TODO
+        newPrice: payload.newPrice,
         estimation: payload.estimation,
       };
       await sendSNSNotification(
@@ -217,8 +218,33 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.RATING_REVIEW,
+      subType: NotificationType.DRIVER_CLOSED,
       payload: notificationPayload,
     });
   });
+
+  emitter.on(NotificationType.DRIVER_CHAT_INITIATED, async (payload:ChatNotificationEventPayload) => {
+    const chatPayload = {
+      ...payload,
+      sendToId: payload?.user.id,
+    };
+
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.DRIVER_CHAT_INITIATED,
+      payload: chatPayload,
+    });
+  });
+  emitter.on(NotificationType.USER_CHAT_INITIATED, async (payload:ChatNotificationEventPayload) => {
+    const chatPayload = {
+      ...payload,
+      breakdownRequestId: payload.breakdownRequestId,
+      sendToId: payload.driver?.userId,
+    };
+
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.USER_CHAT_INITIATED,
+      payload: chatPayload,
+    });
+  });
+
 }

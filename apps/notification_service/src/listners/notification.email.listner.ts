@@ -14,7 +14,7 @@ import {
   sendEmail,
 } from "../service/notification.email.service";
 import { NotificationRepository } from "../repository/notification.repository";
-
+import { logger } from "@towmycar/common";
 interface CheckAndProcessEmailParams {
   payload: ListnerPayload;
   notificationType: NotificationType;
@@ -40,7 +40,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         await checkAndProcessEmail({
           payload,
           notificationType: NotificationType.DRIVER_NOTIFICATION,
-          userId: payload.driver.userId,
+          userId: payload.sendToId,
           breakdownRequestId: payload.breakdownRequestId,
           emailContent,
           recipientEmail: payload.driver.email,
@@ -66,7 +66,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.USER_NOTIFICATION,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -84,7 +84,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_QUOTED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.user.email,
@@ -140,7 +140,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_REGISTERED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
@@ -216,7 +216,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ASSIGNED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
@@ -235,7 +235,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ACCEPTED,
-        userId: payload.driver.userId,
+        userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
         recipientEmail: payload.driver.email,
@@ -309,7 +309,7 @@ async function checkAndProcessEmail({
     };
 
     const result = await sendEmail(emailPayload);
-    if (!result) {
+    if (result) {
       await NotificationRepository.saveNotification({
         userId,
         breakdownRequestId,
@@ -326,6 +326,7 @@ async function checkAndProcessEmail({
     return false;
   } catch (error) {
     console.error(`Failed to process email for user ${userId}:`, error);
+    logger.error(`Failed to process email for user ${userId}:`, error);
     return false;
   }
 }

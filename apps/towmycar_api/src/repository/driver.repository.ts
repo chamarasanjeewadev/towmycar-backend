@@ -14,13 +14,12 @@ import {
   sql,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError } from "../utils/error/errors";
+import { NotFoundError, DataBaseError, BreakdownAssignmentDetails } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import {
-  BreakdownAssignmentDetails,
   CloseDriverAssignmentParams,
 } from "./../types/types";
-import { logger } from "../utils";
+import { logger } from "@towmycar/common";
 import { payments } from "@towmycar/database/db-schema";
 import { notifications } from "@towmycar/database/db-schema";
 import { Notifications } from "@towmycar/database/db-schema";
@@ -30,6 +29,7 @@ import {
   BreakdownRequestStatus,
   DeliveryNotificationType,
 } from "@towmycar/common";
+import { maskSensitiveData } from "../utils/maskData";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -94,6 +94,7 @@ export interface IDriverRepository {
   getDriverById(id: number): Promise<Driver | null>;
   getCustomerByRequestId(requestId: number): Promise<{
     id: number;
+    userId:number;
     firstName: string;
     lastName: string;
     email: string;
@@ -192,21 +193,33 @@ export const DriverRepository: IDriverRepository = {
           weight: breakdownRequest.weight,
           address: breakdownRequest.address,
           toAddress: breakdownRequest.toAddress,
+          postCode: breakdownRequest.postCode,
+          toPostCode: breakdownRequest.toPostCode,
           createdAt: breakdownRequest.createdAt,
           updatedAt: breakdownRequest.updatedAt,
           make: breakdownRequest.make,
           makeModel: breakdownRequest.model,
-          mobileNumber: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+          mobileNumber: maskSensitiveData(
+            breakdownRequest.mobileNumber,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`
+          ),
           requestType: breakdownRequest.requestType,
         },
         driver: {
           id: driver.id,
           firstName: driverUser.firstName,
           lastName: driverUser.lastName,
-          email: driverUser.email,
+          email: maskSensitiveData(
+            driverUser.email,
+            sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+          ),
           imageUrl: driverUser.imageUrl,
           vehicleType: driver.vehicleType,
           regNo: driver.vehicleRegistration,
+          phoneNumber: maskSensitiveData(
+            driver.phoneNumber,
+            sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+          ),
           vehicleRegistration: driver.vehicleRegistration,
           licenseNumber: driver.licenseNumber,
           serviceRadius: driver.serviceRadius,
@@ -229,8 +242,14 @@ export const DriverRepository: IDriverRepository = {
           id: customer.id,
           firstName: user.firstName,
           lastName: user.lastName,
-          email: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.email} ELSE NULL END`,
-          mobileNumber: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+          email: maskSensitiveData(
+            user.email,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`
+          ),
+          mobileNumber: maskSensitiveData(
+            breakdownRequest.mobileNumber,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`
+          ),
           imageUrl: user.imageUrl,
         },
       })
@@ -275,6 +294,8 @@ export const DriverRepository: IDriverRepository = {
       updatedAt: breakdownAssignment.updatedAt,
       address: breakdownRequest.address,
       toAddress: breakdownRequest.toAddress,
+      postCode: breakdownRequest.postCode,
+      toPostCode: breakdownRequest.toPostCode,
       userLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
@@ -306,22 +327,35 @@ export const DriverRepository: IDriverRepository = {
         regNo: breakdownRequest.regNo,
         weight: breakdownRequest.weight,
         address: breakdownRequest.address,
+        postCode: breakdownRequest.postCode,
+        toPostCode: breakdownRequest.toPostCode,
+        toAddress: breakdownRequest.toAddress,
         createdAt: breakdownRequest.createdAt,
         updatedAt: breakdownRequest.updatedAt,
         make: breakdownRequest.make,
         makeModel: breakdownRequest.model,
-        mobileNumber: sql`CASE WHEN ${breakdownAssignment.driverStatus} = 'ACCEPTED' THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+        mobileNumber: maskSensitiveData(
+          breakdownRequest.mobileNumber,
+          sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        ),
         requestType: breakdownRequest.requestType,
       },
       driver: {
         id: driver.id,
+        userId:driverUser.id,
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
-        email: driverUser.email,
+        email: maskSensitiveData(
+          driverUser.email,
+          sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+        ),
         imageUrl: driverUser.imageUrl,
         vehicleType: driver.vehicleType,
         regNo: driver.vehicleRegistration,
-        phoneNumber:driver .phoneNumber,
+        phoneNumber: maskSensitiveData(
+          driver.phoneNumber,
+          sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+        ),
         vehicleRegistration: driver.vehicleRegistration,
         licenseNumber: driver.licenseNumber,
         serviceRadius: driver.serviceRadius,
@@ -344,8 +378,14 @@ export const DriverRepository: IDriverRepository = {
         id: customer.id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${user.email} ELSE NULL END`,
-        mobileNumber: sql`CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${breakdownRequest.mobileNumber} ELSE NULL END`,
+        email: maskSensitiveData(
+          user.email,
+          sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        ),
+        mobileNumber: maskSensitiveData(
+          breakdownRequest.mobileNumber,
+          sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        ),
         // authId: user.authId,
         imageUrl: user.imageUrl,
       },
@@ -523,28 +563,33 @@ export const DriverRepository: IDriverRepository = {
 
   async getCustomerByRequestId(requestId: number): Promise<{
     id: number;
+    userId:number;
     firstName: string;
     lastName: string;
     email: string;
     postcode: string | null;
     mobileNumber: string;
   } | null> {
-    const result = await DB.select({
-      id: customer.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      postcode: customer.postcode,
+    try {
+      const result = await DB.select({
+        id: customer.id,
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        postcode: customer.postcode,
+        mobileNumber: breakdownRequest.mobileNumber,
+      })
+        .from(breakdownRequest)
+        .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
+        .innerJoin(user, eq(user.id, customer.userId))
+        .where(eq(breakdownRequest.id, requestId))
+        .limit(1);
 
-      mobileNumber: breakdownRequest.mobileNumber,
-    })
-      .from(breakdownRequest)
-      .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-      .innerJoin(user, eq(user.id, customer.userId))
-      .where(eq(breakdownRequest.id, requestId))
-      .limit(1);
-
-    return result.length > 0 ? result[0] : null;
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      throw new DataBaseError(error);
+    }
   },
 
   async updateDriver(
@@ -577,8 +622,14 @@ export const DriverRepository: IDriverRepository = {
       userId: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
-      email: user.email,
-      phoneNumber: driver.phoneNumber,
+      email: maskSensitiveData(
+        user.email,
+        sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+      ),
+      phoneNumber: maskSensitiveData(
+        driver.phoneNumber,
+        sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+      ),
       vehicleType: driver.vehicleType,
       vehicleRegistration: driver.vehicleRegistration,
       licenseNumber: driver.licenseNumber,
@@ -714,7 +765,7 @@ export const DriverRepository: IDriverRepository = {
             .set({
               //@ts-ignore
               status: BreakdownRequestStatus.CLOSED,
-       
+
               updatedAt: new Date(),
             })
             .where(eq(breakdownRequest.id, requestId));

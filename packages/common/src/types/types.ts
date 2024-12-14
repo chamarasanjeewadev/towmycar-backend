@@ -1,4 +1,4 @@
-import { NotificationType } from "../enums";
+import { MessageSender, NotificationType } from "../enums";
 
 export type ListnerPayload =
   // | DriverNotificationPayload[]
@@ -12,6 +12,7 @@ export type ListnerPayload =
   | DriverAssignedPayload
   | DriverAcceptPayload
   | UserRejectPayload
+  |ChatNotificationPayload
   | RatingReviewPayload;
 
 export type NotificationPayload = {
@@ -156,6 +157,18 @@ export interface DriverClosedEventPayload {
   viewRequestLink: string;
 }
 
+
+
+
+
+export interface ChatNotificationEventPayload {
+  breakdownRequestId: number;
+  viewRequestLink: string;
+  driver: UserWithDriver;
+  user: UserWithCustomer;
+  sender:MessageSender;
+}
+
 export interface DriverNotifyEventPayload {
   drivers: NearbyDriver[];
   breakdownRequestId: number;
@@ -181,6 +194,12 @@ export interface BaseNotificationPayload {
 export interface DriverRegisteredPayload extends BaseNotificationPayload {
   driver: UserWithDriver;
   verificationLink?: string;
+}
+
+export interface ChatNotificationPayload extends BaseNotificationPayload {
+  driverId:number;
+  userId:number;
+  sender:MessageSender;
 }
 
 // User Request
@@ -312,6 +331,7 @@ export interface BreakdownAssignmentDetails {
   };
   driver: {
     id: number;
+    userId:number;
     firstName: string | null;
     lastName: string | null;
     email: string | null;

@@ -3,12 +3,9 @@ import Pusher from "pusher";
 import { BreakdownRequestService } from "../service/user/userBreakdownRequest.service";
 import { DriverService } from "../service/driver/driver.service";
 import * as ChatService from "../service/chat/chat.service";
+import { MessageSender } from "@towmycar/common";
 
 // Add this enum at the top of the file
-export enum MessageSender {
-  Driver = "driver",
-  Customer = "customer",
-}
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -31,8 +28,8 @@ router.post("/send-message", async (req: Request, res: Response) => {
   }: {
     message: string;
     username: string;
-    requestId: string;
-    driverId: string;
+    requestId: number;
+    driverId: number;
     sender: MessageSender;
   } = req.body;
 
@@ -58,14 +55,16 @@ router.post("/send-message", async (req: Request, res: Response) => {
         sender,
       }
     );
+    await ChatService.SendNewChatPushNotification({driverId,requestId,sender});
+  
     console.log(
       `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${pusherEventName}`
     );
 
     // Save the message to the database
     await ChatService.upsertChat({
-      requestId: parseInt(requestId, 10),
-      driverId: parseInt(driverId, 10),
+      requestId:(requestId),
+      driverId:(driverId),
       message,
       sender,
       sentAt: new Date(),

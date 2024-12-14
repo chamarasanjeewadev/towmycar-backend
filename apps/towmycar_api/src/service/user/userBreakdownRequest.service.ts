@@ -5,13 +5,15 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { registerNotificationListener, sendSNS } from "@towmycar/common";
-import { APIError, BaseError, ERROR_CODES } from "../../utils/error/errors";
-import { NotificationType, UserStatus } from "@towmycar/common";
+import { registerNotificationListener, sendSNS,BaseError,ERROR_CODES,NotificationType, UserStatus,APIError  } from "@towmycar/common";
+import { } from "@towmycar/common";
 import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
 import { DriverRepository } from "./../../repository/driver.repository";
-import { mapToUserWithCustomer, mapToUserWithDriver } from "@towmycar/common/src/mappers/user.mapper";
+import {
+  mapToUserWithCustomer,
+  mapToUserWithDriver,
+} from "@towmycar/common";
 
 const notificationEmitter = new EventEmitter();
 registerNotificationListener(notificationEmitter);
@@ -38,7 +40,6 @@ const CreateBreakdownRequest = async (
         longitude: combinedInput.userToLocation.longitude,
       },
     };
-
     const createdRequest =
       await BreakdownRequestRepository.saveBreakdownRequest(
         breakdownRequestData
@@ -109,7 +110,10 @@ const updateUserStatusInBreakdownAssignment = async (
       return true;
     }
     //TODO move to common service
-    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(updatedAssignment.driverId, updatedAssignment.requestId);
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      updatedAssignment.driverId,
+      updatedAssignment.requestId
+    );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
       updatedAssignment.requestId
     );

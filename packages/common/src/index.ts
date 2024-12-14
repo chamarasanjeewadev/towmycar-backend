@@ -4,4 +4,7 @@ export * from "./types/types";
 export * from "./services/token.service";
 export * from "./utils/maps";
 export * from "./utils/date-functions";
-export * from "./listeners"
+export * from "./listeners";
+export * from "./utils/error";
+export * from "./utils/logger";
+export * from "./mappers";

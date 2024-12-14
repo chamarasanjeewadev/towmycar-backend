@@ -8,6 +8,7 @@ import {
   ListnerPayload,
   UserRejectedPayload,
   UserAcceptedPayload,
+  logger,
 } from "@towmycar/common";
 import { SMSNotificationService } from "../service/notification.sms.service";
 import { NotificationRepository } from "../repository/notification.repository";
@@ -175,6 +176,7 @@ async function processSMSNotification(
 
     console.log(`SMS notification sent successfully to ${userId}`);
   } catch (error) {
+    logger.error("Error sending SMS notification:", error);
     console.error(
       `Failed to process ${notificationType} SMS notification for user/driver:`,
       error

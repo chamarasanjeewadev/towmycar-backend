@@ -69,16 +69,21 @@ export function createBaseTemplate({
       display: inline-block;
       background-color: ${COLORS.primary};
       color: ${COLORS.white};
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 25px;
       font-size: 16px;
+      font-weight: 600;
       text-align: center;
       text-decoration: none;
       margin-top: 20px;
       transition: background-color 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 0.5px;
     }
     .button:hover {
       background-color: ${COLORS.primaryDark};
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     }
     .social-icon {
       padding: 0 8px;
@@ -101,16 +106,14 @@ export function createBaseTemplate({
         }; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); overflow: hidden;">
           <!-- Header -->
           <tr>
-            <td style="padding: 5px; background-color: ${COLORS.primary};">
+            <td style="padding: 12px; background-color: ${COLORS.primary};">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td width="120" style="vertical-align: middle;">
+                  <td width="80" style="vertical-align: middle;">
                     <img src="${logoUrl}" alt="TowMyCar Logo" width="80" style="margin: 0;" />
                   </td>
-                  <td style="vertical-align: middle; text-align: center;">
-                    <h1 style="margin: 0; color: ${
-                      COLORS.white
-                    }; font-size: 28px; font-weight: 600;">TowMyCar</h1>
+                  <td style="vertical-align: middle; text-align: center; padding-right: 80px;">
+                    <h1 style="margin: 0; color: ${COLORS.white}; font-size: 28px; font-weight: 600;">TowMyCar</h1>
                   </td>
                 </tr>
               </table>
@@ -120,7 +123,7 @@ export function createBaseTemplate({
           <!-- Main Content -->
           <tr>
             <td style="padding: 40px; font-size: 16px; line-height: 1.6; color: ${
-              COLORS.text
+              COLORS.secondary
             };">
               <h2 style="margin-top: 0; color: ${
                 COLORS.primary

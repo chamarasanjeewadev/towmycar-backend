@@ -51,7 +51,7 @@ export const sendNotification = async (
   try {
     const result = await sns.publish(snsParams).promise();
     console.log(
-      `SNS notification sent for breakdown request ${message} ${topicArn}`
+      `SNS notification sent for breakdown request ${JSON.stringify(message)}  ${topicArn}`
     );
     return {
       MessageId: result.MessageId,

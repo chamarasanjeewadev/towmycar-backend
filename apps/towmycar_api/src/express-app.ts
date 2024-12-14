@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { httpLogger } from "./utils";
+import { httpLogger } from "@towmycar/common";
 import userRoutes from "./routes/user.routes";
 import breakdownRequestRoutes from "./routes/breakdownRequest.routes";
 import driverRoutes from "./routes/driver.routes";

@@ -1,5 +1,3 @@
-import { driver } from "./../../../../../packages/database/db-schema";
-import { user } from "./../../../../../node_modules/@towmycar/database/db-schema";
 import { DriverProfileDtoType } from "../../dto/driver.dto";
 import {
   IDriverRepository,
@@ -16,23 +14,24 @@ import {
   DriverStatus,
   registerNotificationListener,
   TokenService,
-  UserWithCustomer,
-  UserWithDriver,
 } from "@towmycar/common";
 import { NotificationType } from "@towmycar/common/src/enums";
 import { CloseDriverAssignmentParams } from "./../../types/types";
-import { CustomError, ERROR_CODES } from "./../../../src/utils";
+import { CustomError, ERROR_CODES } from "@towmycar/common";
 import EventEmitter from "events";
 import { BreakdownRequestService } from "../user/userBreakdownRequest.service";
 import {
   mapToUserWithDriver,
   mapToUserWithCustomer,
 } from "@towmycar/common/src/mappers/user.mapper";
+import { getViewRequestUrl } from '@towmycar/common/src/utils/view-request-url.utils';
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20", // Use the latest API version
 });
+
+const MINIMUM_PAYMENT_AMOUNT = 50; // $0.50 in cents (minimum allowed by Stripe for USD)
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -80,7 +79,10 @@ export class DriverService {
     // }
 
     // Fetch user details
-    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(driverId,requestId);
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      driverId,
+      requestId
+    );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
       requestId
     );
@@ -116,7 +118,9 @@ export class DriverService {
       const payload: DriverAcceptedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_ACCEPTED, VIEW_REQUEST_BASE_URL, {
+          requestId
+        }),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -137,7 +141,9 @@ export class DriverService {
       const payload: DriverQuotedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_QUOTATION_UPDATED, VIEW_REQUEST_BASE_URL, {
+          requestId
+        }),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -151,7 +157,9 @@ export class DriverService {
       const payload: DriverRejectedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_REJECTED, VIEW_REQUEST_BASE_URL, {
+          requestId
+        }),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -200,7 +208,8 @@ export class DriverService {
       closeBreakdownAssignment
     );
 
-    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(closeBreakdownAssignment?.driverId,
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      closeBreakdownAssignment?.driverId,
       closeBreakdownAssignment?.requestId
     );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
@@ -217,7 +226,10 @@ export class DriverService {
     const payload: DriverClosedEventPayload = {
       breakdownRequestId: closeBreakdownAssignment?.requestId,
       driver: userWithDriver,
-      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${closeBreakdownAssignment?.requestId}?token=${token}`,
+      viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_CLOSED, VIEW_REQUEST_BASE_URL, {
+        requestId: closeBreakdownAssignment?.requestId,
+        token
+      }),
       user: userWithCustomer,
     };
 
@@ -241,7 +253,8 @@ export class DriverService {
       );
     }
 
-    const amount = Math.round(estimation * 100); // Convert to cents
+    // Convert estimation to cents and ensure it meets minimum
+    const amount = MINIMUM_PAYMENT_AMOUNT
 
     try {
       const paymentIntent = await stripe.paymentIntents.create({
@@ -255,7 +268,7 @@ export class DriverService {
 
       if (paymentIntent.status !== "succeeded") {
         throw new CustomError(
-          ERROR_CODES.PAYMENT_FAILED,
+          ERROR_CODES.INVALID_PAYMENT_AMOUNT,
           400,
           "Payment failed"
         );
@@ -278,7 +291,9 @@ export class DriverService {
       throw new CustomError(
         ERROR_CODES.PAYMENT_FAILED,
         400,
-        "Payment processing failed. Please try again or contact support."
+        error instanceof CustomError 
+          ? error.message 
+          : "Payment processing failed. Please try again or contact support."
       );
     }
   }

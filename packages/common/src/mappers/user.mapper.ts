@@ -11,6 +11,7 @@ interface DriverInfo {
 
 interface CustomerInfo {
   id: number;
+  userId:number;
   email: string;
   firstName: string;
   lastName?: string;
@@ -19,7 +20,7 @@ interface CustomerInfo {
 
 export function mapToUserWithDriver(driverInfo: BreakdownAssignmentDetails): UserWithDriver {
   return {
-    userId: driverInfo.id,
+    userId: driverInfo?.driver?.userId,
     email: driverInfo.driver?.email??"",
     firstName: driverInfo.driver?.firstName || undefined,
     lastName: driverInfo.driver?.lastName || undefined,
@@ -33,7 +34,7 @@ export function mapToUserWithDriver(driverInfo: BreakdownAssignmentDetails): Use
 
 export function mapToUserWithCustomer(customerInfo: CustomerInfo): UserWithCustomer {
   return {
-    id: customerInfo.id,
+    id: customerInfo.userId,
     email: customerInfo.email,
     firstName: customerInfo.firstName,
     lastName: customerInfo.lastName,

@@ -1,23 +1,26 @@
-interface Environment {
-  account: string;
-  region: string;
-}
-
 interface EnvironmentConfig {
-  [key: string]: Environment;
+  stage: string;
+  region: string;
+  account: string;
 }
 
-export const environments: EnvironmentConfig = {
-  development: {
-    account: "111111111111", // Your default account
+const environments: Record<string, EnvironmentConfig> = {
+  prod: {
+    stage: "prod",
     region: "eu-west-2",
+    account: "124355635987", // Your AWS account ID
   },
-  staging: {
-    account: "222222222222", // Your staging account
+  dev: {
+    stage: "dev",
     region: "eu-west-2",
-  },
-  production: {
-    account: "333333333333", // Your production account
-    region: "eu-west-2",
+    account: "124355635987",
   },
 };
+
+export function getEnvironmentConfig(env: string): EnvironmentConfig {
+  const config = environments[env];
+  if (!config) {
+    throw new Error(`Environment ${env} not found in config`);
+  }
+  return config;
+}

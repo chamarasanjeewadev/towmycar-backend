@@ -8,7 +8,7 @@ import { DriverService } from "../service/driver/driver.service";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
-import { CustomError, ERROR_CODES } from "../utils";
+import { CustomError, ERROR_CODES } from "@towmycar/common";
 import { DriverStatus } from "@towmycar/common";
 
 const router = express.Router();

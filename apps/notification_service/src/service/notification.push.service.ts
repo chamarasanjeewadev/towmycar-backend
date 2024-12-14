@@ -141,6 +141,12 @@ export function generatePushNotificationPayload(
       };
 
     case NotificationType.USER_ACCEPTED:
+      return {
+        userId: payload?.sendToId,
+        title: `Quotation Accepted ${requestId}`,
+        message: `User has accepted your quotation for request ${requestId}`,
+        url: payload?.viewRequestLink,
+      };
     case NotificationType.DRIVER_ACCEPTED:
       return {
         userId: payload?.sendToId,
@@ -171,6 +177,20 @@ export function generatePushNotificationPayload(
         userId: payload.sendToId,
         title: `New Rating & Review ${requestId}`,
         message: "You have received a new rating and review",
+        url: payload?.viewRequestLink,
+      } 
+      case NotificationType.DRIVER_CHAT_INITIATED:
+      return {
+        userId: payload.sendToId,
+        title: `New Chat for ${requestId}`,
+        message: "You have received a new Chat message",
+        url: payload?.viewRequestLink,
+      };
+      case NotificationType.USER_CHAT_INITIATED:
+      return {
+        userId: payload.sendToId,
+        title: `New Chat for ${requestId}`,
+        message: "You have received a new Chat message",
         url: payload?.viewRequestLink,
       };
 
