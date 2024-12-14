@@ -1,10 +1,10 @@
-import { DriverAcceptedEventPayload } from "@towmycar/common";
+import { DriverAcceptedEventPayload, DriverQuotationUpdatedPayload } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
-export const driverQuotationUpdatedEmail = (payload: DriverAcceptedEventPayload) => {
+export const driverQuotationUpdatedEmail = (payload: DriverQuotationUpdatedPayload) => {
   const content = `
     <h1>Quotation Updated by driver</h1>
-    <p>Hello ${payload?.user?.firstName ??'Valued Customer'},</p>
+    <p>Hi ${payload?.user?.firstName ??''},</p>
     <p>Good news! A driver updated a quotation for your breakdown request #${payload.breakdownRequestId}.</p>
     <h2>Quotation details:</h2>
     <ul>

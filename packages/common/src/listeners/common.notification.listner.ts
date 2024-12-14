@@ -12,6 +12,7 @@ import {
   UserRejectedPayload,
   DriverClosedEventPayload,
   ChatNotificationEventPayload,
+  DriverQuotationUpdatedPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -88,13 +89,14 @@ export function registerNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.DRIVER_QUOTATION_UPDATED,
     async (payload: DriverQuotedEventPayload) => {
-      const driverQuotedPlayload: DriverQuotedPayload = {
+      const driverQuotedPlayload: DriverQuotationUpdatedPayload = {
         sendToId: payload.user.id,
         driver: payload.driver,
         breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
-        price: payload.newPrice,
+        previousPrice: 0,//TODO
+        newPrice: payload.newPrice,
         estimation: payload.estimation,
       };
       await sendSNSNotification(

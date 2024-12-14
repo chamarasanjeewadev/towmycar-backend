@@ -141,6 +141,12 @@ export function generatePushNotificationPayload(
       };
 
     case NotificationType.USER_ACCEPTED:
+      return {
+        userId: payload?.sendToId,
+        title: `Quotation Accepted ${requestId}`,
+        message: `User has accepted your quotation for request ${requestId}`,
+        url: payload?.viewRequestLink,
+      };
     case NotificationType.DRIVER_ACCEPTED:
       return {
         userId: payload?.sendToId,

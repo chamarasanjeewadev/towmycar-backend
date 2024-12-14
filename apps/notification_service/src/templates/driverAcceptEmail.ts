@@ -3,35 +3,37 @@ import { createBaseTemplate } from "./baseTemplate";
 
 export const driverAcceptEmail = (payload: BaseNotificationPayload) => {
   const content = `
-    <h1>Great news! A driver is willing to assist you</h1>
-    <p>Hello ${payload?.user?.firstName},</p>
+    <h1>🎉 Service Provider Confirmation Required</h1>
+    <p>Dear ${payload?.user?.firstName ?? "Valued Customer"},</p>
     <p style="font-weight: bold; font-size: 16px; color: #2C3E50;">
-      🎉 Excellent news! ${payload?.driver?.firstName} has <span style="color: #27AE60;">ACCEPTED</span> your breakdown assistance request #${payload.breakdownRequestId}
-    </p>
-    <p style="margin-top: 10px;">
-      Your driver is ready to assist you and will be in touch shortly. You can track your request status using the link below.
+      ${payload?.driver?.firstName} has <span style="color: #27AE60;">ACCEPTED</span> your breakdown assistance request #${payload.breakdownRequestId}
     </p>
     
-    <h2>Driver Details:</h2>
+    <h2>Service Provider Details:</h2>
     <ul>
       <li><strong>Name:</strong> ${payload?.driver?.firstName}</li>
       <li><strong>Phone:</strong> ${payload?.driver?.phoneNumber}</li>
       <li><strong>Email:</strong> ${payload?.driver?.email}</li>
     </ul>
     
-    <p>To proceed with the service, please review and accept the quotation provided by the driver. Once you accept, the driver will be on their way to assist you.</p>
-    <p>If you have any questions about the quotation or need further information, don't hesitate to reach out to us or directly to the driver.</p>
-    <p>We're looking forward to getting you back on the road soon!</p>
-
+    <p style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #1B8B4B;">
+      <strong>Action Required:</strong><br>
+      Please review the service details and click the link below to confirm the assistance arrangement. Your confirmation helps ensure prompt service delivery.
+    </p>
+    
     <div style="text-align: center;">
-      <a href="${payload.viewRequestLink}" class="button">View Request and Accept Quotation</a>
+      <a href="${payload.viewRequestLink}" class="button">Review and Confirm Service</a>
     </div>
+    
+    <p style="font-size: 14px; color: #666; margin-top: 20px;">
+      Note: Quick confirmation ensures faster assistance and better service coordination.
+    </p>
   `;
 
   const htmlBody = createBaseTemplate({ content });
 
   return {
-    subject: `Great news! A driver is willing to assist you - Request #${payload.breakdownRequestId}`,
+    subject: `Action Required: Confirm Breakdown Assistance - Request #${payload.breakdownRequestId}`,
     htmlBody,
   };
 };

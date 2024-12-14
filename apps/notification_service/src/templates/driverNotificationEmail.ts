@@ -7,7 +7,7 @@ import { createBaseTemplate } from "./baseTemplate";
 export function driverNotificationEmail(payload: DriverNotificationPayload) {
   const content = `
     <h1>New Breakdown Request: Your Assistance Needed!</h1>
-    <p>Hello ${payload.driver.firstName},</p>
+    <p>Hi ${payload?.driver?.firstName??""},</p>
     <p>We have an <strong>urgent breakdown request</strong> in your area that needs your expertise!</p>
     
     <h2>Request Details:</h2>

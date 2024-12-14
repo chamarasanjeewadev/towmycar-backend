@@ -24,6 +24,7 @@ import {
   mapToUserWithDriver,
   mapToUserWithCustomer,
 } from "@towmycar/common/src/mappers/user.mapper";
+import { getViewRequestUrl } from '@towmycar/common/src/utils/view-request-url.utils';
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -117,7 +118,9 @@ export class DriverService {
       const payload: DriverAcceptedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_ACCEPTED, VIEW_REQUEST_BASE_URL, {
+          requestId
+        }),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -138,7 +141,9 @@ export class DriverService {
       const payload: DriverQuotedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_QUOTATION_UPDATED, VIEW_REQUEST_BASE_URL, {
+          requestId
+        }),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -152,7 +157,9 @@ export class DriverService {
       const payload: DriverRejectedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
+        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_REJECTED, VIEW_REQUEST_BASE_URL, {
+          requestId
+        }),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -219,7 +226,10 @@ export class DriverService {
     const payload: DriverClosedEventPayload = {
       breakdownRequestId: closeBreakdownAssignment?.requestId,
       driver: userWithDriver,
-      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/rate/${closeBreakdownAssignment?.requestId}?token=${token}`,
+      viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_CLOSED, VIEW_REQUEST_BASE_URL, {
+        requestId: closeBreakdownAssignment?.requestId,
+        token
+      }),
       user: userWithCustomer,
     };
 
