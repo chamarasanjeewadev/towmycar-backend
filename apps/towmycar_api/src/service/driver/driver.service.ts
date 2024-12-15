@@ -167,29 +167,9 @@ export class DriverService {
       };
       this.notificationEmitter.emit(NotificationType.DRIVER_REJECTED, payload);
     }
-    // else if (data.driverStatus === DriverStatus.CLOSED) {
-    //   const token = TokenService.generateUrlSafeToken(requestId, driverId);
-    //   const payload: DriverClosedEventPayload = {
-    //     breakdownRequestId: requestId,
-    //     driver: userWithDriver,
-    //     viewRequestLink: `${VIEW_REQUEST_BASE_URL}/user/requests/${requestId}`,
-    //     user: userWithCustomer,
-    //   };
-
-    //   this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
-    // }
     else {
       throw new Error("Invalid status or estimation amount");
     }
-
-    // const emailSnsResult = await sendNotification(
-    //   process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN || "",
-    //   {
-    //     type: BaseNotificationType.EMAIL,
-    //     subType: notificationType,
-    //     payload,
-    //   }
-    // );
     return breakdownRequestUpdated;
   }
 
@@ -249,7 +229,7 @@ export class DriverService {
       throw new CustomError(
         ERROR_CODES.STRIPE_CARD_NOT_ADDED,
         400,
-        "Unable to process payment. Please add a valid payment method."
+        "Unable to process payment. Please add a valid payment method in profile settings."
       );
     }
 

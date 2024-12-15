@@ -238,7 +238,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         userId: payload.sendToId,
         breakdownRequestId: payload.breakdownRequestId,
         emailContent,
-        recipientEmail: payload.driver.email,
+        recipientEmail: payload.user.email,
       });
     }
   );

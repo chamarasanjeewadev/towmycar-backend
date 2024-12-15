@@ -1,5 +1,6 @@
 import { DriverSearchRepository } from "../repository/driversearch.repository";
 import { VIEW_REQUEST_BASE_URL } from "../config";
+import { getViewRequestUrl } from "@towmycar/common";
 import {
   createGoogleMapsDirectionsLink,
   NearbyDriver,
@@ -57,7 +58,9 @@ const findAndNotifyNearbyDrivers = async (
         request.customerId
       );
 
-      const viewRequestLink = `${VIEW_REQUEST_BASE_URL}/driver/requests/${requestId}`;
+      const viewRequestLink =getViewRequestUrl(NotificationType.DRIVER_NOTIFICATION, VIEW_REQUEST_BASE_URL!, {
+        requestId
+      });
       const googleMapsLink = createGoogleMapsDirectionsLink(
         request.location,
         request.toLocation

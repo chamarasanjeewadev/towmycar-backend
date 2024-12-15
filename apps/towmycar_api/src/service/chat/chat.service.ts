@@ -1,12 +1,12 @@
 import { ChatRepository } from "../../repository/chat.repository";
-import { Chat, payments } from "@towmycar/database";
+import { Chat } from "@towmycar/database";
 import { logger, mapToUserWithCustomer, mapToUserWithDriver, MessageSender, NotificationType, registerNotificationListener } from "@towmycar/common";
 import EventEmitter from "events";
 import {
-  IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
 import { VIEW_REQUEST_BASE_URL } from "../../config";
+import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 export const getChatsForRequest = async (
   requestId: number
 ): Promise<Chat[]> => {
@@ -34,8 +34,10 @@ if(!result.length){
   const userWithCustomer = mapToUserWithCustomer(customerDetails);
   const notificationEmitter = new EventEmitter()
  registerNotificationListener(notificationEmitter);
-const viewRequestLink=sender===MessageSender.Driver?`${VIEW_REQUEST_BASE_URL}/user/requests/chat?requestId=${requestId}&driverId=${driverId}`:`${VIEW_REQUEST_BASE_URL}/driver/requests/chat?requestId=${requestId}`
  const notificationType=sender===MessageSender.Driver?NotificationType.DRIVER_CHAT_INITIATED:NotificationType.USER_CHAT_INITIATED
+ const viewRequestLink=getViewRequestUrl(notificationType, VIEW_REQUEST_BASE_URL, {
+  requestId,driverId
+ })
  const payload={
   driver:userWithDriver,user:userWithCustomer,breakdownRequestId:requestId,sender, 
   viewRequestLink

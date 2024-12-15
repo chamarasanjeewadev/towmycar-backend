@@ -23,7 +23,7 @@ export const sendEmail = async (payload: EmailPayloadType) => {
     const params = {
       Source: "towmycar.uk@gmail.com",
       Destination: {
-        ToAddresses: ["towmycar.uk@gmail.com"],
+        ToAddresses: [payload.recipientEmail, "towmycar.uk@gmail.com"],
       },
       Message: {
         Subject: {

@@ -14,6 +14,7 @@ import {
   mapToUserWithCustomer,
   mapToUserWithDriver,
 } from "@towmycar/common";
+import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 
 const notificationEmitter = new EventEmitter();
 registerNotificationListener(notificationEmitter);
@@ -128,7 +129,9 @@ const updateUserStatusInBreakdownAssignment = async (
       user: userWithCustomer,
       userStatus,
       userId,
-      viewRequestLink: `${VIEW_REQUEST_BASE_URL}/driver/requests/${assignmentId}`,
+      viewRequestLink:getViewRequestUrl(notificationType, VIEW_REQUEST_BASE_URL, {
+        requestId:updatedAssignment.requestId
+      })
     });
 
     return true;

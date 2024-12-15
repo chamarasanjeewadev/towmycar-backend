@@ -123,10 +123,10 @@ export function createBaseTemplate({
           <!-- Main Content -->
           <tr>
             <td style="padding: 40px; font-size: 16px; line-height: 1.6; color: ${
-              COLORS.secondary
+              COLORS.text
             };">
               <h2 style="margin-top: 0; color: ${
-                COLORS.primary
+                COLORS.text
               }; font-size: 24px;">${subject}</h2>
               ${content}
               

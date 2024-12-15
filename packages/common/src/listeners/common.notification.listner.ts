@@ -218,7 +218,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.DRIVER_CLOSED,
+      subType: NotificationType.RATING_REVIEW,
       payload: notificationPayload,
     });
   });
