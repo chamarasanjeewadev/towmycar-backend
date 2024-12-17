@@ -10,7 +10,7 @@
     "build": "tsc --noEmitOnError false --skipLibCheck",
     "start": "node dist/server.js",
     "test": "jest",
-    "start:dev": "cross-env NODE_ENV=development ts-node src/server.ts",
+    "start:dev": "dotenv -e .env.dev -- cross-env NODE_ENV=development ts-node src/server.ts",
     "start:prod": "cross-env NODE_ENV=production ts-node src/server.ts"
   },
   "keywords": [],

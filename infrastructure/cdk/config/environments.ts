@@ -13,7 +13,7 @@ const environments: Record<string, EnvironmentConfig> = {
   dev: {
     stage: "dev",
     region: "eu-west-2",
-    account: "124355635987",
+    account: "841162667869",
   },
 };
 

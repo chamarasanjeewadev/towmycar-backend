@@ -15,6 +15,7 @@ import {
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as dotenv from "dotenv";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
+import * as s3 from "aws-cdk-lib/aws-s3";
 
 function loadServiceEnvFile(servicePath: string, environment: string): void {
   const envFile = environment === "prod" ? ".env.prod" : ".env.dev";
@@ -51,6 +52,8 @@ export class CdkStack extends cdk.Stack {
   private finderFunction: NodejsFunction;
   private notificationFunction: NodejsFunction;
 
+  private documentsBucket: s3.Bucket;
+
   constructor(scope: cdk.App, id: string, props: CdkStackProps) {
     super(scope, id, props);
 
@@ -65,6 +68,7 @@ export class CdkStack extends cdk.Stack {
     this.createLambdaFunctions();
     this.setupPermissions();
     this.createApiGateway();
+    this.createS3Bucket(environment);
   }
 
   private createQueuesAndTopics(): void {
@@ -300,6 +304,13 @@ export class CdkStack extends cdk.Stack {
       integration,
     });
 
+   // Add the additional route for /location/{proxy+}
+    httpApi.addRoutes({
+      path: "/location/{proxy+}",
+      methods: [HttpMethod.ANY],
+      integration,
+    });
+
     // Add CloudFormation outputs
     new cdk.CfnOutput(this, "towApiId", {
       value: httpApi.apiId,
@@ -312,5 +323,32 @@ export class CdkStack extends cdk.Stack {
       description: "HTTP API Gateway URL",
       exportName: "TowMyCarHttpApiEndpoint",
     });
+  }
+
+  private createS3Bucket(environment: string): void {
+    // Create S3 Bucket
+    this.documentsBucket = new s3.Bucket(this, "TowMyCarBucket", {
+      bucketName: `tow-my-car-${environment}-bucket`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // Change as needed for production
+      autoDeleteObjects: true, // Change as needed for production
+      cors: [
+        {
+          allowedOrigins: ["*"], // Allow all origins
+          allowedMethods: [
+            s3.HttpMethods.GET,
+            s3.HttpMethods.PUT,
+            s3.HttpMethods.POST,
+            s3.HttpMethods.DELETE,
+            s3.HttpMethods.HEAD,
+          ], // Allow all methods
+          allowedHeaders: ["*"], // Allow all headers
+        },
+      ],
+    });
+
+    // Grant all functions permissions to access the bucket
+    this.documentsBucket.grantReadWrite(this.apiFunction);
+    this.documentsBucket.grantReadWrite(this.finderFunction);
+    this.documentsBucket.grantReadWrite(this.notificationFunction);
   }
 }

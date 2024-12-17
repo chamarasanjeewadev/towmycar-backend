@@ -12,6 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:generate:prod": "dotenv -e .env.prod -- drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:pull:dev": "dotenv -e .env.dev -- drizzle-kit pull",
+    "db:push:dev": "dotenv -e .env.dev -- drizzle-kit push",
     "db:push:prod": "dotenv -e .env.prod -- drizzle-kit push",
     "db:pull:prod": "dotenv -e .env.prod -- drizzle-kit pull",
     "db:migrate": "tsx ./migration.ts",

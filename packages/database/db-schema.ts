@@ -11,7 +11,7 @@ import {
   unique,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { BreakdownRequestStatus } from "@towmycar/common";
+import { BreakdownRequestStatus, DocumentApprovalStatus, DriverApprovalStatus } from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -50,7 +50,14 @@ export const driver = pgTable("driver", {
     .references(() => user.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
+  organizationName: varchar("organization_name", { length: 255 }),
   address: text("address"),
+  address1: text("address1"),
+  address2: text("address2"),
+  postcode: varchar("postcode", { length: 20 }),
+  city: varchar("city", { length: 255 }),
+  state: varchar("state", { length: 255 }),
+  country: varchar("country", { length: 255 }),
   stripeId: varchar("stripe_id", { length: 255 }), // Stripe customer ID
   stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 }), // New field for Stripe payment method ID
   phoneNumber: varchar("phone_number", { length: 20 }),
@@ -71,6 +78,9 @@ export const driver = pgTable("driver", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  approvalStatus: varchar("approval_status").default(DriverApprovalStatus.PENDING), // New field
+  approvedBy: integer("approved_by"), // ID of the admin who approved (references an admins table)
+  approvedAt: timestamp("approved_at"),
 });
 
 // Updated breakdownRequest table
@@ -274,6 +284,39 @@ export const notifications = pgTable("notifications", {
   status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING, SENT, FAILED
 });
 
+// New admin table
+export const admin = pgTable("admin", {
+  id: serial("id").primaryKey().notNull(),
+  userId: integer("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull()
+    .unique(),
+  role: varchar("role", { length: 50 }).notNull(), // Role of the admin (e.g., super admin, moderator)
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// New documents table
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey().notNull(),
+  userId: integer("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull(),
+  approvalStatus: varchar("approval_status").default(DocumentApprovalStatus.PENDING),
+  documentType: varchar("document_type", { length: 50 }).notNull(), // Type of document (e.g., car breakdown photo, driving license)
+  filePath: text("file_path").notNull(), // Path to the uploaded document
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export type User = typeof user.$inferSelect;
 export type Customer = typeof customer.$inferSelect;
 export type Driver = typeof driver.$inferSelect;
@@ -285,3 +328,5 @@ export type Chat = typeof chats.$inferSelect;
 export type ServiceRating = typeof serviceRatings.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Notifications = typeof notifications.$inferSelect;
+export type Admin = typeof admin.$inferSelect;
+export type Documents = typeof documents.$inferSelect;

@@ -8,8 +8,9 @@ import { DriverService } from "../service/driver/driver.service";
 import { driverProfileSchema } from "../dto/driver.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
-import { CustomError, ERROR_CODES } from "@towmycar/common";
+import { CustomError, ERROR_CODES, UploadDocumentType } from "@towmycar/common";
 import { DriverStatus } from "@towmycar/common";
+import { getPresignedUrls } from "../utils";
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -292,6 +293,43 @@ router.get(
       const userId = req.userInfo.userId;
       const notifications = await driverService.getDriverNotifications(userId);
       res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  "/get-presigned-urls",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userInfo.userId;
+      // const {documentTypes} = req.params;
+    const documentTypes=  [
+        UploadDocumentType.DRIVER_LICENSE_FRONT,
+        UploadDocumentType.DRIVER_LICENSE_BACK,
+        UploadDocumentType.VEHICLE_REGISTRATION,
+        UploadDocumentType.VEHICLE_INSURANCE,
+        UploadDocumentType.PUBLIC_LIABILITY_INSURANCE
+      ]
+      const presignedUrls = await getPresignedUrls(userId,documentTypes as unknown as UploadDocumentType[]);
+      res.json(presignedUrls);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.put(
+  "/upload-document",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userInfo.userId;
+      const { filePath,documentType } = req.body;
+      await driverService.uploadDocument(userId, documentType as UploadDocumentType, filePath);
+      res.json({ message: "Document uploaded successfully" });
     } catch (error) {
       next(error);
     }

@@ -179,7 +179,6 @@ router.get(
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log("inside get profile......", req.query);
       const userId = req.userInfo.userId;
       const userProfile = await service.getUserProfileById(userId, repo);
       if (!userProfile) {
@@ -197,7 +196,7 @@ router.get(
   }
 );
 
-// Add this new route
+
 // router.get(
 //   "/profile/:id",
 //   clerkAuthMiddleware("customer"),

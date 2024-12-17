@@ -15,7 +15,7 @@ import {
   registerNotificationListener,
   TokenService,
 } from "@towmycar/common";
-import { NotificationType } from "@towmycar/common/src/enums";
+import { NotificationType, UploadDocumentType } from "@towmycar/common";
 import { CloseDriverAssignmentParams } from "./../../types/types";
 import { CustomError, ERROR_CODES } from "@towmycar/common";
 import EventEmitter from "events";
@@ -179,6 +179,10 @@ export class DriverService {
 
   async getDriverWithPaymentMethod(driverId: number) {
     return DriverRepository.getDriverWithPaymentMethod(driverId);
+  }
+
+  async uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string) {
+    return DriverRepository.uploadDocument(userId, documentType, filePath);
   }
 
   async closeBreakdownRequestAndUpdateRating(

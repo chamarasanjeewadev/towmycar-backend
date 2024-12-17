@@ -10,9 +10,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "deploy:dev": "cross-env NODE_ENV=development $(cat .env.dev) cdk deploy --context env=development",
-    "deploy:staging": "cross-env NODE_ENV=staging $(cat .env.staging) cdk deploy --context env=staging",
-    "deploy:prod": "cross-env NODE_ENV=production  cdk deploy --context env=prod --require-approval never",
+    "deploy:dev": "cross-env NODE_ENV=development cdk deploy --context env=dev",
+    "deploy:prod": "cross-env NODE_ENV=production cdk deploy --context env=prod --require-approval never",
     "deploy:custom": "cross-env NODE_ENV=staging $(cat .env.custom) cdk deploy --context env=staging --profile custom-profile"
   },
   "dependencies": {

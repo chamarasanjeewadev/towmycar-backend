@@ -12,9 +12,11 @@ import {
   desc,
   aliasedTable,
   sql,
+  documents,
+  Documents,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError, BreakdownAssignmentDetails } from "@towmycar/common";
+import { NotFoundError, DataBaseError, BreakdownAssignmentDetails, UploadDocumentType } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import {
   CloseDriverAssignmentParams,
@@ -139,6 +141,7 @@ export interface IDriverRepository {
   getUserNotifications: (userId: number) => Promise<Notifications[]>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
+  uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string):Promise<Documents>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -548,6 +551,8 @@ export const DriverRepository: IDriverRepository = {
   },
 
   async getDriverById(id: number): Promise<Driver | null> {
+
+    try{
     //@ts-ignore
     const [foundDriver] = await DB.select({
       ...driver,
@@ -559,6 +564,10 @@ export const DriverRepository: IDriverRepository = {
       .where(eq(driver.id, id));
     //@ts-ignore
     return foundDriver || null;
+  }catch(error){
+    logger.error("Error in getDriverById:", error);
+    throw new DataBaseError(`Failed to get driver by ID: ${error}`);
+  }
   },
 
   async getCustomerByRequestId(requestId: number): Promise<{
@@ -776,6 +785,27 @@ export const DriverRepository: IDriverRepository = {
       throw new DataBaseError(
         `Error in closeBreakdownRequestAndUpdateRating:: ${error}`
       );
+    }
+  },
+  async uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string) {
+    try {
+      const result = await DB.insert(documents)
+        .values({
+          userId,
+          documentType,
+          filePath,
+        })
+        .onConflictDoUpdate({
+          target: [documents.userId, documents.documentType],
+          set: {
+            filePath,
+          },
+        })
+        .returning();
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      logger.error("Error in uploadDocument:", error);
+      throw new DataBaseError(`Failed to upload document: ${error}`);
     }
   },
   async createPaymentAndUpdateAssignment({

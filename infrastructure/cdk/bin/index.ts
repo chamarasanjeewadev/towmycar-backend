@@ -15,8 +15,6 @@ const getProfileName = (env: string): string => {
   switch (env) {
     case 'prod':
       return 'towmycar-prod';
-    case 'staging':
-      return 'towmycar-staging';
     case 'dev':
     default:
       return 'towmycar-dev';
@@ -31,7 +29,7 @@ const envConfig = getEnvironmentConfig(environment);
 const credentials = new AWS.SharedIniFileCredentials({
   profile: getProfileName(environment)
 });
-
+console.log("credentials", credentials);
 // Update AWS SDK configuration
 AWS.config.update({
   credentials: credentials,
@@ -39,7 +37,8 @@ AWS.config.update({
 });
 
 const stackName = `towmycar-${envConfig.stage}`;
-console.log(environment, envConfig);
+console.log("environment.....", environment);
+console.log("envConfig.....", envConfig);
 new CdkStack(app, stackName, {
   env: {
     account: envConfig.account,
