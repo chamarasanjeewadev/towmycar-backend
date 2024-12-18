@@ -142,6 +142,7 @@ export interface IDriverRepository {
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
   uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string):Promise<Documents>;
+  getDocuments(userId: number):Promise<Documents[]>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -795,12 +796,12 @@ export const DriverRepository: IDriverRepository = {
           documentType,
           filePath,
         })
-        .onConflictDoUpdate({
-          target: [documents.userId, documents.documentType],
-          set: {
-            filePath,
-          },
-        })
+        // .onConflictDoUpdate({
+        //   target: [documents.userId, documents.documentType],
+        //   set: {
+        //     filePath,
+        //   },
+        // })
         .returning();
       return result.length > 0 ? result[0] : null;
     } catch (error) {
@@ -808,6 +809,9 @@ export const DriverRepository: IDriverRepository = {
       throw new DataBaseError(`Failed to upload document: ${error}`);
     }
   },
+  async getDocuments(userId: number): Promise<Documents[]> {
+    return await DB.select().from(documents).where(eq(documents.userId, userId));
+  },  
   async createPaymentAndUpdateAssignment({
     payment,
     assignmentData,

@@ -8,6 +8,31 @@ const requiredDriverSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters long" }),
 });
 
+export const driverBasicProfileSchema = z.object({
+  firstName: z.string().min(1, { message: "Please enter your first name" }),
+  lastName: z.string().min(1, { message: "Please enter your last name" }),
+  phoneNumber: z.string().min(1, { message: "Please enter your phone number" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  organizationName: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  address1: z.string().min(1, { message: "Please enter your address 1" }),
+  address2: z.string().optional().nullable(),
+  city: z.string().min(1, { message: "Please enter your city" }),
+  state: z.string().min(1, { message: "Please enter your state" }),
+  postcode: z.string().min(1, { message: "Please enter your postal code" }),
+  country: z.string().min(1, { message: "Please enter your country" }),
+});
+
+export const driverSettingsSchema = z.object({
+  serviceRadius: z.number().min(1, { message: 'Please enter a valid service radius greater than 0' }),
+  maxWeight: z.number().min(0).max(3000),
+  primaryLocation: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }),
+  address: z.string().optional().nullable(),
+})
+
 export const driverProfileSchema = z.object({
   firstName: z.string().min(1, { message: "Please enter your first name" }),
   lastName: z.string().min(1, { message: "Please enter your last name" }),

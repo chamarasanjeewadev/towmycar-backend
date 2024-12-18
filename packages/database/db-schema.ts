@@ -51,10 +51,10 @@ export const driver = pgTable("driver", {
     .notNull()
     .unique(),
   organizationName: varchar("organization_name", { length: 255 }),
-  address: text("address"),
+  address: text("current_address"),
   address1: text("address1"),
   address2: text("address2"),
-  postcode: varchar("postcode", { length: 20 }),
+  postcode: varchar("post_code", { length: 20 }),
   city: varchar("city", { length: 255 }),
   state: varchar("state", { length: 255 }),
   country: varchar("country", { length: 255 }),

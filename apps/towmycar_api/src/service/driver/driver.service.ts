@@ -25,6 +25,7 @@ import {
   mapToUserWithCustomer,
 } from "@towmycar/common/src/mappers/user.mapper";
 import { getViewRequestUrl } from '@towmycar/common/src/utils/view-request-url.utils';
+import { generateFilePath } from "../../utils/s3utils";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -181,8 +182,20 @@ export class DriverService {
     return DriverRepository.getDriverWithPaymentMethod(driverId);
   }
 
-  async uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string) {
+  async uploadDocument(userId: number, documentType: UploadDocumentType)  {
+    const filePath = await generateFilePath(userId,documentType);
     return DriverRepository.uploadDocument(userId, documentType, filePath);
+  }
+
+  async getDocuments(userId: number) {
+    //filter documents by updatedDate and sort by updatedDate and send first of each document type
+    const documents = await DriverRepository.getDocuments(userId);
+    const filteredDocuments = documents.filter((document) => document.updatedAt);
+    const sortedDocuments = filteredDocuments.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    const uniqueDocuments = sortedDocuments.filter((document, index, self) => 
+      index === self.findIndex((t) => t.documentType === document.documentType)
+    );
+    return uniqueDocuments;
   }
 
   async closeBreakdownRequestAndUpdateRating(

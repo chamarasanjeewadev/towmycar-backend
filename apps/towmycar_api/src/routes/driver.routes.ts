@@ -5,7 +5,7 @@ import {
 } from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
 import { DriverService } from "../service/driver/driver.service";
-import { driverProfileSchema } from "../dto/driver.dto";
+import { driverBasicProfileSchema, driverProfileSchema, driverSettingsSchema } from "../dto/driver.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import { CustomError, ERROR_CODES, UploadDocumentType } from "@towmycar/common";
@@ -184,7 +184,46 @@ router.patch(
         );
       }
 
-      const result = driverProfileSchema.partial().safeParse(req.body);
+      const result = driverBasicProfileSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid profile data: " + result.error.message
+        );
+      }
+
+      const updatedDriver = await updateDriverProfile(
+        driverId,
+        result.data,
+        DriverRepository
+      );
+
+      res.json({
+        message: "Driver profile updated successfully",
+        driver: updatedDriver,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.patch(
+  "/profile-settings",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const driverId = req.userInfo.driverId;
+      if (isNaN(driverId)) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid driver ID"
+        );
+      }
+
+      const result = driverSettingsSchema.partial().safeParse(req.body);
       if (!result.success) {
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
@@ -300,21 +339,15 @@ router.get(
 );
 
 router.get(
-  "/get-presigned-urls",
+  "/get-presigned-url",
   clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userInfo.userId;
-      // const {documentTypes} = req.params;
-    const documentTypes=  [
-        UploadDocumentType.DRIVER_LICENSE_FRONT,
-        UploadDocumentType.DRIVER_LICENSE_BACK,
-        UploadDocumentType.VEHICLE_REGISTRATION,
-        UploadDocumentType.VEHICLE_INSURANCE,
-        UploadDocumentType.PUBLIC_LIABILITY_INSURANCE
-      ]
-      const presignedUrls = await getPresignedUrls(userId,documentTypes as unknown as UploadDocumentType[]);
-      res.json(presignedUrls);
+      const documentType= req.query?.documentType as UploadDocumentType;
+    
+      const presignedUrls = await getPresignedUrls(userId,[documentType]);
+      res.json(presignedUrls?.[0]);
     } catch (error) {
       next(error);
     }
@@ -327,9 +360,23 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userInfo.userId;
-      const { filePath,documentType } = req.body;
-      await driverService.uploadDocument(userId, documentType as UploadDocumentType, filePath);
+      const {documentType } = req.body;
+      await driverService.uploadDocument(userId, documentType as UploadDocumentType);
       res.json({ message: "Document uploaded successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  "/documents",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userInfo.userId;
+      const documents = await driverService.getDocuments(userId);
+      res.json(documents);
     } catch (error) {
       next(error);
     }
