@@ -64,6 +64,7 @@ export enum DocumentApprovalStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
+  UPLOADED = "UPLOADED",
 }
 
 export enum UploadDocumentType {

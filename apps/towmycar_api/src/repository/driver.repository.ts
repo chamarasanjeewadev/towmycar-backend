@@ -16,7 +16,7 @@ import {
   Documents,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError, BreakdownAssignmentDetails, UploadDocumentType } from "@towmycar/common";
+import { NotFoundError, DataBaseError, BreakdownAssignmentDetails, UploadDocumentType, DocumentApprovalStatus } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import {
   CloseDriverAssignmentParams,
@@ -790,11 +790,14 @@ export const DriverRepository: IDriverRepository = {
   },
   async uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string) {
     try {
+      const approvalStatus = DocumentApprovalStatus.UPLOADED.toString();
       const result = await DB.insert(documents)
+        //@ts-ignore
         .values({
           userId,
           documentType,
           filePath,
+          approvalStatus
         })
         // .onConflictDoUpdate({
         //   target: [documents.userId, documents.documentType],
