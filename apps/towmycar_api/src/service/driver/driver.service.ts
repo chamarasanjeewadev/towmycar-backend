@@ -8,6 +8,7 @@ import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the 
 import { Stripe } from "stripe";
 import {
   DriverAcceptedEventPayload,
+  DriverApprovalStatus,
   DriverClosedEventPayload,
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
@@ -364,23 +365,11 @@ export const updateDriverProfile = async (
   repository: IDriverRepository
 ) => {
   // Update the driver's profile with additional information
+  //if auto approve driver requests is true, then update the driver status to accepted
+  if (process.env.AUTO_APPROVE_DRIVER_REQUESTS === "true") {
+    profileData.approvalStatus = DriverApprovalStatus.APPROVED;
+  }
   const updatedDriver = await repository.update(driverId, profileData);
   return updatedDriver;
 };
 
-// export const getDriverByEmail = async (
-//   email: string,
-//   repository: IDriverRepository
-// ) => {
-//   return repository.findByEmail(email);
-// };
-
-// export const getDriverRequestsWithInfo = async (driverId: number) => {
-//   return await DriverRepository.getDriverRequestsWithInfo(driverId);
-// };
-
-// export const getDriverProfileByEmail = async (email: string) => {
-//   return await DriverRepository.getDriverProfileByEmail(email);
-// };
-
-// Add more functions as needed

@@ -1,3 +1,4 @@
+import { DriverApprovalStatus } from "@towmycar/common";
 import { z } from "zod";
 
 const requiredDriverSchema = z.object({
@@ -39,6 +40,7 @@ export const driverProfileSchema = z.object({
   phoneNumber: z.string().min(1, { message: "Please enter your phone number" }),
   vehicleType: z.string().min(1, { message: "Please enter your vehicle type" }),
   maxWeight: z.number().min(1, { message: "Please enter your max weight" }),
+  approvalStatus: z.nativeEnum(DriverApprovalStatus).default(DriverApprovalStatus.PENDING),
   vehicleRegistration: z
     .string()
     .min(1, { message: "Please enter a valid vehicle registration" }),

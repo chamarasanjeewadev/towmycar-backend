@@ -1,19 +1,17 @@
 {
-  "name": "vehicle-breakdown-backend",
+  "name": "vehicle-breakdown-frontend",
   "private": true,
-  "packageManager": "yarn@1.22.19",
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "deploy": "turbo run deploy"
-  },
+  "packageManager": "yarn@1.22.22",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "sync": "turbo repo sync"
+  },
   "devDependencies": {
-    "turbo": "latest"
+    "turbo": "^2.0.10"
   }
 }

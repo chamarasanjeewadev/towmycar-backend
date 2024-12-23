@@ -4,9 +4,11 @@ import { Runtime } from "aws-cdk-lib/aws-lambda";
 import * as path from "path";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as sns from "aws-cdk-lib/aws-sns";
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as iam from "aws-cdk-lib/aws-iam";
+
 import {
   HttpApi,
   CorsHttpMethod,
@@ -21,7 +23,7 @@ function loadServiceEnvFile(servicePath: string, environment: string): void {
   const envFile = environment === "prod" ? ".env.prod" : ".env.dev";
   const envPath = path.join(
     __dirname,
-    `../../../apps/${servicePath}/${envFile}`
+    `../../../apps/${servicePath}/${envFile}`,
   );
   dotenv.config({ path: envPath });
 }
@@ -49,6 +51,7 @@ export class CdkStack extends cdk.Stack {
 
   // Lambda references
   private apiFunction: NodejsFunction;
+  private adminFunction: NodejsFunction;
   private finderFunction: NodejsFunction;
   private notificationFunction: NodejsFunction;
 
@@ -101,11 +104,11 @@ export class CdkStack extends cdk.Stack {
 
   private setupSNStoSQSSubscriptions(): void {
     this.breakdownRequestTopic.addSubscription(
-      new subscriptions.SqsSubscription(this.breakdownRequestQueue)
+      new subscriptions.SqsSubscription(this.breakdownRequestQueue),
     );
 
     this.sendNotificationTopic.addSubscription(
-      new subscriptions.SqsSubscription(this.sendNotificationQueue)
+      new subscriptions.SqsSubscription(this.sendNotificationQueue),
     );
   }
 
@@ -157,6 +160,66 @@ export class CdkStack extends cdk.Stack {
       },
     });
 
+    this.adminFunction = new lambda.Function(this, "admin-service", {
+      ...commonLambdaConfig,
+      functionName: "towmycar-admin",
+      code: lambda.Code.fromAsset(
+        path.join(__dirname, "../../../apps/admin_service/dist"),
+      ),
+      handler: "main.handler",
+      environment: {
+        NODE_ENV: "production",
+        DB_URL: process.env.DB_URL || "",
+        REGION: process.env.REGION || "eu-west-2",
+        SOURCE_EMAIL: process.env.SOURCE_EMAIL || "towmycar.uk@gmail.com",
+        RATING_SECRET_KEY: process.env.RATING_SECRET_KEY || "",
+        SERVICE_ACCOUNT: process.env.SERVICE_ACCOUNT || "",
+        TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",
+        TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
+        TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || "",
+        ENABLE_SMS: process.env.ENABLE_SMS || "false",
+        NODE_TLS_REJECT_UNAUTHORIZED:
+          process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0",
+      },
+      // bundling: {
+      //   externalModules: [
+      //     "@nestjs/microservices",
+      //     "@nestjs/microservices/microservices-module",
+      //     "@nestjs/websockets/socket-module",
+      //     "cache-manager",
+      //     "class-validator",
+      //     "class-transformer",
+      //   ],
+      //   commandHooks: {
+      //     beforeBundling(inputDir: string, outputDir: string): string[] {
+      //       return []; // Build the NestJS app before bundling
+      //     },
+      //     afterBundling(inputDir: string, outputDir: string): string[] {
+      //       return [];
+      //     },
+      //     beforeInstall(): string[] {
+      //       return [];
+      //     },
+      //   },
+      //   minify: true, // Minify the output for smaller bundles
+      //   sourceMap: false, // Optionally include source maps
+      // },
+    });
+
+    // this.adminFunction = new lambda_core.Function(this, "admin-service", {
+    //   code: lambda_core.Code.fromAsset(
+    //     path.join(__dirname, "../../../apps/admin_service/dist"),
+    //   ),
+    //   functionName: "api-lambda-handler",
+    //   runtime: lambda_core.Runtime.NODEJS_18_X,
+    //   handler: "main.handler",
+    //   environment: {
+    //     AWS_BUCKET_NAME: "websiteBucket.bucketName",
+    //   },
+    //   timeout: cdk.Duration.seconds(60),
+    //   memorySize: 256,
+    // });
+
     // Finder Lambda
     this.finderFunction = new NodejsFunction(this, "tow-finder", {
       ...commonLambdaConfig,
@@ -193,7 +256,7 @@ export class CdkStack extends cdk.Stack {
       functionName: "towmycar-notifications",
       entry: path.join(
         __dirname,
-        "../../../apps/notification_service/src/server.ts"
+        "../../../apps/notification_service/src/server.ts",
       ),
       handler: "handler",
       environment: {
@@ -228,7 +291,7 @@ export class CdkStack extends cdk.Stack {
       new lambdaEventSources.SqsEventSource(this.breakdownRequestQueue, {
         batchSize: 10,
         maxBatchingWindow: cdk.Duration.seconds(5),
-      })
+      }),
     );
 
     // Notification Function permissions
@@ -244,7 +307,7 @@ export class CdkStack extends cdk.Stack {
           "ses:SendTemplatedEmail",
         ],
         resources: ["*"], // You can restrict this to specific SES ARNs if needed
-      })
+      }),
     );
 
     // Add SQS event source to notification function
@@ -252,7 +315,7 @@ export class CdkStack extends cdk.Stack {
       new lambdaEventSources.SqsEventSource(this.sendNotificationQueue, {
         batchSize: 10,
         maxBatchingWindow: cdk.Duration.seconds(5),
-      })
+      }),
     );
   }
 
@@ -291,10 +354,22 @@ export class CdkStack extends cdk.Stack {
       },
     });
 
+    const adminIntegration = new HttpLambdaIntegration(
+      "AdminIntegration",
+      this.adminFunction,
+    );
+
+    // Add the default route (proxy)
+    httpApi.addRoutes({
+      path: "/admin/{proxy+}",
+      methods: [HttpMethod.ANY],
+      integration: adminIntegration,
+    });
+
     // Create Lambda integration
     const integration = new HttpLambdaIntegration(
       "DefaultIntegration",
-      this.apiFunction
+      this.apiFunction,
     );
 
     // Add the default route (proxy)
@@ -304,7 +379,7 @@ export class CdkStack extends cdk.Stack {
       integration,
     });
 
-   // Add the additional route for /location/{proxy+}
+    // Add the additional route for /location/{proxy+}
     httpApi.addRoutes({
       path: "/location/{proxy+}",
       methods: [HttpMethod.ANY],
