@@ -11,7 +11,12 @@ import {
   unique,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { BreakdownRequestStatus, DocumentApprovalStatus, DriverApprovalStatus } from "@towmycar/common";
+import {
+  BreakdownRequestStatus,
+  DocumentApprovalStatus,
+  DriverApprovalStatus,
+  DriverAvailabilityStatus,
+} from "@towmycar/common";
 // Renamed userAuth to user
 export const user = pgTable("user", {
   id: serial("id").primaryKey().notNull(),
@@ -65,6 +70,8 @@ export const driver = pgTable("driver", {
   vehicleRegistration: varchar("vehicle_registration", { length: 20 }),
   licenseNumber: varchar("license_number", { length: 50 }),
   serviceRadius: integer("service_radius"),
+  agreedTerms: boolean("agreed_to_terms").default(false).notNull(),
+  profileDescription: text("profile_description"),
   primaryLocation: geometry("primary_location", {
     type: "point",
     mode: "xy",
@@ -78,7 +85,12 @@ export const driver = pgTable("driver", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-  approvalStatus: varchar("approval_status").default(DriverApprovalStatus.PENDING), // New field
+  approvalStatus: varchar("approval_status").default(
+    DriverApprovalStatus.PENDING,
+  ), // New field
+  availabilityStatus: varchar("availability_status").default(
+    DriverAvailabilityStatus.UNAVAILABLE,
+  ), // New field
   approvedBy: integer("approved_by"), // ID of the admin who approved (references an admins table)
   approvedAt: timestamp("approved_at"),
 });
@@ -89,6 +101,7 @@ export const breakdownRequest = pgTable("breakdown_request", {
   customerId: integer("customer_id")
     .references(() => customer.id, { onDelete: "cascade" })
     .notNull(),
+  deliveryTimeframe: varchar("delivery_timeframe", { length: 20 }),
   regNo: varchar("reg_no", { length: 20 }),
   mobileNumber: varchar("mobile_number", { length: 20 }),
   make: varchar("make", { length: 200 }),
@@ -99,6 +112,7 @@ export const breakdownRequest = pgTable("breakdown_request", {
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
   toAddress: text("to_address"),
+  
   userLocation: geometry("user_location", {
     type: "point",
     mode: "xy",
@@ -138,7 +152,7 @@ export const fcmTokens = pgTable(
   table => ({
     // Adding the unique constraint
     requestDriverUnique: unique().on(table.userId, table.token),
-  })
+  }),
 );
 
 // Updated breakdownAssignment table
@@ -167,7 +181,7 @@ export const breakdownAssignment = pgTable(
   table => ({
     // Adding the unique constraint
     requestDriverUnique: unique().on(table.requestId, table.driverId),
-  })
+  }),
 );
 
 // New vehicles table
@@ -268,7 +282,7 @@ export const notifications = pgTable("notifications", {
   notificationType: varchar("notification_type", { length: 100 }).notNull(),
   breakdownRequestId: integer("breakdown_request_id").references(
     () => breakdownRequest.id,
-    { onDelete: "cascade" }
+    { onDelete: "cascade" },
   ),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
@@ -306,7 +320,9 @@ export const documents = pgTable("documents", {
   userId: integer("user_id")
     .references(() => user.id, { onDelete: "cascade" })
     .notNull(),
-  approvalStatus: varchar("approval_status").default(DocumentApprovalStatus.PENDING),
+  approvalStatus: varchar("approval_status").default(
+    DocumentApprovalStatus.PENDING,
+  ),
   documentType: varchar("document_type", { length: 50 }).notNull(), // Type of document (e.g., car breakdown photo, driving license)
   filePath: text("file_path").notNull(), // Path to the uploaded document
   createdAt: timestamp("created_at", { withTimezone: true })

@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import {
   getDriverById,
+  getDriverProfile,
   updateDriverProfile,
 } from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
@@ -377,6 +378,21 @@ router.get(
       const userId = req.userInfo.userId;
       const documents = await driverService.getDocuments(userId);
       res.json(documents);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  "/driver-dashboard",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      console.log("driver-dashboard");
+      const driverId = req.userInfo.driverId;
+      const driverProfile = await getDriverProfile(driverId);
+      res.json(driverProfile);
     } catch (error) {
       next(error);
     }

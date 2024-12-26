@@ -30,66 +30,13 @@ import {
 } from "@towmycar/common";
 import { ConflictError, DataBaseError } from "@towmycar/common";
 import {
-  CloseBreakdownParams,
+  CloseBreakdownParams,BreakdownRequestWithUserDetails,
+  DriverProfile
 } from "./../types/types";
 import { logger } from "@towmycar/common";
 
 // Add this type definition
-type BreakdownRequestWithUserDetails = {
-  id: number;
-  requestType: string;
-  location: { latitude: number; longitude: number } | null;
-  description: string | null;
-  make: string | null;
-  makeModel: string | null;
-  regNo: string | null;
-  mobileNumber: string | null;
-  weight: number | null; // Change this to number | null
-  status: string;
-  createdAt: Date;
-  userId: number;
-  assignments: {
-    id: number;
-    driverStatus: string;
-    userStatus: string;
-    estimation: number | null;
-    explanation: string | null;
-    updatedAt: Date;
-    driver: {
-      id: number;
-      email: string;
-      firstName: string;
-      lastName: string;
-      phoneNumber: string | null;
-      imageUrl: string | null;
-    };
-  }[];
-};
 
-// Add this interface near the top with other type definitions
-interface DriverProfile {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phoneNumber: string | null;
-  imageUrl: string | null;
-  ratings: {
-    count: number;
-    averageRating: number | null;
-    completedJobs: number;
-  };
-  reviews: {
-    rating: number;
-    feedback: string;
-    createdAt: Date;
-    customer: {
-      firstName: string;
-      lastName: string;
-      imageUrl: string | null;
-    };
-  }[];
-}
 
 // declare repository type
 export type BreakdownRequestRepositoryType = {
@@ -161,6 +108,7 @@ const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
     const breakdownData: Omit<BreakdownRequest, "id"> = {
       customerId: data.customerId,
       requestType: data.requestType,
+      deliveryTimeframe: data.deliveryTimeframe,
       address: data.address,
       toAddress: data.toAddress,
       postCode: data.postCode,

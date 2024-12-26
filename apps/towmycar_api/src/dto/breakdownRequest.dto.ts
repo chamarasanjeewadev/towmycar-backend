@@ -1,4 +1,4 @@
-import { UserStatus } from "@towmycar/common";
+import { DeliveryTimeframe, UserStatus } from "@towmycar/common";
 import { z } from "zod";
 
 // Define the schema using Zod for validation
@@ -13,6 +13,7 @@ export const BreakdownRequestSchema = z.object({
   makeModel: z.string(),
   regNo: z.string(),
   weight: z.number(),
+  deliveryTimeframe: z.nativeEnum(DeliveryTimeframe),
   mobileNumber: z.string(),
   userLocation: z.object({
     latitude: z.number(),
@@ -37,6 +38,7 @@ export interface BreakdownRequestInput {
   toAddress: string;
   postCode: string;
   toPostCode: string;
+  deliveryTimeframe: string;
   make: string;
   makeModel: string;
   regNo: string;

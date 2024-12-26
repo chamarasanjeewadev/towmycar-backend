@@ -34,82 +34,29 @@ export interface PaginatedResult<T> {
   limit: number;
 }
 
-export interface BreakdownRequestWithUserDetails {
-  id: number;
-  requestType: string;
-  location: string;
-  description: string | null;
-  status: string;
-  regNo: string | null;
-  weight: number | null;
-  userId: number;
-  firstName: string | null;
-  lastName: string | null;
-  userEmail: string | null;
-  mobileNumber: string | null;
-  make: string | null;
-  makeModel: string | null;
-  color: string | null;
-  userLocation: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-// export interface BreakdownAssignmentDetails {
-//   assignmentId: number;
-//   requestId: number;
-//   driverStatus: string;
-//   userStatus: string;
-//   estimation: string;
-//   explanation: string;
-//   updatedAt: Date;
+// export interface BreakdownRequestWithUserDetails {
+//   id: number;
+//   requestType: string;
+//   location: string;
+//   description: string | null;
+//   status: string;
+//   regNo: string | null;
+//   weight: number | null;
+//   userId: number;
+//   firstName: string | null;
+//   lastName: string | null;
+//   userEmail: string | null;
+//   mobileNumber: string | null;
+//   make: string | null;
+//   makeModel: string | null;
+//   color: string | null;
 //   userLocation: {
 //     latitude: number;
 //     longitude: number;
 //   };
-//   createdAt: string;
-//   userRequest: {
-//     id: number;
-//     customerId: number;
-//     status: string;
-//     description: string | null;
-//     regNo: string | null;
-//     weight: number | null;
-//     address: string;
-//     createdAt: string;
-//     updatedAt: string;
-//     make: string | null;
-//     makeModel: string | null;
-//     mobileNumber: string | null;
-//     requestType: string;
-//   };
-//   driver: {
-//     id: number;
-//     firstName: string | null;
-//     lastName: string | null;
-//     email: string | null;
-//     imageUrl: string | null;
-//     vehicleType: string;
-//     regNo: string;
-//     phoneNumber:string;
-//     vehicleRegistration: string;
-//     licenseNumber: string;
-//     serviceRadius: number;
-//     workingHours: string;
-//     experienceYears: number;
-//     insuranceDetails: string;
-//     primaryLocation: string;
-//   };
-//   customer: {
-//     id: number;
-//     firstName: string;
-//     lastName: string;
-//     email: string;
-//     imageUrl: string | null;
-//     mobileNumber: string | null;
-//   };
 // }
+
+
 
 export interface CloseDriverAssignmentParams {
   requestId: number;
@@ -127,3 +74,58 @@ export type CloseBreakdownParams = {
   siteFeedback?: string | null;
 };
 
+export type BreakdownRequestWithUserDetails = {
+  id: number;
+  requestType: string;
+  location: { latitude: number; longitude: number } | null;
+  description: string | null;
+  make: string | null;
+  makeModel: string | null;
+  regNo: string | null;
+  mobileNumber: string | null;
+  weight: number | null; // Change this to number | null
+  status: string;
+  createdAt: Date;
+  userId: number;
+  assignments: {
+    id: number;
+    driverStatus: string;
+    userStatus: string;
+    estimation: number | null;
+    explanation: string | null;
+    updatedAt: Date;
+    driver: {
+      id: number;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber: string | null;
+      imageUrl: string | null;
+    };
+  }[];
+};
+
+// Add this interface near the top with other type definitions
+export interface DriverProfile {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phoneNumber: string | null;
+  imageUrl: string | null;
+  ratings: {
+    count: number;
+    averageRating: number | null;
+    completedJobs: number;
+  };
+  reviews: {
+    rating: number;
+    feedback: string;
+    createdAt: Date;
+    customer: {
+      firstName: string;
+      lastName: string;
+      imageUrl: string | null;
+    };
+  }[];
+}

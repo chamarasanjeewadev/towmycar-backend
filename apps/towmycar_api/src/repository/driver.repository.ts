@@ -8,18 +8,22 @@ import {
   Driver,
   Customer,
   eq,
+  serviceRatings,
   and,
   desc,
   aliasedTable,
   sql,
   documents,
   Documents,
+  count,
+  isNotNull,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError, BreakdownAssignmentDetails, UploadDocumentType, DocumentApprovalStatus } from "@towmycar/common";
+import { NotFoundError, DataBaseError, BreakdownAssignmentDetails, UploadDocumentType, DocumentApprovalStatus, DriverAvailabilityStatus } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import {
   CloseDriverAssignmentParams,
+  DriverProfile,
 } from "./../types/types";
 import { logger } from "@towmycar/common";
 import { payments } from "@towmycar/database/db-schema";
@@ -143,6 +147,7 @@ export interface IDriverRepository {
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
   uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string):Promise<Documents>;
   getDocuments(userId: number):Promise<Documents[]>;
+  getDriverProfile(driverId: number):Promise<DriverProfile | null>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -202,6 +207,7 @@ export const DriverRepository: IDriverRepository = {
           createdAt: breakdownRequest.createdAt,
           updatedAt: breakdownRequest.updatedAt,
           make: breakdownRequest.make,
+          deliveryTimeframe: breakdownRequest.deliveryTimeframe,
           makeModel: breakdownRequest.model,
           mobileNumber: maskSensitiveData(
             breakdownRequest.mobileNumber,
@@ -330,6 +336,7 @@ export const DriverRepository: IDriverRepository = {
         description: breakdownRequest.description,
         regNo: breakdownRequest.regNo,
         weight: breakdownRequest.weight,
+        deliveryTimeframe: breakdownRequest.deliveryTimeframe,
         address: breakdownRequest.address,
         postCode: breakdownRequest.postCode,
         toPostCode: breakdownRequest.toPostCode,
@@ -500,7 +507,7 @@ export const DriverRepository: IDriverRepository = {
     id: number,
     data: Partial<DriverProfileDtoType>
   ): Promise<Driver> {
-    const { primaryLocation, firstName, lastName, ...restData } = data;
+    const { primaryLocation, firstName, lastName,availabilityStatus, ...restData } = data;
     const prim = {
       x: primaryLocation?.longitude,
       y: primaryLocation?.latitude,
@@ -535,6 +542,7 @@ export const DriverRepository: IDriverRepository = {
         .set({
           ...restData,
           ...(primaryLocation && { primaryLocation: prim }),
+          ...(availabilityStatus && { availabilityStatus: availabilityStatus }),
         } as any)
         .where(eq(driver.id, id))
         .returning();
@@ -654,7 +662,7 @@ export const DriverRepository: IDriverRepository = {
 
     return result.length > 0 ? result[0] : null;
   },
-  async getDriverProfileById(userId: number): Promise<any | null> {
+  async getDriverProfileById(userId: number): Promise<{} | null> {
     //@ts-ignore
     const result = await DB.select({
       ...user,
@@ -896,4 +904,86 @@ export const DriverRepository: IDriverRepository = {
       );
     }
   },
+  async getDriverProfile(
+    driverId: number,
+  ): Promise<DriverProfile | null> {
+    try {
+      const driverInfo = await DB.select({
+        id: driver.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: driver.phoneNumber,
+        imageUrl: user.imageUrl,
+      })
+        .from(driver)
+        .innerJoin(user, eq(driver.userId, user.id))
+        .where(eq(driver.id, driverId))
+        .limit(1);
+  
+      if (!driverInfo.length) {
+        return null;
+      }
+  
+      // Get ratings statistics
+      const ratingsResult = await DB.select({
+        count: count(),
+        averageRating: sql<number>`CAST(AVG(${serviceRatings.customerRating}) AS FLOAT)`,
+      })
+        .from(serviceRatings)
+        .where(eq(serviceRatings.driverId, driverId));
+  
+      // Get completed jobs count
+      const completedJobsResult = await DB.select({
+        completedJobs: count(),
+      })
+        .from(breakdownAssignment)
+        .where(
+          and(
+            eq(breakdownAssignment.driverId, driverId),
+            eq(breakdownAssignment.isCompleted, true),
+            eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED)
+          )
+        );
+  
+      // Get reviews
+      const reviews = await DB.select({
+        rating: serviceRatings.customerRating,
+        feedback: serviceRatings.customerFeedback,
+        createdAt: serviceRatings.createdAt,
+        customer: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          imageUrl: user.imageUrl,
+        },
+      })
+        .from(serviceRatings)
+        .innerJoin(customer, eq(serviceRatings.customerId, customer.id))
+        .innerJoin(user, eq(customer.userId, user.id))
+        .where(
+          and(
+            eq(serviceRatings.driverId, driverId),
+            isNotNull(serviceRatings.customerRating),
+            isNotNull(serviceRatings.customerFeedback)
+          )
+        )
+        .orderBy(desc(serviceRatings.createdAt))
+        .limit(10); // Limit to last 10 reviews
+  
+      return {
+        ...driverInfo[0],
+        ratings: {
+          count: ratingsResult[0].count,
+          averageRating: ratingsResult[0].averageRating,
+          completedJobs: completedJobsResult[0].completedJobs,
+        },
+        reviews: reviews,
+      };
+    } catch (error) {
+      console.error("Error in getDriverProfile:", error);
+      throw new DataBaseError(`Failed to fetch driver profile: ${error}`);
+    }
+  },
 };
+
+

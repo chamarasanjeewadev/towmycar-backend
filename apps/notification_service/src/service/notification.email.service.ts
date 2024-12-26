@@ -21,7 +21,7 @@ const sesClient = new SESClient();
 export const sendEmail = async (payload: EmailPayloadType) => {
   try {
     const params = {
-      Source: "towmycar.uk@gmail.com",
+      Source: "hello@towmycar.uk",
       Destination: {
         ToAddresses: [payload.recipientEmail, "towmycar.uk@gmail.com"],
       },

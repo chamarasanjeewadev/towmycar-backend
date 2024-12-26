@@ -1,4 +1,7 @@
-import { DriverApprovalStatus } from "@towmycar/common";
+import {
+  DriverApprovalStatus,
+  DriverAvailabilityStatus,
+} from "@towmycar/common";
 import { z } from "zod";
 
 const requiredDriverSchema = z.object({
@@ -22,17 +25,24 @@ export const driverBasicProfileSchema = z.object({
   state: z.string().min(1, { message: "Please enter your state" }),
   postcode: z.string().min(1, { message: "Please enter your postal code" }),
   country: z.string().min(1, { message: "Please enter your country" }),
+  profileDescription: z.string().optional().nullable(),
+  agreedTerms: z.boolean().default(false),
 });
 
 export const driverSettingsSchema = z.object({
-  serviceRadius: z.number().min(1, { message: 'Please enter a valid service radius greater than 0' }),
+  serviceRadius: z
+    .number()
+    .min(1, { message: "Please enter a valid service radius greater than 0" }),
   maxWeight: z.number().min(0).max(3000),
   primaryLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),
   }),
+  availabilityStatus: z
+    .nativeEnum(DriverAvailabilityStatus)
+    .default(DriverAvailabilityStatus.UNAVAILABLE),
   address: z.string().optional().nullable(),
-})
+});
 
 export const driverProfileSchema = z.object({
   firstName: z.string().min(1, { message: "Please enter your first name" }),
@@ -40,7 +50,12 @@ export const driverProfileSchema = z.object({
   phoneNumber: z.string().min(1, { message: "Please enter your phone number" }),
   vehicleType: z.string().min(1, { message: "Please enter your vehicle type" }),
   maxWeight: z.number().min(1, { message: "Please enter your max weight" }),
-  approvalStatus: z.nativeEnum(DriverApprovalStatus).default(DriverApprovalStatus.PENDING),
+  availabilityStatus: z
+    .nativeEnum(DriverAvailabilityStatus)
+    .default(DriverAvailabilityStatus.UNAVAILABLE),
+  approvalStatus: z
+    .nativeEnum(DriverApprovalStatus)
+    .default(DriverApprovalStatus.PENDING),
   vehicleRegistration: z
     .string()
     .min(1, { message: "Please enter a valid vehicle registration" }),
@@ -54,6 +69,7 @@ export const driverProfileSchema = z.object({
     latitude: z.number(),
     longitude: z.number(),
   }),
+  profileDescription: z.string().optional().nullable(),
   workingHours: z
     .string()
     .min(1, { message: "Please enter your working hours" }),

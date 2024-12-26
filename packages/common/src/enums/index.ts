@@ -60,11 +60,23 @@ export enum DriverApprovalStatus {
   REJECTED = "REJECTED",
 }
 
+export enum DriverAvailabilityStatus {
+  AVAILABLE = "AVAILABLE",
+  UNAVAILABLE = "UNAVAILABLE",
+}
+
 export enum DocumentApprovalStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
   UPLOADED = "UPLOADED",
+}
+
+export enum DeliveryTimeframe {
+  ASAP = "ASAP",
+  WITHIN_DAY = "WITHIN_DAY",
+  WITHIN_WEEK = "WITHIN_WEEK",
+  WITHIN_MONTH = "WITHIN_MONTH",
 }
 
 export enum UploadDocumentType {

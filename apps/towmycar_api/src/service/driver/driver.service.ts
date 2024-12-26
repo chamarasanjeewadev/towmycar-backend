@@ -9,6 +9,7 @@ import { Stripe } from "stripe";
 import {
   DriverAcceptedEventPayload,
   DriverApprovalStatus,
+  DriverAvailabilityStatus,
   DriverClosedEventPayload,
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
@@ -369,7 +370,12 @@ export const updateDriverProfile = async (
   if (process.env.AUTO_APPROVE_DRIVER_REQUESTS === "true") {
     profileData.approvalStatus = DriverApprovalStatus.APPROVED;
   }
+  
   const updatedDriver = await repository.update(driverId, profileData);
   return updatedDriver;
+};
+
+export const getDriverProfile = async (driverId: number) => {
+  return DriverRepository.getDriverProfile(driverId);
 };
 

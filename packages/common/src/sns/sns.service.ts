@@ -33,7 +33,7 @@ export const sendSNS = async (topicArn: string, message: any) => {
       `Failed to send SNS notification for breakdown request ${snsParams}:`,
       error
     );
-    throw error;
+    // throw error;
   }
 };
 
@@ -62,7 +62,7 @@ export const sendNotification = async (
       `Failed to send SNS notification for breakdown request ${snsParams}:`,
       error
     );
-    throw error;
+    // throw error;
   }
 };
 

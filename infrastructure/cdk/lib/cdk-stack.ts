@@ -380,11 +380,11 @@ export class CdkStack extends cdk.Stack {
     });
 
     // Add the additional route for /location/{proxy+}
-    httpApi.addRoutes({
-      path: "/location/{proxy+}",
-      methods: [HttpMethod.ANY],
-      integration,
-    });
+    // httpApi.addRoutes({
+    //   path: "/location/{proxy+}",
+    //   methods: [HttpMethod.ANY],
+    //   integration,
+    // });
 
     // Add CloudFormation outputs
     new cdk.CfnOutput(this, "towApiId", {
