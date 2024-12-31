@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { BaseError, CustomError, APIError,logger } from "@towmycar/common";
-
+import { BaseError, CustomError, APIError, logger } from "@towmycar/common";
 
 export const errorMiddleware = (
   err: BaseError | CustomError | APIError | Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   let statusCode = 500;
   let errorCode = "INTERNAL_ERROR";
@@ -30,14 +29,19 @@ export const errorMiddleware = (
 
   // Log the error using winston
   logger.error(
-    `Status: ${statusCode}, Code: ${errorCode}, Message: ${message}, Stack: ${err.stack}`
+    `Status: ${statusCode}, Code: ${errorCode}, Message: ${message}, Stack: ${err.stack}`,
   );
 
   // Send response
   res.status(statusCode).json({
     status: "error",
     code: statusCode,
-    info: { message, errorCode, statusCode, customeErrorCode: code },
+    info: {
+      message,
+      errorCode,
+      statusCode,
+      // customeErrorCode: code
+    },
     message: message,
   });
 };

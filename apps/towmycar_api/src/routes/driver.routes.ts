@@ -6,12 +6,19 @@ import {
 } from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
 import { DriverService } from "../service/driver/driver.service";
-import { driverBasicProfileSchema, driverProfileSchema, driverSettingsSchema } from "../dto/driver.dto";
+import {
+  adminApprovalSchema,
+  driverBasicProfileSchema,
+  DriverProfileDtoType,
+  driverProfileSchema,
+  driverSettingsSchema,
+} from "../dto/driver.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
 import { CustomError, ERROR_CODES, UploadDocumentType } from "@towmycar/common";
 import { DriverStatus } from "@towmycar/common";
 import { getPresignedUrls } from "../utils";
+import { Driver } from "@towmycar/database";
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -26,18 +33,17 @@ router.get(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid driver ID"
+          "Invalid driver ID",
         );
       }
 
-      const assignments = await driverService.getDriverRequestsWithInfo(
-        driverId
-      );
+      const assignments =
+        await driverService.getDriverRequestsWithInfo(driverId);
       res.json(assignments);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -51,26 +57,26 @@ router.get(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid driver ID or request ID"
+          "Invalid driver ID or request ID",
         );
       }
 
       const assignment = await driverService.getDriverRequestWithInfo(
         driverId,
-        requestId
+        requestId,
       );
       if (!assignment) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
           404,
-          "Driver request not found"
+          "Driver request not found",
         );
       }
       res.json(assignment);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -86,7 +92,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "driverId and status are required"
+          "driverId and status are required",
         );
       }
 
@@ -99,7 +105,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          'Status must be "ACCEPTED", "REJECTED", "QUOTED", or "CLOSED"'
+          'Status must be "ACCEPTED", "REJECTED", "QUOTED", or "CLOSED"',
         );
       }
 
@@ -110,7 +116,7 @@ router.patch(
           throw new CustomError(
             ERROR_CODES.INVALID_INPUT,
             400,
-            "Estimation must be a valid number"
+            "Estimation must be a valid number",
           );
         }
       }
@@ -123,18 +129,17 @@ router.patch(
         ...(explanation && { explanation }),
       };
 
-      
       const updated = await driverService.updateBreakdownAssignment(
         Number(driverId),
         Number(requestId),
-        dataToUpdate
+        dataToUpdate,
       );
 
       if (!updated) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
           404,
-          "Driver request not found"
+          "Driver request not found",
         );
       }
       // }
@@ -145,7 +150,7 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -160,7 +165,7 @@ router.get(
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
           404,
-          "Driver profile not found"
+          "Driver profile not found",
         );
       }
 
@@ -168,7 +173,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -181,7 +186,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid driver ID"
+          "Invalid driver ID",
         );
       }
 
@@ -190,14 +195,14 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid profile data: " + result.error.message
+          "Invalid profile data: " + result.error.message,
         );
       }
 
       const updatedDriver = await updateDriverProfile(
         driverId,
         result.data,
-        DriverRepository
+        DriverRepository,
       );
 
       res.json({
@@ -207,7 +212,7 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -220,7 +225,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid driver ID"
+          "Invalid driver ID",
         );
       }
 
@@ -229,14 +234,14 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid profile data: " + result.error.message
+          "Invalid profile data: " + result.error.message,
         );
       }
 
       const updatedDriver = await updateDriverProfile(
         driverId,
         result.data,
-        DriverRepository
+        DriverRepository,
       );
 
       res.json({
@@ -246,7 +251,7 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.post(
@@ -260,7 +265,7 @@ router.post(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Registration number is required"
+          "Registration number is required",
         );
       }
 
@@ -282,14 +287,14 @@ router.post(
             ERROR_CODES.RESOURCE_NOT_FOUND,
             error.response?.status || 500,
             error.response?.data?.message ||
-              "Error verifying vehicle registration"
-          )
+              "Error verifying vehicle registration",
+          ),
         );
       } else {
         next(error);
       }
     }
-  }
+  },
 );
 
 router.post(
@@ -305,7 +310,7 @@ router.post(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid request ID"
+          "Invalid request ID",
         );
       }
 
@@ -322,7 +327,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -336,7 +341,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -345,14 +350,14 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userInfo.userId;
-      const documentType= req.query?.documentType as UploadDocumentType;
-    
-      const presignedUrls = await getPresignedUrls(userId,[documentType]);
+      const documentType = req.query?.documentType as UploadDocumentType;
+
+      const presignedUrls = await getPresignedUrls(userId, [documentType]);
       res.json(presignedUrls?.[0]);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.put(
@@ -361,13 +366,16 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userInfo.userId;
-      const {documentType } = req.body;
-      await driverService.uploadDocument(userId, documentType as UploadDocumentType);
+      const { documentType } = req.body;
+      await driverService.uploadDocument(
+        userId,
+        documentType as UploadDocumentType,
+      );
       res.json({ message: "Document uploaded successfully" });
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -381,7 +389,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -389,14 +397,13 @@ router.get(
   clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log("driver-dashboard");
       const driverId = req.userInfo.driverId;
       const driverProfile = await getDriverProfile(driverId);
       res.json(driverProfile);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -409,7 +416,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid notification ID"
+          "Invalid notification ID",
         );
       }
       await driverService.markNotificationAsSeen(notificationId);
@@ -417,7 +424,38 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
+);
+
+router.post(
+  "/admin-approval",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // send email to admin
+      const { driverId } = req.userInfo;
+      const validatedData = adminApprovalSchema.safeParse({
+        body: req.body,
+      });
+
+      // if (!validatedData.success) {
+      //   throw new CustomError(
+      //     ERROR_CODES.INVALID_INPUT,
+      //     400,
+      //     "Invalid admin approval data: " + validatedData.error.message,
+      //   );
+      // }
+
+      const response = await driverService.adminApproval(
+        driverId,
+        req.body as Partial<DriverProfileDtoType>,
+      );
+
+      return res.status(200).json(response?.updatedAt);
+    } catch (error) {
+      next(error);
+    }
+  },
 );
 
 export default router;

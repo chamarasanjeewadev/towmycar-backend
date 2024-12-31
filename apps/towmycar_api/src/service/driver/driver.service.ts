@@ -7,6 +7,8 @@ import {
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
 import {
+  AdminApprovalRequestPayload,
+  ConflictError,
   DriverAcceptedEventPayload,
   DriverApprovalStatus,
   DriverAvailabilityStatus,
@@ -16,6 +18,8 @@ import {
   DriverStatus,
   registerNotificationListener,
   TokenService,
+  UserWithCustomer,
+  UserWithDriver,
 } from "@towmycar/common";
 import { NotificationType, UploadDocumentType } from "@towmycar/common";
 import { CloseDriverAssignmentParams } from "./../../types/types";
@@ -26,7 +30,7 @@ import {
   mapToUserWithDriver,
   mapToUserWithCustomer,
 } from "@towmycar/common/src/mappers/user.mapper";
-import { getViewRequestUrl } from '@towmycar/common/src/utils/view-request-url.utils';
+import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 import { generateFilePath } from "../../utils/s3utils";
 
 // Initialize Stripe client
@@ -57,7 +61,7 @@ export class DriverService {
   async getDriverRequestWithInfo(driverId: number, requestId: number) {
     const request = await DriverRepository.getSpecificDriverRequestWithInfo(
       driverId,
-      requestId
+      requestId,
     );
 
     return request;
@@ -69,26 +73,54 @@ export class DriverService {
     return requests;
   }
 
+  async adminApproval(driverId: number, data: Partial<DriverProfileDtoType>) {
+    const response = await updateDriverProfile(
+      driverId,
+      data as Partial<DriverProfileDtoType>,
+      DriverRepository,
+    );
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      driverId,
+      response.id,
+    );
+    const userWithDriver = mapToUserWithDriver(driverInfo);
+    const admins = await DriverRepository.getAllAdmins();
+    const userWithAdmin = admins.map(admin => ({
+      ...admin,
+      userId: admin.id,
+    }));
+    const payload: AdminApprovalRequestPayload = {
+      admins: userWithAdmin,
+      user: null,
+      driver: userWithDriver,
+      breakdownRequestId: response.id,
+      viewRequestLink: getViewRequestUrl(
+        NotificationType.ADMIN_APPROVAL_REQUEST,
+        VIEW_REQUEST_BASE_URL,
+        {
+          requestId: response.id,
+        },
+      ),
+    };
+    await this.notificationEmitter.emit(
+      NotificationType.ADMIN_APPROVAL_REQUEST,
+      payload,
+    );
+
+    return response;
+  }
+
   async updateBreakdownAssignment(
     driverId: number,
     requestId: number,
-    data: UpdateAssignmentData
+    data: UpdateAssignmentData,
   ) {
-    // Fetch driver details
-    // const driverDetails = await DriverRepository.getDriverById(driverId);
-
-    // if (!driverDetails) {
-    //   throw new Error(`Driver with id ${driverId} not found`);
-    // }
-
-    // Fetch user details
     const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
       driverId,
-      requestId
+      requestId,
     );
-    const customerDetails = await DriverRepository.getCustomerByRequestId(
-      requestId
-    );
+    const customerDetails =
+      await DriverRepository.getCustomerByRequestId(requestId);
 
     const userWithDriver = mapToUserWithDriver(driverInfo);
     const userWithCustomer = mapToUserWithCustomer(customerDetails);
@@ -102,51 +134,59 @@ export class DriverService {
         driverStatus: data.driverStatus,
       };
       let estimation = null;
+      // check if any other driver has accepted the request
+      const otherDriverAccepted =
+        await BreakdownRequestService.getBreakdownAssignmentsByRequestId(
+          Number(requestId),
+        );
+      if (
+        otherDriverAccepted.find(
+          assignment => assignment.driverStatus === DriverStatus.ACCEPTED,
+        )
+      ) {
+        throw new ConflictError(
+          "This Job is no longer available, another driver has already accepted this request, you can close this request",
+        );
+      }
+
       if (!data.estimation) {
         const breakdownAssignment =
           await BreakdownRequestService.getBreakdownAssignmentsByDriverIdAndRequestId(
             Number(driverId),
-            Number(requestId)
+            Number(requestId),
           );
         estimation = breakdownAssignment?.estimation;
       }
-
+      // TODO need to lock the database to avoid two drivers do a payment at the same time
       await this.processPaymentAndUpdateAssignment(
         Number(driverId),
         Number(requestId),
         Number(estimation ?? 5),
-        dataToUpdate
+        dataToUpdate,
       );
-
-      const payload: DriverAcceptedEventPayload = {
-        breakdownRequestId: requestId,
-        driver: userWithDriver,
-        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_ACCEPTED, VIEW_REQUEST_BASE_URL, {
-          requestId
-        }),
-        estimation: +data.estimation,
-        user: userWithCustomer,
-        newPrice: +data.estimation,
-        description: "",
-      };
-      this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
+      // send notification to customer
+      this.sendNotification(requestId, userWithDriver, data, userWithCustomer);
       return true;
     }
-
+    // if not driver status is accepted, then update the breakdown assignment
     const breakdownRequestUpdated =
       await DriverRepository.updatebreakdownAssignment(
         driverId,
         requestId,
-        data
+        data,
       );
 
     if (data.driverStatus === DriverStatus.QUOTED) {
       const payload: DriverQuotedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_QUOTATION_UPDATED, VIEW_REQUEST_BASE_URL, {
-          requestId
-        }),
+        viewRequestLink: getViewRequestUrl(
+          NotificationType.DRIVER_QUOTATION_UPDATED,
+          VIEW_REQUEST_BASE_URL,
+          {
+            requestId,
+          },
+        ),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
@@ -154,26 +194,53 @@ export class DriverService {
       };
       this.notificationEmitter.emit(
         NotificationType.DRIVER_QUOTATION_UPDATED,
-        payload
+        payload,
       );
     } else if (data.driverStatus === DriverStatus.REJECTED) {
       const payload: DriverRejectedEventPayload = {
         breakdownRequestId: requestId,
         driver: userWithDriver,
-        viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_REJECTED, VIEW_REQUEST_BASE_URL, {
-          requestId
-        }),
+        viewRequestLink: getViewRequestUrl(
+          NotificationType.DRIVER_REJECTED,
+          VIEW_REQUEST_BASE_URL,
+          {
+            requestId,
+          },
+        ),
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
         description: "",
       };
       this.notificationEmitter.emit(NotificationType.DRIVER_REJECTED, payload);
-    }
-    else {
+    } else {
       throw new Error("Invalid status or estimation amount");
     }
     return breakdownRequestUpdated;
+  }
+
+  private sendNotification(
+    requestId: number,
+    userWithDriver: UserWithDriver,
+    data: UpdateAssignmentData,
+    userWithCustomer: UserWithCustomer,
+  ) {
+    const payload: DriverAcceptedEventPayload = {
+      breakdownRequestId: requestId,
+      driver: userWithDriver,
+      viewRequestLink: getViewRequestUrl(
+        NotificationType.DRIVER_ACCEPTED,
+        VIEW_REQUEST_BASE_URL,
+        {
+          requestId,
+        },
+      ),
+      estimation: +data.estimation,
+      user: userWithCustomer,
+      newPrice: +data.estimation,
+      description: "",
+    };
+    this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
   }
 
   async getDriverProfileByEmail(email: string) {
@@ -184,35 +251,38 @@ export class DriverService {
     return DriverRepository.getDriverWithPaymentMethod(driverId);
   }
 
-  async uploadDocument(userId: number, documentType: UploadDocumentType)  {
-    const filePath = await generateFilePath(userId,documentType);
+  async uploadDocument(userId: number, documentType: UploadDocumentType) {
+    const filePath = await generateFilePath(userId, documentType);
     return DriverRepository.uploadDocument(userId, documentType, filePath);
   }
 
   async getDocuments(userId: number) {
     //filter documents by updatedDate and sort by updatedDate and send first of each document type
     const documents = await DriverRepository.getDocuments(userId);
-    const filteredDocuments = documents.filter((document) => document.updatedAt);
-    const sortedDocuments = filteredDocuments.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-    const uniqueDocuments = sortedDocuments.filter((document, index, self) => 
-      index === self.findIndex((t) => t.documentType === document.documentType)
+    const filteredDocuments = documents.filter(document => document.updatedAt);
+    const sortedDocuments = filteredDocuments.sort(
+      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+    );
+    const uniqueDocuments = sortedDocuments.filter(
+      (document, index, self) =>
+        index === self.findIndex(t => t.documentType === document.documentType),
     );
     return uniqueDocuments;
   }
 
   async closeBreakdownRequestAndUpdateRating(
-    closeBreakdownAssignment: CloseDriverAssignmentParams
+    closeBreakdownAssignment: CloseDriverAssignmentParams,
   ): Promise<void> {
     await DriverRepository.closeBreakdownRequestAndRequestRating(
-      closeBreakdownAssignment
+      closeBreakdownAssignment,
     );
 
     const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
       closeBreakdownAssignment?.driverId,
-      closeBreakdownAssignment?.requestId
+      closeBreakdownAssignment?.requestId,
     );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
-      closeBreakdownAssignment?.requestId
+      closeBreakdownAssignment?.requestId,
     );
 
     const userWithDriver = mapToUserWithDriver(driverInfo);
@@ -220,15 +290,19 @@ export class DriverService {
 
     const token = TokenService.generateUrlSafeToken(
       closeBreakdownAssignment?.requestId,
-      closeBreakdownAssignment?.driverId
+      closeBreakdownAssignment?.driverId,
     );
     const payload: DriverClosedEventPayload = {
       breakdownRequestId: closeBreakdownAssignment?.requestId,
       driver: userWithDriver,
-      viewRequestLink: getViewRequestUrl(NotificationType.DRIVER_CLOSED, VIEW_REQUEST_BASE_URL, {
-        requestId: closeBreakdownAssignment?.requestId,
-        token
-      }),
+      viewRequestLink: getViewRequestUrl(
+        NotificationType.DRIVER_CLOSED,
+        VIEW_REQUEST_BASE_URL,
+        {
+          requestId: closeBreakdownAssignment?.requestId,
+          token,
+        },
+      ),
       user: userWithCustomer,
     };
 
@@ -240,20 +314,27 @@ export class DriverService {
     driverId: number,
     requestId: number,
     estimation: number,
-    dataToUpdate: UpdateAssignmentData
+    dataToUpdate: UpdateAssignmentData,
   ): Promise<void> {
     const driver = await this.getDriverWithPaymentMethod(driverId);
+    if (!driver.approvalStatus) {
+      throw new CustomError(
+        ERROR_CODES.DRIVER_NOT_APPROVED,
+        400,
+        "Driver not approved. Complete your profile first and submit for approval.",
+      );
+    }
 
     if (!driver?.stripePaymentMethodId) {
       throw new CustomError(
         ERROR_CODES.STRIPE_CARD_NOT_ADDED,
         400,
-        "Unable to process payment. Please add a valid payment method in profile settings."
+        "Unable to process payment. Please add a valid payment method in profile section.",
       );
     }
 
     // Convert estimation to cents and ensure it meets minimum
-    const amount = MINIMUM_PAYMENT_AMOUNT
+    const amount = MINIMUM_PAYMENT_AMOUNT;
 
     try {
       const paymentIntent = await stripe.paymentIntents.create({
@@ -269,7 +350,7 @@ export class DriverService {
         throw new CustomError(
           ERROR_CODES.INVALID_PAYMENT_AMOUNT,
           400,
-          "Payment failed"
+          "Payment failed",
         );
       }
 
@@ -290,9 +371,9 @@ export class DriverService {
       throw new CustomError(
         ERROR_CODES.PAYMENT_FAILED,
         400,
-        error instanceof CustomError 
-          ? error.message 
-          : "Payment processing failed. Please try again or contact support."
+        error instanceof CustomError
+          ? error.message
+          : "Payment processing failed. Please try again or contact support.",
       );
     }
   }
@@ -318,7 +399,7 @@ export class DriverService {
 }
 export const getDriverById = async (
   userId: number,
-  repository: IDriverRepository
+  repository: IDriverRepository,
 ) => {
   try {
     const driverProfile = await repository.getDriverProfileById(userId);
@@ -332,7 +413,7 @@ export const getDriverById = async (
       try {
         // Retrieve payment method details from Stripe
         const paymentMethod = await stripe.paymentMethods.retrieve(
-          driverProfile?.driver?.stripePaymentMethodId
+          driverProfile?.driver?.stripePaymentMethodId,
         );
 
         // Attach payment method details to the driver profile
@@ -363,19 +444,18 @@ export const getDriverById = async (
 export const updateDriverProfile = async (
   driverId: number,
   profileData: Partial<DriverProfileDtoType>,
-  repository: IDriverRepository
+  repository: IDriverRepository,
 ) => {
   // Update the driver's profile with additional information
   //if auto approve driver requests is true, then update the driver status to accepted
   if (process.env.AUTO_APPROVE_DRIVER_REQUESTS === "true") {
     profileData.approvalStatus = DriverApprovalStatus.APPROVED;
   }
-  
+
   const updatedDriver = await repository.update(driverId, profileData);
   return updatedDriver;
 };
 
 export const getDriverProfile = async (driverId: number) => {
-  return DriverRepository.getDriverProfile(driverId);
+  return DriverRepository.getDriverStatsProfile(driverId);
 };
-

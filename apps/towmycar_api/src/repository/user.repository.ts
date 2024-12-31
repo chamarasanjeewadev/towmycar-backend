@@ -18,6 +18,7 @@ import {
   User,
   eq,
   and,
+  admin,
   notifications,
   desc,
   sql,
@@ -34,28 +35,28 @@ export type UserRepositoryType = {
     imageUrl?: string;
   }>;
   getOrCreateUser: (
-    user: UserRegisterInput
+    user: UserRegisterInput,
   ) => Promise<{ id: number; isCreated: boolean }>;
   getUserProfileByEmail: (email: string) => Promise<any | null>;
   getUserProfileById: (id: number) => Promise<any | null>;
   getUserProfileByAuthId: (authId: string) => Promise<any | null>; // New method
   updateUserProfile: (
     id: number,
-    updateData: Partial<UserRegisterInput>
+    updateData: Partial<UserRegisterInput>,
   ) => Promise<any | null>;
   saveFcmToken: (
     userId: number,
     token: string,
-    browserInfo?: string
+    browserInfo?: string,
   ) => Promise<number>;
   getUserById: (userId: number) => Promise<any | null>;
   addVehicle: (
-    vehicleData: Omit<Vehicle, "id" | "createdAt" | "updatedAt">
+    vehicleData: Omit<Vehicle, "id" | "createdAt" | "updatedAt">,
   ) => Promise<number>;
   getVehiclesByCustomerId: (customerId: number) => Promise<Vehicle[]>;
   updateVehicle: (
     id: number,
-    updateData: Partial<Vehicle>
+    updateData: Partial<Vehicle>,
   ) => Promise<Vehicle | null>;
   deleteVehicle: (id: number) => Promise<boolean>;
   createAnonymousCustomer: (userInput: {
@@ -93,7 +94,7 @@ const createUser = async (user: UserRegisterInput): Promise<number> => {
 };
 
 const getOrCreateUser = async (
-  userRegisterInput: UserRegisterInput
+  userRegisterInput: UserRegisterInput,
 ): Promise<{ id: number; isCreated: boolean }> => {
   try {
     // Try to find the user by email
@@ -170,7 +171,7 @@ const getUserProfileByAuthId = async (authId: string): Promise<any | null> => {
 
 const updateUserProfile = async (
   id: number,
-  updateData: Partial<UserRegisterInput>
+  updateData: Partial<UserRegisterInput>,
 ): Promise<any | null> => {
   const result = await DB.update(user)
     .set(updateData)
@@ -183,7 +184,7 @@ const updateUserProfile = async (
 const saveFcmToken = async (
   userId: number,
   token: string,
-  browserInfo?: string
+  browserInfo?: string,
 ): Promise<number> => {
   const result = await DB.insert(fcmTokens)
     .values({
@@ -213,21 +214,21 @@ const getUserById = async (userId: number): Promise<any | null> => {
 };
 
 const addVehicle = async (
-  vehicleData: Omit<Vehicle, "id" | "createdAt" | "updatedAt">
+  vehicleData: Omit<Vehicle, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> => {
   const result = await DB.insert(vehicles).values(vehicleData).returning();
   return result[0].id;
 };
 
 const getVehiclesByCustomerId = async (
-  customerId: number
+  customerId: number,
 ): Promise<Vehicle[]> => {
   return DB.select().from(vehicles).where(eq(vehicles.customerId, customerId));
 };
 
 const updateVehicle = async (
   id: number,
-  updateData: Partial<Vehicle>
+  updateData: Partial<Vehicle>,
 ): Promise<Vehicle | null> => {
   const result = await DB.update(vehicles)
     .set(updateData)
@@ -313,12 +314,13 @@ const createAnonymousCustomer = async (userInput: {
 };
 
 const createUserFromWebhook = async (
-  userData: UserData
+  userData: UserData,
 ): Promise<{
   userId: number;
   role: string;
   customerId?: number;
   driverId?: number;
+  adminId?: number;
 }> => {
   try {
     const {
@@ -341,7 +343,7 @@ const createUserFromWebhook = async (
         .limit(1);
 
       let newUserId: number;
-      let customerId, driverId;
+      let customerId, driverId, adminId;
       if (existingUser.length > 0) {
         // User exists, update the record
         const updateResult = await trx
@@ -388,10 +390,10 @@ const createUserFromWebhook = async (
             .limit(1);
           if (existingDriver.length > 0) {
             driverId = existingDriver[0].id;
-          } else {
+          } else if (role === "admin") {
             // Create new driver record if it doesn't exist
             const driverResult = await trx
-              .insert(driver)
+              .insert(admin)
               //@ts-ignore
               .values({
                 userId: newUserId,
@@ -399,7 +401,7 @@ const createUserFromWebhook = async (
                 updatedAt: new Date(),
               })
               .returning();
-            driverId = driverResult[0].id;
+            adminId = driverResult[0].id;
           }
         }
       } else {
@@ -442,9 +444,21 @@ const createUserFromWebhook = async (
             })
             .returning();
           customerId = customerResult[0].id;
+        } else if (role === "admin") {
+          const adminResult = await trx
+            .insert(admin)
+            //@ts-ignore
+            .values({
+              userId: newUserId,
+              role: "admin",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+          adminId = adminResult[0].id;
         }
       }
-      return { userId: newUserId, role, customerId, driverId };
+      return { userId: newUserId, role, customerId, driverId, adminId };
     });
 
     return result;
@@ -455,12 +469,17 @@ const createUserFromWebhook = async (
 };
 
 const getUserNotifications = async (
-  userId: number
+  userId: number,
 ): Promise<Notification[]> => {
   try {
     return await DB.select()
       .from(notifications)
-      .where(and(eq(notifications.userId, userId),eq(notifications.deliveryType, DeliveryNotificationType.PUSH)))
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.deliveryType, DeliveryNotificationType.PUSH),
+        ),
+      )
       .orderBy(desc(notifications.createdAt));
   } catch (error) {
     console.error("Error in getUserNotifications:", error);
@@ -469,7 +488,7 @@ const getUserNotifications = async (
 };
 
 const markNotificationAsSeen = async (
-  notificationId: number
+  notificationId: number,
 ): Promise<void> => {
   try {
     await DB.update(notifications)
@@ -486,13 +505,13 @@ const getUnseenNotificationsCount = async (userId: number): Promise<number> => {
     const result = await DB.select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(
-        and(eq(notifications.userId, userId), eq(notifications.isSeen, false))
+        and(eq(notifications.userId, userId), eq(notifications.isSeen, false)),
       );
     return Number(result[0].count) || 0;
   } catch (error) {
     console.error("Error in getUnseenNotificationsCount:", error);
     throw new DataBaseError(
-      `Failed to get unseen notifications count: ${error}`
+      `Failed to get unseen notifications count: ${error}`,
     );
   }
 };

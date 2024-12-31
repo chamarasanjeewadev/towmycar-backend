@@ -13,6 +13,7 @@ import {
   DriverClosedEventPayload,
   ChatNotificationEventPayload,
   DriverQuotationUpdatedPayload,
+  AdminApprovalRequestPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -36,9 +37,9 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         {
           subType: NotificationType.DRIVER_NOTIFICATION,
           payload: snsNotificationPayload as any,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -60,9 +61,9 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         {
           subType: NotificationType.USER_NOTIFICATION,
           payload: driverNotificationPlayload,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -82,9 +83,9 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         {
           subType: NotificationType.DRIVER_QUOTED,
           payload: driverQuotedPlayload,
-        }
+        },
       );
-    }
+    },
   );
   emitter.on(
     NotificationType.DRIVER_QUOTATION_UPDATED,
@@ -95,7 +96,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         breakdownRequestId: payload.breakdownRequestId,
         user: payload.user,
         viewRequestLink: payload.viewRequestLink,
-        previousPrice: 0,//TODO
+        previousPrice: 0, //TODO
         newPrice: payload.newPrice,
         estimation: payload.estimation,
       };
@@ -104,9 +105,9 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         {
           subType: NotificationType.DRIVER_QUOTATION_UPDATED,
           payload: driverQuotedPlayload,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(NotificationType.DRIVER_REGISTERED, async payload => {
@@ -158,9 +159,9 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         {
           subType: NotificationType.USER_ACCEPTED,
           payload: userAcceptedPlayload,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(NotificationType.USER_REJECTED, async payload => {
@@ -211,40 +212,76 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     });
   });
 
-  emitter.on(NotificationType.DRIVER_CLOSED, async (payload:DriverClosedEventPayload) => {
-    const notificationPayload = {
-      ...payload,
-      sendToId: payload.user.id,
-    };
+  emitter.on(
+    NotificationType.DRIVER_CLOSED,
+    async (payload: DriverClosedEventPayload) => {
+      const notificationPayload = {
+        ...payload,
+        sendToId: payload.user.id,
+      };
 
-    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.RATING_REVIEW,
-      payload: notificationPayload,
-    });
-  });
+      await sendSNSNotification(
+        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+        {
+          subType: NotificationType.RATING_REVIEW,
+          payload: notificationPayload,
+        },
+      );
+    },
+  );
 
-  emitter.on(NotificationType.DRIVER_CHAT_INITIATED, async (payload:ChatNotificationEventPayload) => {
-    const chatPayload = {
-      ...payload,
-      sendToId: payload?.user.id,
-    };
+  emitter.on(
+    NotificationType.DRIVER_CHAT_INITIATED,
+    async (payload: ChatNotificationEventPayload) => {
+      const chatPayload = {
+        ...payload,
+        sendToId: payload?.user.id,
+      };
 
-    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.DRIVER_CHAT_INITIATED,
-      payload: chatPayload,
-    });
-  });
-  emitter.on(NotificationType.USER_CHAT_INITIATED, async (payload:ChatNotificationEventPayload) => {
-    const chatPayload = {
-      ...payload,
-      breakdownRequestId: payload.breakdownRequestId,
-      sendToId: payload.driver?.userId,
-    };
+      await sendSNSNotification(
+        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+        {
+          subType: NotificationType.DRIVER_CHAT_INITIATED,
+          payload: chatPayload,
+        },
+      );
+    },
+  );
+  emitter.on(
+    NotificationType.USER_CHAT_INITIATED,
+    async (payload: ChatNotificationEventPayload) => {
+      const chatPayload = {
+        ...payload,
+        breakdownRequestId: payload.breakdownRequestId,
+        sendToId: payload.driver?.userId,
+      };
 
-    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.USER_CHAT_INITIATED,
-      payload: chatPayload,
-    });
-  });
-
+      await sendSNSNotification(
+        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+        {
+          subType: NotificationType.USER_CHAT_INITIATED,
+          payload: chatPayload,
+        },
+      );
+    },
+  );
+  emitter.on(
+    NotificationType.ADMIN_APPROVAL_REQUEST,
+    async (payload: AdminApprovalRequestPayload) => {
+      payload.admins.forEach(async admin => {
+        const notificationPayload = {
+          ...payload,
+          sendToId: admin.userId,
+        };
+        await sendSNSNotification(
+          process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+          {
+            subType: NotificationType.ADMIN_APPROVAL_REQUEST,
+            payload: notificationPayload,
+          },
+        );
+      });
+    
+    },
+  );
 }

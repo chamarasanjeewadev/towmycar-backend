@@ -112,7 +112,7 @@ export const breakdownRequest = pgTable("breakdown_request", {
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
   toAddress: text("to_address"),
-  
+
   userLocation: geometry("user_location", {
     type: "point",
     mode: "xy",
@@ -280,10 +280,11 @@ export const notifications = pgTable("notifications", {
     length: 100,
   }),
   notificationType: varchar("notification_type", { length: 100 }).notNull(),
-  breakdownRequestId: integer("breakdown_request_id").references(
-    () => breakdownRequest.id,
-    { onDelete: "cascade" },
-  ),
+  breakdownRequestId: integer("breakdown_request_id")
+    .references(() => breakdownRequest.id, {
+      onDelete: "cascade",
+    }),
+    
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   url: text("url"),

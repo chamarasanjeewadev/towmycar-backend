@@ -6,7 +6,6 @@ import {
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
 import { registerNotificationListener, sendSNS,BaseError,ERROR_CODES,NotificationType, UserStatus,APIError  } from "@towmycar/common";
-import { } from "@towmycar/common";
 import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
 import { DriverRepository } from "./../../repository/driver.repository";

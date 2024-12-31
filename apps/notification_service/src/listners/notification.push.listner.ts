@@ -8,6 +8,7 @@ import {
   ListnerPayload,
   UserRejectedPayload,
   ChatNotificationPayload,
+  AdminApprovalRequestPayload,
 } from "@towmycar/common";
 import { UserNotificationService } from "../service/notification.push.service";
 import { NotificationRepository } from "../repository/notification.repository";
@@ -139,6 +140,12 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
       await processNotification(NotificationType.USER_CHAT_INITIATED, payload);
     }
   );
+  emitter.on(
+    `${DeliveryNotificationType.PUSH}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
+    async (payload: AdminApprovalRequestPayload) => {
+      await processNotification(NotificationType.ADMIN_APPROVAL_REQUEST, payload);
+    }
+  ); 
 }
 
 async function processNotification(

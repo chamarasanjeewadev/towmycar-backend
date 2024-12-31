@@ -9,6 +9,7 @@ import {
   UserRejectedPayload,
   UserAcceptedPayload,
   logger,
+  AdminApprovalRequestPayload,
 } from "@towmycar/common";
 import { SMSNotificationService } from "../service/notification.sms.service";
 import { NotificationRepository } from "../repository/notification.repository";
@@ -132,6 +133,12 @@ export function registerSmsNotificationListener(emitter: EventEmitter): void {
       await processSMSNotification(NotificationType.RATING_REVIEW, payload);
     }
   );
+  emitter.on(
+    `${DeliveryNotificationType.SMS}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
+    async (payload: AdminApprovalRequestPayload) => {
+      await processSMSNotification(NotificationType.ADMIN_APPROVAL_REQUEST, payload);
+    }
+  );  
 }
 
 async function processSMSNotification(

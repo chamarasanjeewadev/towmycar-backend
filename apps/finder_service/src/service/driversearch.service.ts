@@ -12,7 +12,6 @@ import { EventEmitter } from "events";
 // Initialize listeners
 const notificationEmitter = new EventEmitter();
 registerNotificationListener(notificationEmitter);
-// initializeSmsNotificationListener(notificationEmitter);
 
 // Add User interface (you might want to import this from a shared types file)
 

@@ -8,12 +8,14 @@ import { userCreatedEmail } from "../templates/userCreatedEmail";
 import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
+  AdminApprovalRequestPayload,
   DriverNotificationPayload,
   EmailPayloadType,
   NotificationType,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 import { userRejectedEmail } from "../templates/userRejectedEmail";
+import { adminApprovalRequestEmail } from "../templates/adminApprovalRequestEmail";
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
@@ -81,6 +83,8 @@ export function getEmailContent(type: NotificationType, payload: any) {
       return driverNotificationEmail(payload as DriverNotificationPayload);
     case NotificationType.RATING_REVIEW:
       return RatingRequestEmail(payload);
+    case NotificationType.ADMIN_APPROVAL_REQUEST:
+      return adminApprovalRequestEmail(payload as AdminApprovalRequestPayload);
     default:
       throw new Error(`Invalid email notification type: ${type}`);
   }

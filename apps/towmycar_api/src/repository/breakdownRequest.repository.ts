@@ -322,26 +322,26 @@ const updateUserStatusInBreakdownAssignment = async (
     }
 
     // If the new status is ACCEPTED, check for existing accepted assignments
-    if (userStatus === UserStatus.ACCEPTED) {
-      const existingAcceptedAssignment = await DB.select({
-        id: breakdownAssignment.id,
-      })
-        .from(breakdownAssignment)
-        .where(
-          and(
-            eq(breakdownAssignment.requestId, requestId),
-            eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
-            ne(breakdownAssignment.id, assignmentId)
-          )
-        )
-        .limit(1);
+    // if (userStatus === UserStatus.ACCEPTED) {
+    //   const existingAcceptedAssignment = await DB.select({
+    //     id: breakdownAssignment.id,
+    //   })
+    //     .from(breakdownAssignment)
+    //     .where(
+    //       and(
+    //         eq(breakdownAssignment.requestId, requestId),
+    //         eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
+    //         ne(breakdownAssignment.id, assignmentId)
+    //       )
+    //     )
+    //     .limit(1);
 
-      if (existingAcceptedAssignment.length > 0) {
-        throw new ConflictError(
-          "Another assignment for this request has already been accepted"
-        );
-      }
-    }
+    //   if (existingAcceptedAssignment.length > 0) {
+    //     throw new ConflictError(
+    //       "Another assignment for this request has already been accepted"
+    //     );
+    //   }
+    // }
 
     // If no conflict, proceed with the update
     const result = await DB.update(breakdownAssignment)

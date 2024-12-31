@@ -19,14 +19,19 @@ import {
   isNotNull,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
-import { NotFoundError, DataBaseError, BreakdownAssignmentDetails, UploadDocumentType, DocumentApprovalStatus, DriverAvailabilityStatus } from "@towmycar/common";
-import crypto from "crypto"; // Added import for crypto
 import {
-  CloseDriverAssignmentParams,
-  DriverProfile,
-} from "./../types/types";
+  NotFoundError,
+  DataBaseError,
+  BreakdownAssignmentDetails,
+  UploadDocumentType,
+  DocumentApprovalStatus,
+  DriverAvailabilityStatus,
+  DriverApprovalStatus,
+} from "@towmycar/common";
+import crypto from "crypto"; // Added import for crypto
+import { CloseDriverAssignmentParams, DriverProfile } from "./../types/types";
 import { logger } from "@towmycar/common";
-import { payments } from "@towmycar/database/db-schema";
+import { payments, User } from "@towmycar/database/db-schema";
 import { notifications } from "@towmycar/database/db-schema";
 import { Notifications } from "@towmycar/database/db-schema";
 import {
@@ -56,7 +61,7 @@ interface CreatePaymentAndUpdateAssignmentParams {
 }
 
 const create = async (
-  data: Pick<DriverInput, "username" | "email">
+  data: Pick<DriverInput, "username" | "email">,
 ): Promise<number> => {
   const userResult = await DB.insert(user)
     .values({
@@ -84,23 +89,23 @@ export interface IDriverRepository {
   create(driverData: Pick<DriverInput, "username" | "email">): Promise<number>;
   findByEmail(email: string): Promise<Driver | null>;
   getDriverRequestsWithInfo(
-    driverId: number
+    driverId: number,
   ): Promise<BreakdownAssignmentDetails[]>;
   getSpecificDriverRequestWithInfo(
     driverId: number,
-    requestId: number
+    requestId: number,
   ): Promise<BreakdownAssignmentDetails | null>;
   updatebreakdownAssignment(
     driverId: number,
     requestId: number,
-    data: UpdateAssignmentData
+    data: UpdateAssignmentData,
   ): Promise<boolean>;
   update(id: number, data: Partial<DriverProfileDtoType>): Promise<Driver>;
   getDriverProfileByEmail(email: string): Promise<Driver | null>;
   getDriverById(id: number): Promise<Driver | null>;
   getCustomerByRequestId(requestId: number): Promise<{
     id: number;
-    userId:number;
+    userId: number;
     firstName: string;
     lastName: string;
     email: string;
@@ -109,7 +114,7 @@ export interface IDriverRepository {
   } | null>;
   updateDriver(
     driverId: number,
-    updateData: Partial<Driver>
+    updateData: Partial<Driver>,
   ): Promise<Driver | null>;
   getDriverProfileById(userId: number): Promise<any | null>;
   getDriverByRequestId(requestId: number): Promise<
@@ -128,15 +133,15 @@ export interface IDriverRepository {
   >;
   updateDriverPaymentMethod(
     driverId: number,
-    paymentMethodId: string
+    paymentMethodId: string,
   ): Promise<Driver | null>;
   getDriverWithPaymentMethod(driverId: number): Promise<Driver | null>;
   updateBreakdownRequestStatus(
     requestId: number,
-    status: BreakdownRequestStatus
+    status: BreakdownRequestStatus,
   ): Promise<boolean>;
   closeBreakdownRequestAndRequestRating(
-    params: CloseDriverAssignmentParams
+    params: CloseDriverAssignmentParams,
   ): Promise<void>;
   createPaymentAndUpdateAssignment({
     payment,
@@ -145,9 +150,14 @@ export interface IDriverRepository {
   getUserNotifications: (userId: number) => Promise<Notifications[]>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
-  uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string):Promise<Documents>;
-  getDocuments(userId: number):Promise<Documents[]>;
-  getDriverProfile(driverId: number):Promise<DriverProfile | null>;
+  uploadDocument(
+    userId: number,
+    documentType: UploadDocumentType,
+    filePath: string,
+  ): Promise<Documents>;
+  getDocuments(userId: number): Promise<Documents[]>;
+  getDriverStatsProfile(driverId: number): Promise<DriverProfile | null>;
+  getAllAdmins(): Promise<User[]>;
 }
 
 export const DriverRepository: IDriverRepository = {
@@ -160,7 +170,7 @@ export const DriverRepository: IDriverRepository = {
     return foundDriver || null;
   },
   async getDriverRequestsWithInfo(
-    driverId: number
+    driverId: number,
   ): Promise<BreakdownAssignmentDetails[]> {
     try {
       const driverUser = aliasedTable(user, "driver_user");
@@ -175,21 +185,21 @@ export const DriverRepository: IDriverRepository = {
         userLocation: {
           latitude:
             sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-              "latitude"
+              "latitude",
             ),
           longitude:
             sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-              "longitude"
+              "longitude",
             ),
         },
         userToLocation: {
           latitude:
             sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-              "latitude"
+              "latitude",
             ),
           longitude:
             sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-              "longitude"
+              "longitude",
             ),
         },
         createdAt: breakdownAssignment.assignedAt,
@@ -211,7 +221,7 @@ export const DriverRepository: IDriverRepository = {
           makeModel: breakdownRequest.model,
           mobileNumber: maskSensitiveData(
             breakdownRequest.mobileNumber,
-            sql`${breakdownAssignment.paymentId} IS NOT NULL`
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
           ),
           requestType: breakdownRequest.requestType,
         },
@@ -221,14 +231,14 @@ export const DriverRepository: IDriverRepository = {
           lastName: driverUser.lastName,
           email: maskSensitiveData(
             driverUser.email,
-            sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+            sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
           ),
           imageUrl: driverUser.imageUrl,
           vehicleType: driver.vehicleType,
           regNo: driver.vehicleRegistration,
           phoneNumber: maskSensitiveData(
             driver.phoneNumber,
-            sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+            sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
           ),
           vehicleRegistration: driver.vehicleRegistration,
           licenseNumber: driver.licenseNumber,
@@ -240,11 +250,11 @@ export const DriverRepository: IDriverRepository = {
             //@ts-ignore
             latitude:
               sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
-                "latitude"
+                "latitude",
               ),
             longitude:
               sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
-                "longitude"
+                "longitude",
               ),
           },
         },
@@ -254,11 +264,11 @@ export const DriverRepository: IDriverRepository = {
           lastName: user.lastName,
           email: maskSensitiveData(
             user.email,
-            sql`${breakdownAssignment.paymentId} IS NOT NULL`
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
           ),
           mobileNumber: maskSensitiveData(
             breakdownRequest.mobileNumber,
-            sql`${breakdownAssignment.paymentId} IS NOT NULL`
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
           ),
           imageUrl: user.imageUrl,
         },
@@ -266,7 +276,7 @@ export const DriverRepository: IDriverRepository = {
         .from(breakdownAssignment)
         .innerJoin(
           breakdownRequest,
-          eq(breakdownAssignment.requestId, breakdownRequest.id)
+          eq(breakdownAssignment.requestId, breakdownRequest.id),
         )
         .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
         .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
@@ -274,24 +284,28 @@ export const DriverRepository: IDriverRepository = {
         .leftJoin(user, eq(customer.userId, user.id))
         .where(
           and(
-            eq(breakdownAssignment.driverId, driverId)
+            eq(breakdownAssignment.driverId, driverId),
             // Add this condition to exclude CLOSED requests
             // not(eq(breakdownRequest.status, BreakdownRequestStatus.CLOSED))
-          )
+          ),
         )
         .orderBy(desc(breakdownAssignment.updatedAt));
       //@ts-ignore
       return result;
     } catch (error) {
       throw new DataBaseError(
-        `Failed to fetch breakdown request by IDs: ${error}`
+        `Failed to fetch breakdown request by IDs: ${error}`,
       );
     }
+  },
+  async getAllAdmins(): Promise<User[]> {
+    const admins = await DB.select().from(user).where(eq(user.role, "admin"));
+    return admins || [];
   },
 
   async getSpecificDriverRequestWithInfo(
     driverId: number,
-    requestId: number
+    requestId: number,
   ): Promise<BreakdownAssignmentDetails | null> {
     const driverUser = aliasedTable(user, "driver_user");
     const [result] = await DB.select({
@@ -309,21 +323,21 @@ export const DriverRepository: IDriverRepository = {
       userLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       userToLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       // userLocation: breakdownRequest.userLocation,
@@ -347,25 +361,25 @@ export const DriverRepository: IDriverRepository = {
         makeModel: breakdownRequest.model,
         mobileNumber: maskSensitiveData(
           breakdownRequest.mobileNumber,
-          sql`${breakdownAssignment.paymentId} IS NOT NULL`
+          sql`${breakdownAssignment.paymentId} IS NOT NULL`,
         ),
         requestType: breakdownRequest.requestType,
       },
       driver: {
         id: driver.id,
-        userId:driverUser.id,
+        userId: driverUser.id,
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
         email: maskSensitiveData(
           driverUser.email,
-          sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+          sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
         ),
         imageUrl: driverUser.imageUrl,
         vehicleType: driver.vehicleType,
         regNo: driver.vehicleRegistration,
         phoneNumber: maskSensitiveData(
           driver.phoneNumber,
-          sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+          sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
         ),
         vehicleRegistration: driver.vehicleRegistration,
         licenseNumber: driver.licenseNumber,
@@ -377,11 +391,11 @@ export const DriverRepository: IDriverRepository = {
           //@ts-ignore
           latitude:
             sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
-              "latitude"
+              "latitude",
             ),
           longitude:
             sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
-              "longitude"
+              "longitude",
             ),
         },
       },
@@ -391,11 +405,11 @@ export const DriverRepository: IDriverRepository = {
         lastName: user.lastName,
         email: maskSensitiveData(
           user.email,
-          sql`${breakdownAssignment.paymentId} IS NOT NULL`
+          sql`${breakdownAssignment.paymentId} IS NOT NULL`,
         ),
         mobileNumber: maskSensitiveData(
           breakdownRequest.mobileNumber,
-          sql`${breakdownAssignment.paymentId} IS NOT NULL`
+          sql`${breakdownAssignment.paymentId} IS NOT NULL`,
         ),
         // authId: user.authId,
         imageUrl: user.imageUrl,
@@ -404,7 +418,7 @@ export const DriverRepository: IDriverRepository = {
       .from(breakdownAssignment)
       .innerJoin(
         breakdownRequest,
-        eq(breakdownAssignment.requestId, breakdownRequest.id)
+        eq(breakdownAssignment.requestId, breakdownRequest.id),
       )
       .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
@@ -413,8 +427,8 @@ export const DriverRepository: IDriverRepository = {
       .where(
         and(
           eq(breakdownAssignment.driverId, driverId),
-          eq(breakdownAssignment.requestId, requestId)
-        )
+          eq(breakdownAssignment.requestId, requestId),
+        ),
       );
 
     if (!result) return null;
@@ -425,7 +439,7 @@ export const DriverRepository: IDriverRepository = {
   async updatebreakdownAssignment(
     driverId: number,
     requestId: number,
-    data: UpdateAssignmentData
+    data: UpdateAssignmentData,
   ): Promise<boolean> {
     const updateData: Partial<typeof breakdownAssignment.$inferInsert> = {
       //@ts-ignore
@@ -445,14 +459,14 @@ export const DriverRepository: IDriverRepository = {
             eq(breakdownAssignment.driverId, driverId),
             eq(breakdownAssignment.requestId, requestId),
             eq(breakdownAssignment.driverStatus, DriverStatus.ACCEPTED),
-            eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED)
-          )
+            eq(breakdownAssignment.userStatus, UserStatus.ACCEPTED),
+          ),
         )
         .limit(1);
 
       if (existingAcceptedAssignment.length > 0) {
         throw new NotFoundError(
-          "This assignment is no longer available for update."
+          "This assignment is no longer available for update.",
         );
       }
       // Proceed with the update if no accepted assignment exists
@@ -462,8 +476,8 @@ export const DriverRepository: IDriverRepository = {
         .where(
           and(
             eq(breakdownAssignment.driverId, driverId),
-            eq(breakdownAssignment.requestId, requestId)
-          )
+            eq(breakdownAssignment.requestId, requestId),
+          ),
         )
         .returning({ id: breakdownAssignment.id });
 
@@ -471,7 +485,7 @@ export const DriverRepository: IDriverRepository = {
       if (updatedRows.length > 0 && data.driverStatus === DriverStatus.QUOTED) {
         await this.updateBreakdownRequestStatus(
           requestId,
-          UserStatus.INPROGRESS
+          UserStatus.INPROGRESS,
         );
       }
 
@@ -483,14 +497,14 @@ export const DriverRepository: IDriverRepository = {
           .where(
             and(
               eq(breakdownAssignment.driverId, driverId),
-              eq(breakdownAssignment.requestId, requestId)
-            )
+              eq(breakdownAssignment.requestId, requestId),
+            ),
           )
           .limit(1);
 
         if (existingAssignment.length > 0) {
           throw new NotFoundError(
-            "This assignment is no longer available for update."
+            "This assignment is no longer available for update.",
           );
         } else {
           throw new Error("The specified assignment does not exist.");
@@ -505,9 +519,15 @@ export const DriverRepository: IDriverRepository = {
 
   async update(
     id: number,
-    data: Partial<DriverProfileDtoType>
+    data: Partial<DriverProfileDtoType>,
   ): Promise<Driver> {
-    const { primaryLocation, firstName, lastName,availabilityStatus, ...restData } = data;
+    const {
+      primaryLocation,
+      firstName,
+      lastName,
+      availabilityStatus,
+      ...restData
+    } = data;
     const prim = {
       x: primaryLocation?.longitude,
       y: primaryLocation?.latitude,
@@ -560,28 +580,27 @@ export const DriverRepository: IDriverRepository = {
   },
 
   async getDriverById(id: number): Promise<Driver | null> {
-
-    try{
-    //@ts-ignore
-    const [foundDriver] = await DB.select({
-      ...driver,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    })
-      .from(driver)
-      .innerJoin(user, eq(driver.userId, user.id))
-      .where(eq(driver.id, id));
-    //@ts-ignore
-    return foundDriver || null;
-  }catch(error){
-    logger.error("Error in getDriverById:", error);
-    throw new DataBaseError(`Failed to get driver by ID: ${error}`);
-  }
+    try {
+      //@ts-ignore
+      const [foundDriver] = await DB.select({
+        ...driver,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      })
+        .from(driver)
+        .innerJoin(user, eq(driver.userId, user.id))
+        .where(eq(driver.id, id));
+      //@ts-ignore
+      return foundDriver || null;
+    } catch (error) {
+      logger.error("Error in getDriverById:", error);
+      throw new DataBaseError(`Failed to get driver by ID: ${error}`);
+    }
   },
 
   async getCustomerByRequestId(requestId: number): Promise<{
     id: number;
-    userId:number;
+    userId: number;
     firstName: string;
     lastName: string;
     email: string;
@@ -612,7 +631,7 @@ export const DriverRepository: IDriverRepository = {
 
   async updateDriver(
     driverId: number,
-    updateData: Partial<Driver>
+    updateData: Partial<Driver>,
   ): Promise<Driver | null> {
     const result = await DB.update(driver)
       .set(updateData)
@@ -642,11 +661,11 @@ export const DriverRepository: IDriverRepository = {
       lastName: user.lastName,
       email: maskSensitiveData(
         user.email,
-        sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+        sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
       ),
       phoneNumber: maskSensitiveData(
         driver.phoneNumber,
-        sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`
+        sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
       ),
       vehicleType: driver.vehicleType,
       vehicleRegistration: driver.vehicleRegistration,
@@ -672,11 +691,11 @@ export const DriverRepository: IDriverRepository = {
           //@ts-ignore
           latitude:
             sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
-              "latitude"
+              "latitude",
             ),
           longitude:
             sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
-              "longitude"
+              "longitude",
             ),
         },
       },
@@ -690,7 +709,7 @@ export const DriverRepository: IDriverRepository = {
   },
   async updateDriverPaymentMethod(
     driverId: number,
-    paymentMethodId: string
+    paymentMethodId: string,
   ): Promise<Driver | null> {
     const result = await DB.update(driver)
       //@ts-ignore
@@ -709,7 +728,7 @@ export const DriverRepository: IDriverRepository = {
   },
   async updateBreakdownRequestStatus(
     requestId: number,
-    status: BreakdownRequestStatus
+    status: BreakdownRequestStatus,
   ): Promise<boolean> {
     try {
       const result = await DB.update(breakdownRequest)
@@ -718,8 +737,8 @@ export const DriverRepository: IDriverRepository = {
         .where(
           and(
             eq(breakdownRequest.id, requestId),
-            eq(breakdownRequest.status, BreakdownRequestStatus.WAITING)
-          )
+            eq(breakdownRequest.status, BreakdownRequestStatus.WAITING),
+          ),
         )
         .returning({ id: breakdownRequest.id });
 
@@ -727,12 +746,12 @@ export const DriverRepository: IDriverRepository = {
     } catch (error) {
       logger.error("Error updating breakdown request status:", error);
       throw new DataBaseError(
-        `Failed to update breakdown request status: ${error}`
+        `Failed to update breakdown request status: ${error}`,
       );
     }
   },
   async closeBreakdownRequestAndRequestRating(
-    params: CloseDriverAssignmentParams
+    params: CloseDriverAssignmentParams,
   ): Promise<void> {
     const { driverId, requestId, markAsCompleted, reason } = params;
 
@@ -748,8 +767,8 @@ export const DriverRepository: IDriverRepository = {
           .where(
             and(
               eq(breakdownAssignment.driverId, driverId),
-              eq(breakdownAssignment.requestId, requestId)
-            )
+              eq(breakdownAssignment.requestId, requestId),
+            ),
           )
           .limit(1);
 
@@ -765,8 +784,8 @@ export const DriverRepository: IDriverRepository = {
           .where(
             and(
               eq(breakdownAssignment.driverId, driverId),
-              eq(breakdownAssignment.requestId, requestId)
-            )
+              eq(breakdownAssignment.requestId, requestId),
+            ),
           );
 
         if (
@@ -792,11 +811,15 @@ export const DriverRepository: IDriverRepository = {
     } catch (error) {
       logger.error("Error in closeBreakdownRequestAndUpdateRating:", error);
       throw new DataBaseError(
-        `Error in closeBreakdownRequestAndUpdateRating:: ${error}`
+        `Error in closeBreakdownRequestAndUpdateRating:: ${error}`,
       );
     }
   },
-  async uploadDocument(userId: number, documentType: UploadDocumentType, filePath: string) {
+  async uploadDocument(
+    userId: number,
+    documentType: UploadDocumentType,
+    filePath: string,
+  ) {
     try {
       const approvalStatus = DocumentApprovalStatus.UPLOADED.toString();
       const result = await DB.insert(documents)
@@ -805,7 +828,7 @@ export const DriverRepository: IDriverRepository = {
           userId,
           documentType,
           filePath,
-          approvalStatus
+          approvalStatus,
         })
         // .onConflictDoUpdate({
         //   target: [documents.userId, documents.documentType],
@@ -821,8 +844,10 @@ export const DriverRepository: IDriverRepository = {
     }
   },
   async getDocuments(userId: number): Promise<Documents[]> {
-    return await DB.select().from(documents).where(eq(documents.userId, userId));
-  },  
+    return await DB.select()
+      .from(documents)
+      .where(eq(documents.userId, userId));
+  },
   async createPaymentAndUpdateAssignment({
     payment,
     assignmentData,
@@ -856,8 +881,8 @@ export const DriverRepository: IDriverRepository = {
         .where(
           and(
             eq(breakdownAssignment.driverId, payment.driverId),
-            eq(breakdownAssignment.requestId, payment.requestId)
-          )
+            eq(breakdownAssignment.requestId, payment.requestId),
+          ),
         );
     });
   },
@@ -869,8 +894,8 @@ export const DriverRepository: IDriverRepository = {
         .where(
           and(
             eq(notifications.userId, userId),
-            eq(notifications.deliveryType, DeliveryNotificationType.PUSH)
-          )
+            eq(notifications.deliveryType, DeliveryNotificationType.PUSH),
+          ),
         )
         .orderBy(desc(notifications.createdAt));
     } catch (error) {
@@ -894,19 +919,20 @@ export const DriverRepository: IDriverRepository = {
       const result = await DB.select({ count: sql<number>`count(*)` })
         .from(notifications)
         .where(
-          and(eq(notifications.userId, userId), eq(notifications.isSeen, false))
+          and(
+            eq(notifications.userId, userId),
+            eq(notifications.isSeen, false),
+          ),
         );
       return Number(result[0].count) || 0;
     } catch (error) {
       logger.error("Error in getUnseenNotificationsCount:", error);
       throw new DataBaseError(
-        `Failed to get unseen notifications count: ${error}`
+        `Failed to get unseen notifications count: ${error}`,
       );
     }
   },
-  async getDriverProfile(
-    driverId: number,
-  ): Promise<DriverProfile | null> {
+  async getDriverStatsProfile(driverId: number): Promise<DriverProfile | null> {
     try {
       const driverInfo = await DB.select({
         id: driver.id,
@@ -915,16 +941,18 @@ export const DriverRepository: IDriverRepository = {
         email: user.email,
         phoneNumber: driver.phoneNumber,
         imageUrl: user.imageUrl,
+        approvalStatus: driver.approvalStatus,
+        postcode: driver.postcode,
       })
         .from(driver)
         .innerJoin(user, eq(driver.userId, user.id))
         .where(eq(driver.id, driverId))
         .limit(1);
-  
+
       if (!driverInfo.length) {
         return null;
       }
-  
+
       // Get ratings statistics
       const ratingsResult = await DB.select({
         count: count(),
@@ -932,7 +960,7 @@ export const DriverRepository: IDriverRepository = {
       })
         .from(serviceRatings)
         .where(eq(serviceRatings.driverId, driverId));
-  
+
       // Get completed jobs count
       const completedJobsResult = await DB.select({
         completedJobs: count(),
@@ -942,10 +970,10 @@ export const DriverRepository: IDriverRepository = {
           and(
             eq(breakdownAssignment.driverId, driverId),
             eq(breakdownAssignment.isCompleted, true),
-            eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED)
-          )
+            eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED),
+          ),
         );
-  
+
       // Get reviews
       const reviews = await DB.select({
         rating: serviceRatings.customerRating,
@@ -964,12 +992,12 @@ export const DriverRepository: IDriverRepository = {
           and(
             eq(serviceRatings.driverId, driverId),
             isNotNull(serviceRatings.customerRating),
-            isNotNull(serviceRatings.customerFeedback)
-          )
+            isNotNull(serviceRatings.customerFeedback),
+          ),
         )
         .orderBy(desc(serviceRatings.createdAt))
         .limit(10); // Limit to last 10 reviews
-  
+
       return {
         ...driverInfo[0],
         ratings: {
@@ -985,5 +1013,3 @@ export const DriverRepository: IDriverRepository = {
     }
   },
 };
-
-

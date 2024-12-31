@@ -115,6 +115,8 @@ export const AnonymousBreakdownRequestSchema = z.object({
   body: BreakdownRequestSchema,
 });
 
+
+
 export const UserStatusSchema = z.object({
   userStatus: z.nativeEnum(UserStatus),
 });

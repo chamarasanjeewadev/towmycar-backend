@@ -8,6 +8,7 @@ import {
   DriverQuotedPayload,
   ListnerPayload,
   UserRejectedPayload,
+  AdminApprovalRequestPayload,
 } from "@towmycar/common";
 import {
   getEmailContent,
@@ -34,7 +35,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       const processPromises = payload.map(async payload => {
         const emailContent = getEmailContent(
           NotificationType.DRIVER_NOTIFICATION,
-          payload
+          payload,
         );
 
         await checkAndProcessEmail({
@@ -52,7 +53,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       } catch (error) {
         console.error("Error processing email notifications:", error);
       }
-    }
+    },
   );
 
   emitter.on(
@@ -60,7 +61,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_NOTIFICATION,
-        payload
+        payload,
       );
 
       await checkAndProcessEmail({
@@ -71,14 +72,14 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
   emitter.on(
     `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTED}`,
     async (payload: DriverQuotedPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_QUOTED,
-        payload
+        payload,
       );
 
       await checkAndProcessEmail({
@@ -89,14 +90,14 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
   emitter.on(
     `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_QUOTATION_UPDATED}`,
     async (payload: DriverQuotedPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_QUOTATION_UPDATED,
-        payload
+        payload,
       );
 
       await checkAndProcessEmail({
@@ -107,7 +108,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
 
   // USER_REQUEST handler
@@ -116,7 +117,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_REQUEST,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -126,7 +127,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
 
   // DRIVER_REGISTERED handler
@@ -135,7 +136,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: DriverNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_REGISTERED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -145,7 +146,25 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.driver.email,
       });
-    }
+    },
+  );
+
+  emitter.on(
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
+    async (payload: AdminApprovalRequestPayload) => {
+      const emailContent = getEmailContent(
+        NotificationType.ADMIN_APPROVAL_REQUEST,
+        payload,
+      );
+      await checkAndProcessEmail({
+        payload,
+        notificationType: NotificationType.ADMIN_APPROVAL_REQUEST,
+        userId: payload?.sendToId,
+        breakdownRequestId: null, // payload?.breakdownRequestId,
+        emailContent,
+        recipientEmail: "hello.towmycar.uk@gmail.com",
+      });
+    },
   );
 
   // USER_CREATED handler
@@ -154,7 +173,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_CREATED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -164,7 +183,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
 
   // USER_ACCEPT handler
@@ -173,7 +192,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_ACCEPTED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -183,7 +202,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.driver.email,
       });
-    }
+    },
   );
 
   // DRIVER_REJECT handler
@@ -192,7 +211,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: DriverNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_REJECTED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -202,7 +221,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.driver.email,
       });
-    }
+    },
   );
 
   // DRIVER_ASSIGNED handler
@@ -211,7 +230,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: DriverNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_ASSIGNED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -221,7 +240,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.driver.email,
       });
-    }
+    },
   );
 
   // DRIVER_ACCEPT handler
@@ -230,7 +249,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: DriverNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.DRIVER_ACCEPTED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -240,7 +259,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
 
   // USER_REJECT handler
@@ -249,7 +268,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: UserRejectedPayload) => {
       const emailContent = getEmailContent(
         NotificationType.USER_REJECTED,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -259,7 +278,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
 
   // RATING_REVIEW handler
@@ -268,7 +287,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
     async (payload: UserNotificationPayload) => {
       const emailContent = getEmailContent(
         NotificationType.RATING_REVIEW,
-        payload
+        payload,
       );
       await checkAndProcessEmail({
         payload,
@@ -278,7 +297,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
         emailContent,
         recipientEmail: payload.user.email,
       });
-    }
+    },
   );
 }
 
@@ -295,7 +314,7 @@ async function checkAndProcessEmail({
       userId,
       notificationType,
       deliveryType: DeliveryNotificationType.EMAIL,
-      breakdownRequestId: payload.breakdownRequestId,
+      breakdownRequestId:  payload.breakdownRequestId,
     });
 
     if (isAlreadySent) {

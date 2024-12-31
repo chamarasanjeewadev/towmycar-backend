@@ -12,6 +12,12 @@ const requiredDriverSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters long" }),
 });
 
+export const adminApprovalSchema = z.object({
+  agreedTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the terms and conditions",
+  }),
+});
+
 export const driverBasicProfileSchema = z.object({
   firstName: z.string().min(1, { message: "Please enter your first name" }),
   lastName: z.string().min(1, { message: "Please enter your last name" }),
@@ -50,6 +56,7 @@ export const driverProfileSchema = z.object({
   phoneNumber: z.string().min(1, { message: "Please enter your phone number" }),
   vehicleType: z.string().min(1, { message: "Please enter your vehicle type" }),
   maxWeight: z.number().min(1, { message: "Please enter your max weight" }),
+  agreedTerms: z.boolean().default(false),
   availabilityStatus: z
     .nativeEnum(DriverAvailabilityStatus)
     .default(DriverAvailabilityStatus.UNAVAILABLE),
