@@ -1,4 +1,4 @@
-import { ListnerPayload, NotificationType } from "@towmycar/common";
+import { ListnerPayload, maskText, NotificationType } from "@towmycar/common";
 import { getSMSProvider } from "../utils/sms/smsProviderFactory";
 
 const smsProvider = getSMSProvider();
@@ -53,21 +53,21 @@ function generateSMSNotificationPayload(
     case NotificationType.DRIVER_QUOTATION_UPDATED:
       return {
         phoneNumber: payload.user?.phoneNumber,
-        message: `A driver has updated their quotation for your request ${requestId}`,
+        message: `Driver ${maskText(payload?.driver?.firstName ?? "****")} has updated their quotation for your request`,
         viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.DRIVER_QUOTED:
       return {
         phoneNumber: payload.user?.phoneNumber,
-        message: `A new quote is available for your breakdown request ${requestId}`,
+        message: `Driver ${maskText(payload?.driver?.firstName ?? "****")} has quoted for your request`,
         viewLink: payload.viewRequestLink,
       };
 
     case NotificationType.USER_ACCEPTED:
       return {
         phoneNumber: payload.driver?.phoneNumber,
-        message: `User has accepted your quotation for request ${requestId}`,
+        message: `User ${maskText(payload?.user?.firstName ?? "****")} has accepted your quotation for request ${requestId}`,
         viewLink: payload.viewRequestLink,
       };
     case NotificationType.DRIVER_ACCEPTED:

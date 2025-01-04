@@ -7,7 +7,9 @@ import breakdownRequestRoutes from "./routes/breakdownRequest.routes";
 import driverRoutes from "./routes/driver.routes";
 import stripeRoutes from "./routes/stripe.routes";
 import chatRoutes from "./routes/chat.routes";
+import adminRoutes from "./routes/admin.routes";
 import { errorMiddleware } from "./middleware/errorHandlingMiddleware";
+import analyticsRoutes from "./routes/analytics.routes";
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use("/driver", driverRoutes);
 app.use("/chat", chatRoutes);
 app.use("/user", breakdownRequestRoutes);
 app.use("/stripe", stripeRoutes);
+app.use("/admin", adminRoutes);
+app.use("/analytics", analyticsRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

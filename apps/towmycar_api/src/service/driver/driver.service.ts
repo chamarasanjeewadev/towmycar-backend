@@ -1,3 +1,4 @@
+import { getUserProfileById } from "./../user/user.service";
 import { DriverProfileDtoType } from "../../dto/driver.dto";
 import {
   IDriverRepository,
@@ -16,6 +17,7 @@ import {
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
   DriverStatus,
+  logger,
   registerNotificationListener,
   TokenService,
   UserWithCustomer,
@@ -32,6 +34,8 @@ import {
 } from "@towmycar/common/src/mappers/user.mapper";
 import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 import { generateFilePath } from "../../utils/s3utils";
+import { UserRepository } from "../../repository/user.repository";
+import { IsNull } from "@sinclair/typebox/build/cjs/type/guard/kind";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -74,16 +78,19 @@ export class DriverService {
   }
 
   async adminApproval(driverId: number, data: Partial<DriverProfileDtoType>) {
-    const response = await updateDriverProfile(
-      driverId,
-      data as Partial<DriverProfileDtoType>,
-      DriverRepository,
-    );
-    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
-      driverId,
-      response.id,
-    );
-    const userWithDriver = mapToUserWithDriver(driverInfo);
+    const driverInfo = await DriverRepository.getDriverById(driverId);
+    const user = await UserRepository.getUserProfileById(driverInfo?.userId);
+    const userWithDriver = {
+      userId: driverInfo?.userId,
+      email: user?.email ?? "",
+      firstName: user?.firstName || undefined,
+      lastName: user?.lastName || undefined,
+      phoneNumber: user?.phoneNumber || undefined,
+      driver: {
+        id: driverInfo?.id,
+        phoneNumber: driverInfo?.phoneNumber,
+      },
+    };
     const admins = await DriverRepository.getAllAdmins();
     const userWithAdmin = admins.map(admin => ({
       ...admin,
@@ -93,12 +100,12 @@ export class DriverService {
       admins: userWithAdmin,
       user: null,
       driver: userWithDriver,
-      breakdownRequestId: response.id,
+      breakdownRequestId: null,
       viewRequestLink: getViewRequestUrl(
         NotificationType.ADMIN_APPROVAL_REQUEST,
         VIEW_REQUEST_BASE_URL,
         {
-          requestId: response.id,
+          requestId: null,
         },
       ),
     };
@@ -106,7 +113,11 @@ export class DriverService {
       NotificationType.ADMIN_APPROVAL_REQUEST,
       payload,
     );
-
+    const response = await this.updateDriverProfile(
+      driverId,
+      { ...data, approvalStatus: DriverApprovalStatus.PENDING },
+      DriverRepository,
+    );
     return response;
   }
 
@@ -127,6 +138,11 @@ export class DriverService {
 
     if (!driverInfo) {
       throw new Error(`User not found for request ${requestId}`);
+    }
+    if (driverInfo?.driver?.approvalStatus !== DriverApprovalStatus.APPROVED) {
+      throw new ConflictError(
+        "You need to get your profile approved first to respond to this job",
+      );
     }
 
     if (data.driverStatus === DriverStatus.ACCEPTED) {
@@ -317,7 +333,7 @@ export class DriverService {
     dataToUpdate: UpdateAssignmentData,
   ): Promise<void> {
     const driver = await this.getDriverWithPaymentMethod(driverId);
-    if (!driver.approvalStatus) {
+    if (driver.approvalStatus !== DriverApprovalStatus.APPROVED) {
       throw new CustomError(
         ERROR_CODES.DRIVER_NOT_APPROVED,
         400,
@@ -367,7 +383,7 @@ export class DriverService {
         assignmentData: dataToUpdate,
       });
     } catch (error) {
-      console.error("Payment processing error:", error);
+      logger.error("Payment processing error:", error);
       throw new CustomError(
         ERROR_CODES.PAYMENT_FAILED,
         400,
@@ -388,6 +404,10 @@ export class DriverService {
     }
   }
 
+  async markAllNotificationsAsSeen(userId: number) {
+    await DriverRepository.markAllNotificationsAsSeen(userId);
+  }
+
   async markNotificationAsSeen(notificationId: number) {
     try {
       await DriverRepository.markNotificationAsSeen(notificationId);
@@ -396,66 +416,64 @@ export class DriverService {
       throw error;
     }
   }
-}
-export const getDriverById = async (
-  userId: number,
-  repository: IDriverRepository,
-) => {
-  try {
-    const driverProfile = await repository.getDriverProfileById(userId);
 
-    if (!driverProfile) {
-      throw new Error(`Driver with id ${userId} not found`);
-    }
+  async getDriverById(userId: number) {
+    try {
+      const driverProfile = await DriverRepository.getDriverProfileById(userId);
 
-    // Check if the driver has a Stripe payment method ID
-    if (driverProfile?.driver?.stripePaymentMethodId) {
-      try {
-        // Retrieve payment method details from Stripe
-        const paymentMethod = await stripe.paymentMethods.retrieve(
-          driverProfile?.driver?.stripePaymentMethodId,
-        );
-
-        // Attach payment method details to the driver profile
-        return {
-          ...driverProfile,
-          paymentMethod: {
-            brand: paymentMethod.card?.brand,
-            last4: paymentMethod.card?.last4,
-            expirationMonth: paymentMethod.card?.exp_month,
-            expirationYear: paymentMethod.card?.exp_year,
-          },
-        };
-      } catch (stripeError) {
-        console.error("Error retrieving Stripe payment method:", stripeError);
-        // Return the driver profile without payment method if there's an error
-        return driverProfile;
+      if (!driverProfile) {
+        throw new Error(`Driver with id ${userId} not found`);
       }
+
+      // Check if the driver has a Stripe payment method ID
+      if (driverProfile?.driver?.stripePaymentMethodId) {
+        try {
+          // Retrieve payment method details from Stripe
+          const paymentMethod = await stripe.paymentMethods.retrieve(
+            driverProfile?.driver?.stripePaymentMethodId,
+          );
+
+          // Attach payment method details to the driver profile
+          return {
+            ...driverProfile,
+            paymentMethod: {
+              brand: paymentMethod.card?.brand,
+              last4: paymentMethod.card?.last4,
+              expirationMonth: paymentMethod.card?.exp_month,
+              expirationYear: paymentMethod.card?.exp_year,
+            },
+          };
+        } catch (stripeError) {
+          console.error("Error retrieving Stripe payment method:", stripeError);
+          // Return the driver profile without payment method if there's an error
+          return driverProfile;
+        }
+      }
+
+      // Return the driver profile without payment method if no Stripe payment method ID is available
+      return driverProfile;
+    } catch (error) {
+      console.error("Error in getDriverById:", error);
+      throw new Error("Failed to retrieve driver profile");
+    }
+  }
+
+  async updateDriverProfile(
+    driverId: number,
+    profileData: Partial<DriverProfileDtoType>,
+    repository: IDriverRepository,
+  ) {
+    // Update the driver's profile with additional information
+    //if auto approve driver requests is true, then update the driver status to accepted
+    if (process.env.AUTO_APPROVE_DRIVER_REQUESTS === "true") {
+      profileData.approvalStatus = DriverApprovalStatus.APPROVED;
     }
 
-    // Return the driver profile without payment method if no Stripe payment method ID is available
-    return driverProfile;
-  } catch (error) {
-    console.error("Error in getDriverById:", error);
-    throw new Error("Failed to retrieve driver profile");
-  }
-};
-
-export const updateDriverProfile = async (
-  driverId: number,
-  profileData: Partial<DriverProfileDtoType>,
-  repository: IDriverRepository,
-) => {
-  // Update the driver's profile with additional information
-  //if auto approve driver requests is true, then update the driver status to accepted
-  if (process.env.AUTO_APPROVE_DRIVER_REQUESTS === "true") {
-    profileData.approvalStatus = DriverApprovalStatus.APPROVED;
+    const updatedDriver = await repository.update(driverId, profileData);
+    return updatedDriver;
   }
 
-  const updatedDriver = await repository.update(driverId, profileData);
-  return updatedDriver;
-};
-
-export const getDriverProfile = async (driverId: number) => {
-  return DriverRepository.getDriverStatsProfile(driverId);
-};
+  async getDriverProfile(driverId: number) {
+    return DriverRepository.getDriverStatsProfile(driverId);
+  }
+}

@@ -2,6 +2,8 @@ import { NotificationType } from "@towmycar/common";
 
 const SKIP_DUPLICATE_CHECK_TYPES = new Set([
   NotificationType.DRIVER_QUOTATION_UPDATED,
+  NotificationType.DRIVER_CHAT_INITIATED,
+  NotificationType.USER_CHAT_INITIATED,
   // Add other notification types that should skip duplicate checking
 ]);
 

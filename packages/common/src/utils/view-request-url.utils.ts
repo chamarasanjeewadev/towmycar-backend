@@ -74,12 +74,12 @@ export function getViewRequestUrl(
       requestId,
       driverId,
     }: ViewRequestUrlParams) =>
-      `${userRequestBaseUrl}/requestId=${requestId}&driverId=${driverId}`,
+      `${userRequestBaseUrl}/chat?requestId=${requestId}&driverId=${driverId}`,
 
     [NotificationType.USER_CHAT_INITIATED]: ({
       requestId,
     }: ViewRequestUrlParams) =>
-      `${driverRequestBaseUrl}/user/requests/chat?requestId=${requestId}`,
+      `${driverRequestBaseUrl}/chat?requestId=${requestId}`,
 
     [NotificationType.ADMIN_APPROVAL_REQUEST]: ({
       requestId,

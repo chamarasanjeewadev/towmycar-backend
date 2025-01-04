@@ -29,6 +29,7 @@ interface NotificationInput {
   deliveryType: DeliveryNotificationType;
   breakdownRequestId?: number | null;
   payload?: string | null;
+  status?: string;
 }
 
 export interface NotificationRepositoryType {

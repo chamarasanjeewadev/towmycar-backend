@@ -1,9 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import {
-  getDriverById,
-  getDriverProfile,
-  updateDriverProfile,
-} from "../service/driver/driver.service";
+import {} from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
 import { DriverService } from "../service/driver/driver.service";
 import {
@@ -160,7 +156,7 @@ router.get(
     try {
       const userId = req.userInfo.userId;
 
-      const driverProfile = await getDriverById(userId, DriverRepository);
+      const driverProfile = await driverService.getDriverById(userId);
       if (!driverProfile) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
@@ -199,7 +195,7 @@ router.patch(
         );
       }
 
-      const updatedDriver = await updateDriverProfile(
+      const updatedDriver = await driverService.updateDriverProfile(
         driverId,
         result.data,
         DriverRepository,
@@ -238,7 +234,7 @@ router.patch(
         );
       }
 
-      const updatedDriver = await updateDriverProfile(
+      const updatedDriver = await driverService.updateDriverProfile(
         driverId,
         result.data,
         DriverRepository,
@@ -398,7 +394,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = req.userInfo.driverId;
-      const driverProfile = await getDriverProfile(driverId);
+      const driverProfile = await driverService.getDriverProfile(driverId);
       res.json(driverProfile);
     } catch (error) {
       next(error);
@@ -424,6 +420,15 @@ router.patch(
     } catch (error) {
       next(error);
     }
+  },
+);
+
+router.patch(
+  "/notifications/all/isSeen",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    await driverService.markAllNotificationsAsSeen(req.userInfo.userId);
+    res.json({ message: "All notifications marked as seen" });
   },
 );
 

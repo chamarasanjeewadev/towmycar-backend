@@ -32,6 +32,8 @@ export function mapToUserWithDriver(driverInfo: BreakdownAssignmentDetails): Use
   };
 }
 
+
+
 export function mapToUserWithCustomer(customerInfo: CustomerInfo): UserWithCustomer {
   return {
     id: customerInfo.userId,

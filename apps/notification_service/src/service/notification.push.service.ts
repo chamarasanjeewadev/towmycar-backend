@@ -5,6 +5,7 @@ import {
   NotificationType,
   ListnerPayload,
   DeliveryNotificationType,
+  maskText,
 } from "@towmycar/common";
 import { NotificationRepository } from "../repository/notification.repository";
 
@@ -25,7 +26,7 @@ export interface PushNotificationResult {
 }
 
 async function sendGenericPushNotification(
-  payload: PushNotificationPayload
+  payload: PushNotificationPayload,
 ): Promise<PushNotificationResult> {
   const { userId, title, message, url } = payload;
 
@@ -59,20 +60,20 @@ async function sendGenericPushNotification(
     };
 
     const notificationPromises = uniqueTokens.map(token =>
-      sendPush(token, notificationMessage)
+      sendPush(token, notificationMessage),
     );
 
     const results = await Promise.allSettled(notificationPromises);
 
     const successfulTokens = results
       .map((result, index) =>
-        result.status === "fulfilled" ? uniqueTokens[index] : null
+        result.status === "fulfilled" ? uniqueTokens[index] : null,
       )
       .filter((token): token is string => token !== null);
 
     const failedTokens = results
       .map((result, index) =>
-        result.status === "rejected" ? uniqueTokens[index] : null
+        result.status === "rejected" ? uniqueTokens[index] : null,
       )
       .filter((token): token is string => token !== null);
 
@@ -93,7 +94,7 @@ async function sendGenericPushNotification(
 
 export function generatePushNotificationPayload(
   type: NotificationType,
-  payload: ListnerPayload
+  payload: ListnerPayload,
 ): PushNotificationPayload {
   const requestId = payload.breakdownRequestId
     ? `(Request #${payload.breakdownRequestId})`
@@ -128,7 +129,7 @@ export function generatePushNotificationPayload(
       return {
         userId: payload?.driver?.userId,
         title: `Quotation Updated ${requestId}`,
-        message: "A driver has updated their quotation for your request",
+        message: `Driver ${maskText(payload?.driver?.firstName ?? "****")} has updated their quotation for your request`,
         url: payload?.viewRequestLink,
       };
 
@@ -136,7 +137,7 @@ export function generatePushNotificationPayload(
       return {
         userId: payload.sendToId,
         title: `New Quote Available ${requestId}`,
-        message: "A new quote is available for your breakdown request",
+        message: `Driver ${maskText(payload?.driver?.firstName ?? "****")} has quoted for your request`,
         url: payload?.viewRequestLink,
       };
 
@@ -144,14 +145,14 @@ export function generatePushNotificationPayload(
       return {
         userId: payload?.sendToId,
         title: `Quotation Accepted ${requestId}`,
-        message: `User has accepted your quotation for request ${requestId}`,
+        message: `User ${maskText(payload?.user?.firstName ?? "****")} has accepted your quotation for request ${requestId}`,
         url: payload?.viewRequestLink,
       };
     case NotificationType.DRIVER_ACCEPTED:
       return {
         userId: payload?.sendToId,
         title: `Request Accepted ${requestId}`,
-        message: "Your request has been accepted",
+        message: `Driver ${payload?.driver?.firstName} has accepted your request`,
         url: payload?.viewRequestLink,
       };
 
@@ -178,15 +179,15 @@ export function generatePushNotificationPayload(
         title: `New Rating & Review ${requestId}`,
         message: "You have received a new rating and review",
         url: payload?.viewRequestLink,
-      } 
-      case NotificationType.DRIVER_CHAT_INITIATED:
+      };
+    case NotificationType.DRIVER_CHAT_INITIATED:
       return {
         userId: payload.sendToId,
         title: `New Chat for ${requestId}`,
         message: "You have received a new Chat message",
         url: payload?.viewRequestLink,
       };
-      case NotificationType.USER_CHAT_INITIATED:
+    case NotificationType.USER_CHAT_INITIATED:
       return {
         userId: payload.sendToId,
         title: `New Chat for ${requestId}`,

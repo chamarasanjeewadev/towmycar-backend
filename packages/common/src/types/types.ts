@@ -1,4 +1,4 @@
-import { MessageSender, NotificationType } from "../enums";
+import { DriverApprovalStatus, MessageSender, NotificationType } from "../enums";
 
 export type ListnerPayload =
   // | DriverNotificationPayload[]
@@ -361,6 +361,7 @@ export interface BreakdownAssignmentDetails {
     vehicleType: string;
     regNo: string;
     phoneNumber:string;
+    approvalStatus:DriverApprovalStatus;
     vehicleRegistration: string;
     licenseNumber: string;
     serviceRadius: number;

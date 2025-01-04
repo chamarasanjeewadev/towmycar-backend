@@ -30,23 +30,23 @@ import {
 } from "@towmycar/common";
 import { ConflictError, DataBaseError } from "@towmycar/common";
 import {
-  CloseBreakdownParams,BreakdownRequestWithUserDetails,
-  DriverProfile
+  CloseBreakdownParams,
+  BreakdownRequestWithUserDetails,
+  DriverProfile,
 } from "./../types/types";
 import { logger } from "@towmycar/common";
 
 // Add this type definition
 
-
 // declare repository type
 export type BreakdownRequestRepositoryType = {
   saveBreakdownRequest: (
-    data: BreakdownRequestInput
+    data: BreakdownRequestInput,
   ) => Promise<BreakdownRequest>;
   getPaginatedBreakdownRequestsByCustomerId: (
     page: number,
     pageSize: number,
-    customerId?: number
+    customerId?: number,
   ) => Promise<{
     requests: BreakdownRequestWithUserDetails[];
     totalCount: number;
@@ -55,20 +55,20 @@ export type BreakdownRequestRepositoryType = {
   updateUserStatusInBreakdownAssignment: (
     // userId: number,
     assignmentId: number,
-    userStatus: UserStatus
+    userStatus: UserStatus,
   ) => Promise<BreakdownAssignment | null>;
   getBreakdownAssignmentsByRequestId: (
-    requestId: number
+    requestId: number,
   ) => Promise<BreakdownAssignmentDetails[]>;
   getBreakdownAssignmentsByDriverIdAndRequestId: (
     driverId: number,
-    requestId?: number
+    requestId?: number,
   ) => Promise<BreakdownAssignmentDetails | null>;
   closeBreakdownAndUpdateRating: (
-    params: CloseBreakdownParams
+    params: CloseBreakdownParams,
   ) => Promise<void>;
   getBreakdownRequestById: (
-    requestId: number
+    requestId: number,
   ) => Promise<BreakdownRequestWithUserDetails | null>;
   getDriverRatingCount: (driverId: number) => Promise<{
     count: number;
@@ -77,14 +77,14 @@ export type BreakdownRequestRepositoryType = {
   }>;
   getDriverProfile: (
     driverId: number,
-    requestId: number
+    requestId: number,
   ) => Promise<DriverProfile | null>;
 };
 
 // Add these utility functions after the imports
 function maskText(
   text: SQL<string> | Column<any, any, any>,
-  visibleChars: number = 3
+  visibleChars: number = 3,
 ): SQL<string> {
   return sql<string>`CASE 
     WHEN ${text} IS NULL THEN NULL
@@ -95,7 +95,7 @@ function maskText(
 function maskSensitiveData(
   text: SQL<string> | Column<any, any, any>,
   isVisible: SQL<boolean>,
-  visibleChars: number = 3
+  visibleChars: number = 3,
 ): SQL<string> {
   return sql<string>`CASE 
     WHEN ${isVisible} THEN ${text}
@@ -146,7 +146,7 @@ const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
 const getPaginatedBreakdownRequestsByCustomerId = async (
   page: number,
   pageSize: number,
-  customerId?: number
+  customerId?: number,
 ): Promise<{
   requests: BreakdownRequestWithUserDetails[];
   totalCount: number;
@@ -173,21 +173,21 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
       location: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       toLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       assignments: sql<
@@ -226,7 +226,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
                 'imageUrl', ${driverUser.imageUrl}
               )
             )
-          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.driverStatus} IN (${DriverStatus.QUOTED}, ${DriverStatus.ACCEPTED})),
+          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.driverStatus} IN (${DriverStatus.QUOTED}, ${DriverStatus.ACCEPTED},${DriverStatus.CLOSED})),
           '[]'::json
         )
       `.as("assignments"),
@@ -236,7 +236,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
       .leftJoin(user, eq(user.id, customer.userId))
       .leftJoin(
         breakdownAssignment,
-        eq(breakdownAssignment.requestId, breakdownRequest.id)
+        eq(breakdownAssignment.requestId, breakdownRequest.id),
       )
       .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .leftJoin(driverUser, eq(driver.userId, driverUser.id));
@@ -246,7 +246,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
     if (customerId) {
       //@ts-ignore
       filteredQuery = filteredQuery.where(
-        eq(breakdownRequest.customerId, customerId)
+        eq(breakdownRequest.customerId, customerId),
       );
     }
 
@@ -263,7 +263,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
       request => ({
         ...request,
         weight: request.weight ? Number(request.weight) : null,
-      })
+      }),
     );
 
     const countQuery = DB.select({
@@ -275,7 +275,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
     if (customerId) {
       //@ts-ignore
       filteredCountQuery = filteredCountQuery.where(
-        eq(breakdownRequest.customerId, customerId)
+        eq(breakdownRequest.customerId, customerId),
       );
     }
 
@@ -293,7 +293,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
 
 const updateUserStatusInBreakdownAssignment = async (
   assignmentId: number,
-  userStatus: UserStatus
+  userStatus: UserStatus,
 ): Promise<BreakdownAssignment | null> => {
   try {
     // First, get the current assignment to check its requestId and driverStatus
@@ -317,7 +317,7 @@ const updateUserStatusInBreakdownAssignment = async (
       driverStatus === DriverStatus.ACCEPTED
     ) {
       throw new ConflictError(
-        "Cannot reject an assignment that has already been accepted by the driver"
+        "Cannot reject an assignment that has already been accepted by the driver",
       );
     }
 
@@ -358,7 +358,7 @@ const updateUserStatusInBreakdownAssignment = async (
 };
 
 const getBreakdownAssignmentsByRequestId = async (
-  requestId: number
+  requestId: number,
 ): Promise<BreakdownAssignmentDetails[]> => {
   const driverUser = aliasedTable(user, "driver_user");
   const result = await DB.select({
@@ -373,19 +373,19 @@ const getBreakdownAssignmentsByRequestId = async (
       id: driver.id,
       email: maskSensitiveData(
         driverUser.email,
-        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`,
       ),
       phoneNumber: maskSensitiveData(
         driver.phoneNumber,
-        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`,
       ),
       firstName: maskSensitiveData(
         driverUser.firstName,
-        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`,
       ),
       lastName: maskSensitiveData(
         driverUser.lastName,
-        sql`${breakdownAssignment.paymentId} IS NOT NULL`
+        sql`${breakdownAssignment.paymentId} IS NOT NULL`,
       ),
       imageUrl: sql<string>`CASE 
         WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.imageUrl} 
@@ -405,7 +405,7 @@ const getBreakdownAssignmentsByRequestId = async (
     .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
     .innerJoin(
       breakdownRequest,
-      eq(breakdownAssignment.requestId, breakdownRequest.id)
+      eq(breakdownAssignment.requestId, breakdownRequest.id),
     )
     .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
     .leftJoin(user, eq(customer.userId, user.id))
@@ -413,8 +413,8 @@ const getBreakdownAssignmentsByRequestId = async (
     .where(
       and(
         eq(breakdownAssignment.requestId, requestId),
-        ne(breakdownAssignment.driverStatus, DriverStatus.PENDING)
-      )
+        ne(breakdownAssignment.driverStatus, DriverStatus.PENDING),
+      ),
     )
     .orderBy(desc(breakdownAssignment.updatedAt));
   //@ts-ignore
@@ -423,7 +423,7 @@ const getBreakdownAssignmentsByRequestId = async (
 
 const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   driverId: number,
-  requestId?: number
+  requestId?: number,
 ): Promise<BreakdownAssignmentDetails | null> => {
   let query = DB.select({
     id: breakdownAssignment.id,
@@ -452,7 +452,7 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
     .innerJoin(user, eq(driver.userId, user.id))
     .innerJoin(
       breakdownRequest,
-      eq(breakdownAssignment.requestId, breakdownRequest.id)
+      eq(breakdownAssignment.requestId, breakdownRequest.id),
     )
     .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
     .where(eq(driver.id, driverId));
@@ -507,7 +507,7 @@ const closeBreakdownAndUpdateRating = async ({
 
       if (!customerId) {
         throw new Error(
-          "Failed to retrieve customerId after updating breakdown request"
+          "Failed to retrieve customerId after updating breakdown request",
         );
       }
 
@@ -529,7 +529,7 @@ const closeBreakdownAndUpdateRating = async ({
 };
 
 const getBreakdownRequestById = async (
-  requestId: number
+  requestId: number,
 ): Promise<BreakdownRequestWithUserDetails | null> => {
   try {
     const result = await DB.select({
@@ -547,21 +547,21 @@ const getBreakdownRequestById = async (
       location: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       toLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       assignments: sql<
@@ -595,24 +595,24 @@ const getBreakdownRequestById = async (
                 'id', ${driver.id},
                 'email', ${maskSensitiveData(
                   user.email,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
                 )},
                 'firstName', ${maskSensitiveData(
                   user.firstName,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
                 )},
                 'lastName', ${maskSensitiveData(
                   user.lastName,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
                 )},
                 'phoneNumber', ${maskSensitiveData(
                   driver.phoneNumber,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`
+                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
                 )},
                 'imageUrl', CASE 
                   WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${
-        user.imageUrl
-      } 
+                    user.imageUrl
+                  } 
                   ELSE NULL 
                 END
               )
@@ -625,7 +625,7 @@ const getBreakdownRequestById = async (
       .from(breakdownRequest)
       .leftJoin(
         breakdownAssignment,
-        eq(breakdownAssignment.requestId, breakdownRequest.id)
+        eq(breakdownAssignment.requestId, breakdownRequest.id),
       )
       .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .leftJoin(user, eq(driver.userId, user.id))
@@ -646,13 +646,13 @@ const getBreakdownRequestById = async (
   } catch (error) {
     console.error("Error in getBreakdownRequestById:", error);
     throw new DataBaseError(
-      `Failed to fetch breakdown request by IDs: ${error}`
+      `Failed to fetch breakdown request by IDs: ${error}`,
     );
   }
 };
 
 const getDriverRatingCount = async (
-  driverId: number
+  driverId: number,
 ): Promise<{
   count: number;
   averageRating: number | null;
@@ -676,8 +676,8 @@ const getDriverRatingCount = async (
         and(
           eq(breakdownAssignment.driverId, driverId),
           eq(breakdownAssignment.isCompleted, true),
-          eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED)
-        )
+          eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED),
+        ),
       );
 
     return {
@@ -694,7 +694,7 @@ const getDriverRatingCount = async (
 // Update the getDriverProfile function to accept requestId
 const getDriverProfile = async (
   driverId: number,
-  requestId: number
+  requestId: number,
 ): Promise<DriverProfile | null> => {
   try {
     // First check if there's an accepted assignment for this request and driver
@@ -707,8 +707,8 @@ const getDriverProfile = async (
       .where(
         and(
           eq(breakdownAssignment.driverId, driverId),
-          eq(breakdownAssignment.requestId, requestId)
-        )
+          eq(breakdownAssignment.requestId, requestId),
+        ),
       )
       .limit(1);
 
@@ -754,8 +754,8 @@ const getDriverProfile = async (
         and(
           eq(breakdownAssignment.driverId, driverId),
           eq(breakdownAssignment.isCompleted, true),
-          eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED)
-        )
+          eq(breakdownAssignment.driverStatus, DriverStatus.CLOSED),
+        ),
       );
 
     // Get reviews
@@ -776,8 +776,8 @@ const getDriverProfile = async (
         and(
           eq(serviceRatings.driverId, driverId),
           isNotNull(serviceRatings.customerRating),
-          isNotNull(serviceRatings.customerFeedback)
-        )
+          isNotNull(serviceRatings.customerFeedback),
+        ),
       )
       .orderBy(desc(serviceRatings.createdAt))
       .limit(10); // Limit to last 10 reviews

@@ -65,6 +65,7 @@ export type UserRepositoryType = {
     lastName: string;
   }) => Promise<{ customer: any; user: any; isNewUser: boolean }>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
+  markAllNotificationsAsSeen: (userId: number) => Promise<void>;
   getUserNotifications: (userId: number) => Promise<Notification[]>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
 };
@@ -484,6 +485,15 @@ const getUserNotifications = async (
   } catch (error) {
     console.error("Error in getUserNotifications:", error);
     throw new DataBaseError(`Failed to get user notifications: ${error}`);
+  }
+};
+
+const markAllNotificationsAsSeen = async (userId: number): Promise<void> => {
+  try {
+    await DB.update(notifications).set({ isSeen: true }).where(eq(notifications.userId, userId));
+  } catch (error) {
+    console.error("Error in markAllNotificationsAsSeen:", error);
+    throw new DataBaseError(`Failed to mark all notifications as seen: ${error}`);
   }
 };
 

@@ -34,6 +34,12 @@ export enum DriverStatus {
   CLOSED = "CLOSED",
 }
 
+export enum NotificationStatus {
+  PENDING = "PENDING",
+  SENT = "SENT",
+  FAILED = "FAILED",
+}
+
 export enum UserStatus {
   ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
@@ -56,6 +62,7 @@ export enum BreakdownRequestStatus {
 }
 
 export enum DriverApprovalStatus {
+  INITIAL = "INITIAL",
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",

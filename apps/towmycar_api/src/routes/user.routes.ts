@@ -438,4 +438,13 @@ router.patch(
   }
 );
 
+router.patch(
+  "/notifications/all/isSeen",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    await service.markAllNotificationsAsSeen(req.userInfo.userId, repo);
+    res.json({ message: "All notifications marked as seen" });
+  }
+);
+
 export default router;

@@ -17,6 +17,7 @@ import {
   Documents,
   count,
   isNotNull,
+  not,
 } from "@towmycar/database";
 import { DriverInput, DriverProfileDtoType } from "../dto/driver.dto";
 import {
@@ -149,6 +150,7 @@ export interface IDriverRepository {
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void>;
   getUserNotifications: (userId: number) => Promise<Notifications[]>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
+  markAllNotificationsAsSeen: (userId: number) => Promise<void>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
   uploadDocument(
     userId: number,
@@ -229,6 +231,7 @@ export const DriverRepository: IDriverRepository = {
           id: driver.id,
           firstName: driverUser.firstName,
           lastName: driverUser.lastName,
+          approvalStatus: driver.approvalStatus,
           email: maskSensitiveData(
             driverUser.email,
             sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
@@ -370,6 +373,7 @@ export const DriverRepository: IDriverRepository = {
         userId: driverUser.id,
         firstName: driverUser.firstName,
         lastName: driverUser.lastName,
+        approvalStatus: driver.approvalStatus,
         email: maskSensitiveData(
           driverUser.email,
           sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
@@ -884,6 +888,20 @@ export const DriverRepository: IDriverRepository = {
             eq(breakdownAssignment.requestId, payment.requestId),
           ),
         );
+      await tx
+        .update(breakdownAssignment)
+        .set({
+          //@ts-ignore
+          driverStatus: DriverStatus.CLOSED,
+          updatedAt: new Date(),
+          reasonToClose: "admin closed the job",
+        })
+        .where(
+          and(
+            not(eq(breakdownAssignment.driverId, payment.driverId)),
+            eq(breakdownAssignment.requestId, payment.requestId),
+          ),
+        );
     });
   },
 
@@ -912,6 +930,19 @@ export const DriverRepository: IDriverRepository = {
     } catch (error) {
       logger.error("Error in markNotificationAsSeen:", error);
       throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
+    }
+  },
+  async markAllNotificationsAsSeen(userId: number): Promise<void> {
+    try {
+      await DB.update(notifications)
+        //@ts-ignore
+        .set({ isSeen: true })
+        .where(eq(notifications.userId, userId));
+    } catch (error) {
+      logger.error("Error in markAllNotificationsAsSeen:", error);
+      throw new DataBaseError(
+        `Failed to mark all notifications as seen: ${error}`,
+      );
     }
   },
   async getUnseenNotificationsCount(userId: number): Promise<number> {

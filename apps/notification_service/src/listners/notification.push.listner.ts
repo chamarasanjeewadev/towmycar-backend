@@ -9,6 +9,8 @@ import {
   UserRejectedPayload,
   ChatNotificationPayload,
   AdminApprovalRequestPayload,
+  NotificationStatus,
+  logger,
 } from "@towmycar/common";
 import { UserNotificationService } from "../service/notification.push.service";
 import { NotificationRepository } from "../repository/notification.repository";
@@ -20,7 +22,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_NOTIFICATION}`,
     async (payload: DriverNotificationPayload[]) => {
       const processPromises = payload.map(payloadData =>
-        processNotification(NotificationType.DRIVER_NOTIFICATION, payloadData)
+        processNotification(NotificationType.DRIVER_NOTIFICATION, payloadData),
       );
 
       try {
@@ -28,7 +30,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
       } catch (error) {
         console.error("Error processing driver notifications:", error);
       }
-    }
+    },
   );
 
   // USER_NOTIFICATION handler
@@ -36,7 +38,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.USER_NOTIFICATION}`,
     async (payload: DriverNotificationPayload) => {
       await processNotification(NotificationType.USER_NOTIFICATION, payload);
-    }
+    },
   );
 
   // USER_REQUEST handler
@@ -44,7 +46,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.USER_REQUEST}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.USER_REQUEST, payload);
-    }
+    },
   );
 
   // DRIVER_REGISTERED handler
@@ -52,7 +54,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_REGISTERED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.DRIVER_REGISTERED, payload);
-    }
+    },
   );
 
   // USER_CREATED handler
@@ -60,7 +62,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.USER_CREATED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.USER_CREATED, payload);
-    }
+    },
   );
 
   // USER_ACCEPT handler
@@ -68,7 +70,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.USER_ACCEPTED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.USER_ACCEPTED, payload);
-    }
+    },
   );
 
   // DRIVER_REJECT handler
@@ -76,7 +78,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_REJECTED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.DRIVER_REJECTED, payload);
-    }
+    },
   );
 
   emitter.on(
@@ -84,9 +86,9 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     async (payload: DriverQuotedPayload) => {
       await processNotification(
         NotificationType.DRIVER_QUOTATION_UPDATED,
-        payload
+        payload,
       );
-    }
+    },
   );
 
   // DRIVER_ASSIGNED handler
@@ -94,7 +96,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_ASSIGNED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.DRIVER_ASSIGNED, payload);
-    }
+    },
   );
 
   // DRIVER_QUOTED handler
@@ -102,7 +104,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_QUOTED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.DRIVER_QUOTED, payload);
-    }
+    },
   );
 
   // DRIVER_ACCEPT handler
@@ -110,7 +112,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_ACCEPTED}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.DRIVER_ACCEPTED, payload);
-    }
+    },
   );
 
   // USER_REJECT handler
@@ -118,7 +120,7 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.USER_REJECTED}`,
     async (payload: UserRejectedPayload) => {
       await processNotification(NotificationType.USER_REJECTED, payload);
-    }
+    },
   );
 
   // RATING_REVIEW handler
@@ -126,31 +128,37 @@ export function registerPushNotificationListener(emitter: EventEmitter): void {
     `${DeliveryNotificationType.PUSH}:${NotificationType.RATING_REVIEW}`,
     async (payload: NotificationPayload) => {
       await processNotification(NotificationType.RATING_REVIEW, payload);
-    }
+    },
   );
   emitter.on(
     `${DeliveryNotificationType.PUSH}:${NotificationType.DRIVER_CHAT_INITIATED}`,
     async (payload: ChatNotificationPayload) => {
-      await processNotification(NotificationType.DRIVER_CHAT_INITIATED, payload);
-    }
+      await processNotification(
+        NotificationType.DRIVER_CHAT_INITIATED,
+        payload,
+      );
+    },
   );
   emitter.on(
     `${DeliveryNotificationType.PUSH}:${NotificationType.USER_CHAT_INITIATED}`,
     async (payload: ChatNotificationPayload) => {
       await processNotification(NotificationType.USER_CHAT_INITIATED, payload);
-    }
+    },
   );
   emitter.on(
     `${DeliveryNotificationType.PUSH}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
     async (payload: AdminApprovalRequestPayload) => {
-      await processNotification(NotificationType.ADMIN_APPROVAL_REQUEST, payload);
-    }
-  ); 
+      await processNotification(
+        NotificationType.ADMIN_APPROVAL_REQUEST,
+        payload,
+      );
+    },
+  );
 }
 
 async function processNotification(
   notificationType: NotificationType,
-  payload: ListnerPayload
+  payload: ListnerPayload,
 ) {
   try {
     if (shouldCheckDuplicate(notificationType)) {
@@ -163,7 +171,7 @@ async function processNotification(
 
       if (isAlreadySent) {
         console.log(
-          `Push notification already sent for user/driver: ${payload?.sendToId}, type: ${notificationType}`
+          `Push notification already sent for user/driver: ${payload?.sendToId}, type: ${notificationType}`,
         );
         return;
       }
@@ -171,12 +179,17 @@ async function processNotification(
 
     const pushPayload = UserNotificationService.generatePushNotificationPayload(
       notificationType,
-      payload
+      payload,
     );
 
-    const result = await UserNotificationService.sendGenericPushNotification(
-      pushPayload
-    );
+    const result =
+      await UserNotificationService.sendGenericPushNotification(pushPayload);
+    if (!result.success) {
+      logger.error(result);
+    }
+    const status = result.success
+      ? NotificationStatus.SENT
+      : NotificationStatus.FAILED;
 
     await NotificationRepository.saveNotification({
       userId: payload.sendToId,
@@ -187,11 +200,12 @@ async function processNotification(
       url: pushPayload.url,
       title: pushPayload.title,
       message: pushPayload.message,
+      status: status,
     });
   } catch (error) {
     console.error(
       `Failed to process ${notificationType} notification for user/driver:`,
-      error
+      error,
     );
   }
 }

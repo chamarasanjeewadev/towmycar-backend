@@ -86,7 +86,7 @@ export const driver = pgTable("driver", {
     .defaultNow()
     .notNull(),
   approvalStatus: varchar("approval_status").default(
-    DriverApprovalStatus.PENDING,
+    DriverApprovalStatus.INITIAL,
   ), // New field
   availabilityStatus: varchar("availability_status").default(
     DriverAvailabilityStatus.UNAVAILABLE,

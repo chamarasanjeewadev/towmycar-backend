@@ -131,3 +131,10 @@ export const markNotificationAsSeen = async (
     throw error;
   }
 };
+
+export const markAllNotificationsAsSeen = async (
+  userId: number,
+  repo: UserRepositoryType
+) => {
+  await repo.markAllNotificationsAsSeen(userId);
+};

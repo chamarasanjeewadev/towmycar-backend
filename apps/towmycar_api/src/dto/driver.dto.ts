@@ -13,10 +13,20 @@ const requiredDriverSchema = z.object({
 });
 
 export const adminApprovalSchema = z.object({
-  agreedTerms: z.boolean().refine(val => val === true, {
+  agreedTerms: z.string().refine(val => val === "true", {
     message: "You must agree to the terms and conditions",
   }),
 });
+
+export const contactUsSchema = z.object({
+  firstName: z.string().min(2).max(50),
+  lastName: z.string().min(2).max(50),
+  email: z.string().email(),
+  message: z
+    .string()
+    .min(10, { message: 'Message must be at least 10 characters' })
+})
+
 
 export const driverBasicProfileSchema = z.object({
   firstName: z.string().min(1, { message: "Please enter your first name" }),
