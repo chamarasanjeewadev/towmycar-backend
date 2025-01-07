@@ -273,6 +273,7 @@ export class CdkStack extends cdk.Stack {
         ENABLE_SMS: process.env.ENABLE_SMS || "false",
         NODE_TLS_REJECT_UNAUTHORIZED:
           process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0",
+        VIEW_REQUEST_BASE_URL: process.env.VIEW_REQUEST_BASE_URL || "",
       },
     });
   }

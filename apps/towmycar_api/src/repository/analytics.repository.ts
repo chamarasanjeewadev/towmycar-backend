@@ -8,11 +8,13 @@ import {
   customer,
   user,
   eq,
+  ServiceRating,
 } from "@towmycar/database";
 
 type AnalyticsRepositoryType = {
   getRecentBreakdownRequests: () => Promise<Partial<BreakdownRequest>[]>;
   getSiteRatings: () => Promise<Partial<SiteRating>[]>;
+  getDriverRatings: (driverId: number) => Promise<Partial<ServiceRating>[]>;
 };
 
 export const AnalyticsRepository: AnalyticsRepositoryType = {
@@ -48,6 +50,16 @@ export const AnalyticsRepository: AnalyticsRepositoryType = {
       .innerJoin(user, eq(customer.userId, user.id))
       .orderBy(desc(serviceRatings.createdAt))
       .limit(10);
+    return result;
+  },
+  async getDriverRatings(driverId: number): Promise<Partial<ServiceRating>[]> {
+    const result = await DB.select({
+      rating: serviceRatings.customerRating,
+      feedback: serviceRatings.customerFeedback,
+      createdAt: serviceRatings.createdAt,
+    })
+      .from(serviceRatings)
+      .where(eq(serviceRatings.driverId, driverId));
     return result;
   },
 };

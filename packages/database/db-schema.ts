@@ -280,11 +280,13 @@ export const notifications = pgTable("notifications", {
     length: 100,
   }),
   notificationType: varchar("notification_type", { length: 100 }).notNull(),
-  breakdownRequestId: integer("breakdown_request_id")
-    .references(() => breakdownRequest.id, {
+  breakdownRequestId: integer("breakdown_request_id").references(
+    () => breakdownRequest.id,
+    {
       onDelete: "cascade",
-    }),
-    
+    },
+  ),
+
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   url: text("url"),

@@ -7,9 +7,13 @@ import {
   user,
   eq,
   sql,
+  and,
 } from "@towmycar/database";
 import {
+  DriverApprovalStatus,
+  DriverAvailabilityStatus,
   DriverStatus,
+  logger,
   NearbyDriver,
   UserStatus,
   UserWithCustomer,
@@ -23,17 +27,17 @@ export type DriverSearchRepositoryType = {
     longitude: number,
     toLatitude: number | null,
     toLongitude: number | null,
-    weight: string | number | null
+    weight: string | number | null,
   ) => Promise<NearbyDriver[]>;
 
   updateDriverRequests: (
     requestId: number,
-    nearbyDrivers: NearbyDriver[]
+    nearbyDrivers: NearbyDriver[],
   ) => Promise<void>;
 
   getUserByCustomerId: (customerId: number) => Promise<UserWithCustomer | null>;
   getBreakdownRequestById: (
-    requestId: number
+    requestId: number,
   ) => Promise<BreakdownRequestWithUserDetails | null>;
 };
 
@@ -43,7 +47,7 @@ const findNearbyDrivers = async (
   longitude: number,
   toLatitude: number | null,
   toLongitude: number | null,
-  weight: string | number | null
+  weight: string | number | null,
 ): Promise<NearbyDriver[]> => {
   try {
     const weightCondition = weight
@@ -52,7 +56,7 @@ const findNearbyDrivers = async (
 
     const nearbyDrivers = await DB.select({
       id: driver.id,
-      userId:user.id,
+      userId: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -69,13 +73,18 @@ const findNearbyDrivers = async (
       .from(driver)
       .leftJoin(user, eq(driver.userId, user.id))
       .where(
-        sql`ST_DWithin(
+        and(
+          eq(driver.approvalStatus, DriverApprovalStatus.APPROVED),
+          eq(driver.availabilityStatus, DriverAvailabilityStatus.AVAILABLE),
+          sql`ST_DWithin(
           ${driver.primaryLocation}::geography,
           ST_MakePoint(${longitude}, ${latitude})::geography,
           ${driver.serviceRadius} * 1000
-        ) ${weightCondition}`
+        ) ${weightCondition}`,
+        ),
       )
       .orderBy(sql`distance`);
+    logger.info("nearbyDrivers", nearbyDrivers);
     console.log("nearbyDrivers", nearbyDrivers);
     // Use a type assertion here
     return nearbyDrivers as unknown as NearbyDriver[];
@@ -86,12 +95,12 @@ const findNearbyDrivers = async (
 };
 
 // @ts-nocheck
-const findNearbyDrivers2 = async (
+const findNearbyDriversAroundFromAndToLocations = async (
   latitude: number,
   longitude: number,
   toLatitude: number | null,
   toLongitude: number | null,
-  weight: number
+  weight: number,
 ): Promise<NearbyDriver[]> => {
   try {
     const distanceCalc =
@@ -163,7 +172,7 @@ const findNearbyDrivers2 = async (
           ${driver.serviceRadius}
         FROM ${driver}
         WHERE ${locationFilter} ${weightCondition}
-      ) as unique_drivers`
+      ) as unique_drivers`,
       )
       .innerJoin(user, eq(sql`unique_drivers.user_id`, user.id))
       .orderBy(sql`distance`);
@@ -177,7 +186,7 @@ const findNearbyDrivers2 = async (
 
 const updateDriverRequests = async (
   requestId: number,
-  nearbyDrivers: NearbyDriver[]
+  nearbyDrivers: NearbyDriver[],
 ): Promise<void> => {
   const now = new Date();
 
@@ -195,7 +204,7 @@ const updateDriverRequests = async (
             assignedAt: now,
             createdAt: now,
             updatedAt: now,
-          }))
+          })),
         )
         .onConflictDoUpdate({
           target: [breakdownAssignment.requestId, breakdownAssignment.driverId],
@@ -242,14 +251,14 @@ const getUserByCustomerId = async (customerId: number) => {
       throw error;
     } else {
       throw new Error(
-        `Failed to get user for customerId ${customerId}{error: ${error}}`
+        `Failed to get user for customerId ${customerId}{error: ${error}}`,
       );
     }
   }
 };
 
 const getBreakdownRequestById = async (
-  requestId: number
+  requestId: number,
 ): Promise<BreakdownRequestWithUserDetails> => {
   try {
     const result = await DB.select({
@@ -267,28 +276,28 @@ const getBreakdownRequestById = async (
       location: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
       toLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "latitude"
+            "latitude",
           ),
         longitude:
           sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "longitude"
+            "longitude",
           ),
       },
     })
       .from(breakdownRequest)
       .leftJoin(
         breakdownAssignment,
-        eq(breakdownAssignment.requestId, breakdownRequest.id)
+        eq(breakdownAssignment.requestId, breakdownRequest.id),
       )
       .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .leftJoin(user, eq(driver.userId, user.id))

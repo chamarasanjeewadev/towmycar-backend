@@ -9,4 +9,7 @@ export const AnalyticsService = {
   async getSiteRatings(): Promise<Partial<ServiceRating>[]> {
     return AnalyticsRepository.getSiteRatings();
   },
+  async getDriverRatings(driverId: number): Promise<Partial<ServiceRating>[]> {
+    return AnalyticsRepository.getDriverRatings(driverId);
+  },
 };

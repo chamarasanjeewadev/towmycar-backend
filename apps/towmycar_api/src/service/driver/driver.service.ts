@@ -1,4 +1,3 @@
-import { getUserProfileById } from "./../user/user.service";
 import { DriverProfileDtoType } from "../../dto/driver.dto";
 import {
   IDriverRepository,
@@ -12,11 +11,11 @@ import {
   ConflictError,
   DriverAcceptedEventPayload,
   DriverApprovalStatus,
-  DriverAvailabilityStatus,
   DriverClosedEventPayload,
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
   DriverStatus,
+  isTrialPeriodExpired,
   logger,
   registerNotificationListener,
   TokenService,
@@ -35,7 +34,7 @@ import {
 import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 import { generateFilePath } from "../../utils/s3utils";
 import { UserRepository } from "../../repository/user.repository";
-import { IsNull } from "@sinclair/typebox/build/cjs/type/guard/kind";
+import { driver, Driver } from "@towmycar/database";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -340,18 +339,66 @@ export class DriverService {
         "Driver not approved. Complete your profile first and submit for approval.",
       );
     }
-
-    if (!driver?.stripePaymentMethodId) {
-      throw new CustomError(
-        ERROR_CODES.STRIPE_CARD_NOT_ADDED,
-        400,
-        "Unable to process payment. Please add a valid payment method in profile section.",
-      );
+    // if driver is not trial period, then check if they have a stripe payment method
+    if (isTrialPeriodExpired(driver.createdAt)) {
+      if (!driver?.stripePaymentMethodId) {
+        throw new CustomError(
+          ERROR_CODES.STRIPE_CARD_NOT_ADDED,
+          400,
+          "Unable to process payment. Please add a valid payment method in profile section.",
+        );
+      }
     }
 
     // Convert estimation to cents and ensure it meets minimum
     const amount = MINIMUM_PAYMENT_AMOUNT;
 
+    try {
+      //   const paymentIntent = await stripe.paymentIntents.create({
+      //     amount,
+      //     currency: "usd",
+      //     customer: driver.stripeId,
+      //     payment_method: driver.stripePaymentMethodId,
+      //     off_session: true,
+      //     confirm: true,
+      //   });
+
+      //   if (paymentIntent.status !== "succeeded") {
+      //     throw new CustomError(
+      //       ERROR_CODES.INVALID_PAYMENT_AMOUNT,
+      //       400,
+      //       "Payment failed",
+      //     );
+      //   }
+      //will throw if not successful, TODO change logic
+      const paymentIntent = await this.getDriverPayment(amount, driver);
+      
+
+      // Save payment and update assignment
+      await DriverRepository.createPaymentAndUpdateAssignment({
+        payment: {
+          stripePaymentIntentId: paymentIntent.id,
+          amount: estimation,
+          currency: "usd",
+          status: paymentIntent.status,
+          driverId,
+          requestId,
+        },
+        assignmentData: dataToUpdate,
+      });
+    } catch (error) {
+      logger.error("Payment processing error:", error);
+      throw new CustomError(
+        ERROR_CODES.PAYMENT_FAILED,
+        400,
+        error instanceof CustomError
+          ? error.message
+          : "Payment processing failed. Please try again or contact support.",
+      );
+    }
+  }
+
+  async getDriverPayment(amount: number, driver: Driver) {
     try {
       const paymentIntent = await stripe.paymentIntents.create({
         amount,
@@ -369,19 +416,7 @@ export class DriverService {
           "Payment failed",
         );
       }
-
-      // Save payment and update assignment
-      await DriverRepository.createPaymentAndUpdateAssignment({
-        payment: {
-          stripePaymentIntentId: paymentIntent.id,
-          amount: estimation,
-          currency: "usd",
-          status: paymentIntent.status,
-          driverId,
-          requestId,
-        },
-        assignmentData: dataToUpdate,
-      });
+      return paymentIntent;
     } catch (error) {
       logger.error("Payment processing error:", error);
       throw new CustomError(

@@ -4,10 +4,8 @@ import {
   PushNotificationPayload,
   NotificationType,
   ListnerPayload,
-  DeliveryNotificationType,
   maskText,
 } from "@towmycar/common";
-import { NotificationRepository } from "../repository/notification.repository";
 
 interface NotificationMessage {
   title: string;

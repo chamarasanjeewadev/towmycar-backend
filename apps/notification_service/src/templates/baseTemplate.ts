@@ -9,9 +9,9 @@ interface BaseTemplateProps {
 }
 
 const COLORS = {
-  primary: "#1B8B4B",
-  primaryDark: "#146B3A",
-  primaryLight: "#22AB5D",
+  primary: "#f9761f",
+  primaryDark: "#f9761f",
+  primaryLight: "#f9761f",
   secondary: "#FFF7E6",
   text: "#1A1A1A",
   textLight: "#6B7280",
@@ -27,7 +27,7 @@ const COLORS = {
 
 export function createBaseTemplate({
   content,
-  logoUrl = "https://towmycar.vercel.app/towmycarlogo.png",
+  logoUrl = `${process.env.VIEW_REQUEST_BASE_URL??""}/towmycarlogo.png`,
   subject = "",
   from = "",
   fromEmail = "",
