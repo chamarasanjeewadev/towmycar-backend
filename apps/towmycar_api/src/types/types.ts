@@ -112,6 +112,7 @@ export interface DriverProfile {
   lastName: string;
   email: string | null;
   phoneNumber: string | null;
+  createdAt: Date;
   imageUrl: string | null;
   ratings: {
     count: number;

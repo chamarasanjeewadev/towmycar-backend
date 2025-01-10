@@ -1,4 +1,6 @@
-import { addMonths, format, isAfter, isBefore } from "date-fns";
+import { addDays, format, isAfter, isBefore } from "date-fns";
+import { TRIAL_PERIOD_DAYS } from "./common-consts";
+
 
 export const formatDate = (
   date: string | number | Date | null | undefined,
@@ -12,7 +14,7 @@ export const isTrialPeriodExpired = (
 ): boolean => {
   if (!driverCreatedDate) return true;
   return isAfter(
-    addMonths(new Date(driverCreatedDate), 3),
     new Date(Date.now()),
+    addDays(new Date(driverCreatedDate), TRIAL_PERIOD_DAYS),
   );
 };

@@ -138,3 +138,10 @@ export const markAllNotificationsAsSeen = async (
 ) => {
   await repo.markAllNotificationsAsSeen(userId);
 };
+
+export const markAllChatNotificationsAsSeen = async (
+  userId: number,
+  repo: UserRepositoryType
+) => {
+  await repo.markAllChatNotificationsAsSeen(userId);
+};

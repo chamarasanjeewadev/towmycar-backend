@@ -5,14 +5,20 @@ import {
   BREAKDOWN_REQUEST_SNS_TOPIC_ARN,
   VIEW_REQUEST_BASE_URL,
 } from "../../config";
-import { registerNotificationListener, sendSNS,BaseError,ERROR_CODES,NotificationType, UserStatus,APIError  } from "@towmycar/common";
+import {
+  registerNotificationListener,
+  sendSNS,
+  BaseError,
+  ERROR_CODES,
+  NotificationType,
+  UserStatus,
+  APIError,
+  isTrialPeriodExpired,
+} from "@towmycar/common";
 import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
 import { DriverRepository } from "./../../repository/driver.repository";
-import {
-  mapToUserWithCustomer,
-  mapToUserWithDriver,
-} from "@towmycar/common";
+import { mapToUserWithCustomer, mapToUserWithDriver } from "@towmycar/common";
 import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 
 const notificationEmitter = new EventEmitter();
@@ -25,7 +31,7 @@ const CreateBreakdownRequest = async (
     role: string;
     customerId?: number;
     driverId?: number;
-  }
+  },
 ) => {
   try {
     const breakdownRequestData: BreakdownRequestInput = {
@@ -42,12 +48,12 @@ const CreateBreakdownRequest = async (
     };
     const createdRequest =
       await BreakdownRequestRepository.saveBreakdownRequest(
-        breakdownRequestData
+        breakdownRequestData,
       );
     // Send request to breakdown service to find near by drivers
     const combinedSnsResult = await sendSNS(
       BREAKDOWN_REQUEST_SNS_TOPIC_ARN || "",
-      { requestId: createdRequest?.id }
+      { requestId: createdRequest?.id },
     );
 
     return {
@@ -65,7 +71,7 @@ const CreateBreakdownRequest = async (
       ERROR_CODES.INTERNAL_SERVER_ERROR,
       error instanceof Error
         ? error.message
-        : "An unexpected error occurred while creating breakdown request"
+        : "An unexpected error occurred while creating breakdown request",
     );
   }
 };
@@ -73,13 +79,13 @@ const CreateBreakdownRequest = async (
 const getPaginatedBreakdownRequestsByCustomerId = async (
   page: number,
   pageSize: number,
-  customerId?: number
+  customerId?: number,
 ) => {
   const { requests, totalCount } =
     await BreakdownRequestRepository.getPaginatedBreakdownRequestsByCustomerId(
       page,
       pageSize,
-      customerId
+      customerId,
     );
 
   return {
@@ -91,12 +97,12 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
 const updateUserStatusInBreakdownAssignment = async (
   assignmentId: number,
   userStatus: UserStatus,
-  userId: number
+  userId: number,
 ): Promise<boolean> => {
   const updatedAssignment =
     await BreakdownRequestRepository.updateUserStatusInBreakdownAssignment(
       assignmentId,
-      userStatus
+      userStatus,
     );
 
   if (updatedAssignment) {
@@ -112,10 +118,10 @@ const updateUserStatusInBreakdownAssignment = async (
     //TODO move to common service
     const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
       updatedAssignment.driverId,
-      updatedAssignment.requestId
+      updatedAssignment.requestId,
     );
     const customerDetails = await DriverRepository.getCustomerByRequestId(
-      updatedAssignment.requestId
+      updatedAssignment.requestId,
     );
 
     const userWithDriver = mapToUserWithDriver(driverInfo);
@@ -128,9 +134,13 @@ const updateUserStatusInBreakdownAssignment = async (
       user: userWithCustomer,
       userStatus,
       userId,
-      viewRequestLink:getViewRequestUrl(notificationType, VIEW_REQUEST_BASE_URL, {
-        requestId:updatedAssignment.requestId
-      })
+      viewRequestLink: getViewRequestUrl(
+        notificationType,
+        VIEW_REQUEST_BASE_URL,
+        {
+          requestId: updatedAssignment.requestId,
+        },
+      ),
     });
 
     return true;
@@ -142,12 +152,12 @@ const updateUserStatusInBreakdownAssignment = async (
 // Add this new method to the BreakdownRequestService object
 const getBreakdownAssignmentsByRequestId = async (requestId: number) => {
   return await BreakdownRequestRepository.getBreakdownAssignmentsByRequestId(
-    requestId
+    requestId,
   );
 };
 
 const createAnonymousCustomerAndBreakdownRequest = async (
-  breakdownRequestInput: BreakdownRequestInput
+  breakdownRequestInput: BreakdownRequestInput,
 ) => {
   try {
     // Create anonymous customer
@@ -167,7 +177,7 @@ const createAnonymousCustomerAndBreakdownRequest = async (
         userId: anonymousUser.user.id,
         role: "customer",
         customerId: anonymousUser.customer.id,
-      }
+      },
     );
 
     return {
@@ -177,7 +187,7 @@ const createAnonymousCustomerAndBreakdownRequest = async (
   } catch (error) {
     console.error(
       "Error creating anonymous customer and breakdown request:",
-      error
+      error,
     );
     throw error;
   }
@@ -185,18 +195,17 @@ const createAnonymousCustomerAndBreakdownRequest = async (
 
 const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   driverId: number,
-  requestId?: number
+  requestId?: number,
 ) => {
   return await BreakdownRequestRepository.getBreakdownAssignmentsByDriverIdAndRequestId(
     driverId,
-    requestId
+    requestId,
   );
 };
 
 const getBreakdownRequestById = async (requestId: number) => {
-  const request = await BreakdownRequestRepository.getBreakdownRequestById(
-    requestId
-  );
+  const request =
+    await BreakdownRequestRepository.getBreakdownRequestById(requestId);
   if (!request) {
     throw new Error("Breakdown request not found");
   }
@@ -204,7 +213,7 @@ const getBreakdownRequestById = async (requestId: number) => {
 };
 
 const closeBreakdownAndUpdateRating = async (
-  params: CloseBreakdownParams
+  params: CloseBreakdownParams,
 ): Promise<void> => {
   await BreakdownRequestRepository.closeBreakdownAndUpdateRating(params);
 };
@@ -219,12 +228,13 @@ const getDriverProfile = async (
   driverId: number,
   requestId: number,
   page: number = 1,
-  pageSize: number = 10
+  pageSize: number = 10,
 ) => {
   const profile = await BreakdownRequestRepository.getDriverProfile(
     driverId,
-    requestId
+    requestId,
   );
+
   if (!profile) {
     throw new Error("Driver not found");
   }
@@ -246,6 +256,6 @@ export const BreakdownRequestService = {
     driverId: number,
     requestId: number,
     page?: number,
-    pageSize?: number
+    pageSize?: number,
   ) => getDriverProfile(driverId, requestId, page, pageSize),
 };

@@ -10,6 +10,11 @@ export const AnalyticsService = {
     return AnalyticsRepository.getSiteRatings();
   },
   async getDriverRatings(driverId: number): Promise<Partial<ServiceRating>[]> {
-    return AnalyticsRepository.getDriverRatings(driverId);
+    const result = await AnalyticsRepository.getDriverRatings(driverId);
+    const uniqueResult = result.filter(
+      (x, index, self) =>
+        index === self.findIndex(t => t.requestId === x.requestId),
+    );
+    return uniqueResult;
   },
 };

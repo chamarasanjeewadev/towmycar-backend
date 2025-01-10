@@ -1,7 +1,9 @@
+import { markAllChatNotificationsAsSeen } from "./../service/user/user.service";
 import express, { Request, Response, NextFunction } from "express";
 import {} from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
 import { DriverService } from "../service/driver/driver.service";
+import * as userService from "../service/user/user.service";
 import {
   adminApprovalSchema,
   driverBasicProfileSchema,
@@ -15,6 +17,7 @@ import { CustomError, ERROR_CODES, UploadDocumentType } from "@towmycar/common";
 import { DriverStatus } from "@towmycar/common";
 import { getPresignedUrls } from "../utils";
 import { Driver } from "@towmycar/database";
+import { UserRepository } from "../repository/user.repository";
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -394,11 +397,36 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const driverId = req.userInfo.driverId;
-      const driverProfile = await driverService.getDriverProfile(driverId);
+      const driverProfile =
+        await driverService.getDriverDashboardStatsProfile(driverId);
       res.json(driverProfile);
     } catch (error) {
       next(error);
     }
+  },
+);
+
+router.patch(
+  "/notifications/chat/all/isSeen",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    await userService.markAllChatNotificationsAsSeen(
+      req.userInfo.userId,
+      UserRepository,
+    );
+    res.json({ message: "All chat notifications marked as seen" });
+  },
+);
+
+router.patch(
+  "/notifications/other/all/isSeen",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    await userService.markAllChatNotificationsAsSeen(
+      req.userInfo.userId,
+      UserRepository,
+    );
+    res.json({ message: "All other notifications marked as seen" });
   },
 );
 
@@ -415,20 +443,11 @@ router.patch(
           "Invalid notification ID",
         );
       }
-      await driverService.markNotificationAsSeen(notificationId);
+      await userService.markNotificationAsSeen(notificationId, UserRepository);
       res.json({ message: "Notification marked as seen" });
     } catch (error) {
       next(error);
     }
-  },
-);
-
-router.patch(
-  "/notifications/all/isSeen",
-  clerkAuthMiddleware("driver"),
-  async (req: Request, res: Response, next: NextFunction) => {
-    await driverService.markAllNotificationsAsSeen(req.userInfo.userId);
-    res.json({ message: "All notifications marked as seen" });
   },
 );
 

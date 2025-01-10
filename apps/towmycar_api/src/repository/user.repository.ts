@@ -19,11 +19,14 @@ import {
   eq,
   and,
   admin,
+  not,
   notifications,
   desc,
   sql,
+  or,
 } from "@towmycar/database";
 import { DeliveryNotificationType } from "@towmycar/common";
+import { NotificationType } from "@towmycar/common";
 
 export type UserRepositoryType = {
   createUser: (user: UserRegisterInput) => Promise<number>;
@@ -68,6 +71,7 @@ export type UserRepositoryType = {
   markAllNotificationsAsSeen: (userId: number) => Promise<void>;
   getUserNotifications: (userId: number) => Promise<Notification[]>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
+  markAllChatNotificationsAsSeen: (userId: number) => Promise<void>;
 };
 
 const createUser = async (user: UserRegisterInput): Promise<number> => {
@@ -488,27 +492,31 @@ const getUserNotifications = async (
   }
 };
 
-const markAllNotificationsAsSeen = async (userId: number): Promise<void> => {
-  try {
-    await DB.update(notifications).set({ isSeen: true }).where(eq(notifications.userId, userId));
-  } catch (error) {
-    console.error("Error in markAllNotificationsAsSeen:", error);
-    throw new DataBaseError(`Failed to mark all notifications as seen: ${error}`);
-  }
-};
+// const markAllNotificationsAsSeen = async (userId: number): Promise<void> => {
+//   try {
+//     await DB.update(notifications)
+//       .set({ isSeen: true })
+//       .where(eq(notifications.userId, userId));
+//   } catch (error) {
+//     console.error("Error in markAllNotificationsAsSeen:", error);
+//     throw new DataBaseError(
+//       `Failed to mark all notifications as seen: ${error}`,
+//     );
+//   }
+// };
 
-const markNotificationAsSeen = async (
-  notificationId: number,
-): Promise<void> => {
-  try {
-    await DB.update(notifications)
-      .set({ isSeen: true })
-      .where(eq(notifications.id, notificationId));
-  } catch (error) {
-    console.error("Error in markNotificationAsSeen:", error);
-    throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
-  }
-};
+// const markNotificationAsSeen = async (
+//   notificationId: number,
+// ): Promise<void> => {
+//   try {
+//     await DB.update(notifications)
+//       .set({ isSeen: true })
+//       .where(eq(notifications.id, notificationId));
+//   } catch (error) {
+//     console.error("Error in markNotificationAsSeen:", error);
+//     throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
+//   }
+// };
 
 const getUnseenNotificationsCount = async (userId: number): Promise<number> => {
   try {
@@ -523,6 +531,82 @@ const getUnseenNotificationsCount = async (userId: number): Promise<number> => {
     throw new DataBaseError(
       `Failed to get unseen notifications count: ${error}`,
     );
+  }
+};
+
+const markAllChatNotificationsAsSeen = async (
+  userId: number,
+): Promise<void> => {
+  try {
+    await DB.update(notifications)
+      //@ts-ignore
+      .set({ isSeen: true })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.deliveryType, DeliveryNotificationType.PUSH),
+          or(
+            eq(
+              notifications.notificationType,
+              NotificationType.DRIVER_CHAT_INITIATED,
+            ),
+            eq(
+              notifications.notificationType,
+              NotificationType.USER_CHAT_INITIATED,
+            ),
+          ),
+        ),
+      );
+  } catch (error) {
+    logger.error("Error in markAllNotificationsAsSeen:", error);
+    throw new DataBaseError(
+      `Failed to mark all notifications as seen: ${error}`,
+    );
+  }
+};
+
+const markAllNotificationsAsSeen = async (userId: number): Promise<void> => {
+  try {
+    await DB.update(notifications)
+      //@ts-ignore
+      .set({ isSeen: true })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.deliveryType, DeliveryNotificationType.PUSH),
+          not(
+            eq(
+              notifications.notificationType,
+              NotificationType.DRIVER_CHAT_INITIATED,
+            ),
+          ),
+          not(
+            eq(
+              notifications.notificationType,
+              NotificationType.USER_CHAT_INITIATED,
+            ),
+          ),
+        ),
+      );
+  } catch (error) {
+    logger.error("Error in markAllNotificationsAsSeen:", error);
+    throw new DataBaseError(
+      `Failed to mark all notifications as seen: ${error}`,
+    );
+  }
+};
+
+const markNotificationAsSeen = async (
+  notificationId: number,
+): Promise<void> => {
+  try {
+    await DB.update(notifications)
+      //@ts-ignore
+      .set({ isSeen: true })
+      .where(eq(notifications.id, notificationId));
+  } catch (error) {
+    logger.error("Error in markNotificationAsSeen:", error);
+    throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
   }
 };
 
@@ -544,4 +628,6 @@ export const UserRepository: UserRepositoryType = {
   markNotificationAsSeen,
   getUserNotifications,
   getUnseenNotificationsCount,
+  markAllChatNotificationsAsSeen,
+  markAllNotificationsAsSeen,
 };

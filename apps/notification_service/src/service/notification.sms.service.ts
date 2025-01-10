@@ -25,7 +25,7 @@ function generateSMSNotificationPayload(
   payload: ListnerPayload
 ): { message: string; viewLink?: string; phoneNumber?: string } {
   const requestId = payload.breakdownRequestId
-    ? `(Request #${payload.breakdownRequestId})`
+    ? `(Request, Reference Id: ${payload.breakdownRequestId})`
     : "";
 
   switch (type) {

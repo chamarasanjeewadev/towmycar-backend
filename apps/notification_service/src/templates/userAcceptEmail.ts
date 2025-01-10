@@ -4,7 +4,7 @@ export const userAcceptEmail = (payload: any) => {
   const content = `
     <h1>Quotation Accepted - Action Required</h1>
     <p>Hi ${payload?.driver?.firstName ?? ","},</p>
-    <p>Great news! Customer has accepted your quotation for breakdown assistance request #${payload.requestId}.</p>
+    <p>Great news! Customer has accepted your quotation for breakdown assistance request, Reference Id: ${payload.requestId}.</p>
     
     <p style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #1B8B4B;">
       <strong>Next Steps:</strong><br>

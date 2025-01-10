@@ -44,7 +44,7 @@ router.post(
     } catch (error) {
       handleWebhookError(error, res);
     }
-  }
+  },
 );
 
 function validateWebhookSecret() {
@@ -77,7 +77,7 @@ async function handleUserCreated(evt: any, res: Response) {
     const userInfo = await service.createUserFromWebhook(userData, repo);
     const stripeCustomerId = await createStripeCustomerIfDriver(
       userInfo,
-      userData
+      userData,
     );
     await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
 
@@ -113,7 +113,7 @@ async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
 async function updateClerkUser(
   clerkUserId: string,
   userInfo: any,
-  stripeCustomerId: string | undefined
+  stripeCustomerId: string | undefined,
 ) {
   try {
     const params = {
@@ -185,7 +185,7 @@ router.get(
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
           404,
-          "User profile not found"
+          "User profile not found",
         );
       }
 
@@ -193,9 +193,8 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
-
 
 // router.get(
 //   "/profile/:id",
@@ -238,7 +237,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid user ID"
+          "Invalid user ID",
         );
       }
 
@@ -249,13 +248,13 @@ router.patch(
       const updatedProfile = await service.updateUserProfile(
         id,
         updateData,
-        repo
+        repo,
       );
       if (!updatedProfile) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
           404,
-          "User profile not found"
+          "User profile not found",
         );
       }
 
@@ -266,7 +265,7 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 //@ts-ignore
 router.post(
@@ -280,14 +279,14 @@ router.post(
         userId,
         token,
         browserInfo,
-        UserRepository
+        UserRepository,
       );
       res.status(201).json(result);
     } catch (error) {
       console.error("Error saving FCM token:", error);
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 );
 
 // Add this new route for getting driver profile
@@ -302,7 +301,7 @@ router.post(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Registration number is required"
+          "Registration number is required",
         );
       }
 
@@ -329,7 +328,7 @@ router.post(
         throw new CustomError(
           ERROR_CODES.INVALID_RESPONSE,
           400,
-          "Incomplete vehicle data received from the API"
+          "Incomplete vehicle data received from the API",
         );
       }
 
@@ -341,8 +340,8 @@ router.post(
             ERROR_CODES.EXTERNAL_API_ERROR,
             error.response?.status || 500,
             error.response?.data?.message ||
-              "Error verifying vehicle registration"
-          )
+              "Error verifying vehicle registration",
+          ),
         );
       } else if (error instanceof CustomError) {
         next(error);
@@ -351,12 +350,12 @@ router.post(
           new CustomError(
             ERROR_CODES.INTERNAL_SERVER_ERROR,
             500,
-            "An unexpected error occurred"
-          )
+            "An unexpected error occurred",
+          ),
         );
       }
     }
-  }
+  },
 );
 
 router.patch(
@@ -369,7 +368,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid driver ID"
+          "Invalid driver ID",
         );
       }
 
@@ -379,13 +378,13 @@ router.patch(
 
       const updatedDriver = await DriverRepository.updateDriver(
         driverId,
-        updateData
+        updateData,
       );
       if (!updatedDriver) {
         throw new CustomError(
           ERROR_CODES.RESOURCE_NOT_FOUND,
           404,
-          "Driver not found"
+          "Driver not found",
         );
       }
 
@@ -396,7 +395,7 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Add this new route
@@ -411,10 +410,8 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
-
-
 
 // Add this new route for marking notifications as seen
 router.patch(
@@ -427,7 +424,7 @@ router.patch(
         throw new CustomError(
           ERROR_CODES.INVALID_INPUT,
           400,
-          "Invalid notification ID"
+          "Invalid notification ID",
         );
       }
       await service.markNotificationAsSeen(notificationId, repo);
@@ -435,16 +432,33 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
+);
+
+// router.patch(
+//   "/notifications/other/all/isSeen",
+//   clerkAuthMiddleware("customer"),
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     await service.markAllNotificationsAsSeen(req.userInfo.userId, repo);
+//     res.json({ message: "All notifications marked as seen" });
+//   }
+// );
+router.patch(
+  "/notifications/chat/all/isSeen",
+  clerkAuthMiddleware("customer"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    await service.markAllChatNotificationsAsSeen(req.userInfo.userId, repo);
+    res.json({ message: "All chat notifications marked as seen" });
+  },
 );
 
 router.patch(
-  "/notifications/all/isSeen",
+  "/notifications/other/all/isSeen",
   clerkAuthMiddleware("customer"),
   async (req: Request, res: Response, next: NextFunction) => {
     await service.markAllNotificationsAsSeen(req.userInfo.userId, repo);
-    res.json({ message: "All notifications marked as seen" });
-  }
+    res.json({ message: "All other notifications marked as seen" });
+  },
 );
 
 export default router;

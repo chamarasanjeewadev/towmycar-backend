@@ -35,6 +35,7 @@ import {
   DriverProfile,
 } from "./../types/types";
 import { logger } from "@towmycar/common";
+import { getIsInTrialPeriod, maskSensitiveData } from "../utils/sql-helpers";
 
 // Add this type definition
 
@@ -89,17 +90,6 @@ function maskText(
   return sql<string>`CASE 
     WHEN ${text} IS NULL THEN NULL
     ELSE CONCAT(SUBSTRING(${text}, 1, ${visibleChars}), REPEAT('*', GREATEST(LENGTH(${text}) - ${visibleChars}, 0)))
-  END`;
-}
-
-function maskSensitiveData(
-  text: SQL<string> | Column<any, any, any>,
-  isVisible: SQL<boolean>,
-  visibleChars: number = 3,
-): SQL<string> {
-  return sql<string>`CASE 
-    WHEN ${isVisible} THEN ${text}
-    ELSE ${maskText(text, visibleChars)}
   END`;
 }
 
@@ -366,6 +356,8 @@ const getBreakdownAssignmentsByRequestId = async (
     requestId: breakdownAssignment.requestId,
     driverStatus: breakdownAssignment.driverStatus,
     userStatus: breakdownAssignment.userStatus,
+    closedBy: breakdownAssignment.closedBy,
+    closedAt: breakdownAssignment.closedAt,
     estimation: breakdownAssignment.estimation,
     explanation: breakdownAssignment.explanation,
     updatedAt: breakdownAssignment.updatedAt,
@@ -588,6 +580,8 @@ const getBreakdownRequestById = async (
               'id', ${breakdownAssignment.id},
               'driverStatus', ${breakdownAssignment.driverStatus},
               'userStatus', ${breakdownAssignment.userStatus},
+              'closedBy', ${breakdownAssignment.closedBy},
+              'closedAt', ${breakdownAssignment.closedAt},
               'estimation', ${breakdownAssignment.estimation},
               'explanation', ${breakdownAssignment.explanation},
               'updatedAt', ${breakdownAssignment.updatedAt},
@@ -721,12 +715,15 @@ const getDriverProfile = async (
       id: driver.id,
       firstName: maskSensitiveData(user.firstName, sql`${isAccepted}`),
       lastName: maskSensitiveData(user.lastName, sql`${isAccepted}`),
+      createdAt: driver.createdAt,
       email: maskSensitiveData(user.email, sql`${isAccepted}`),
       phoneNumber: maskSensitiveData(driver.phoneNumber, sql`${isAccepted}`),
+      isInTrialPeriod: getIsInTrialPeriod(driver.createdAt),
       imageUrl: sql<string>`CASE 
         WHEN ${isAccepted} THEN ${user.imageUrl}
         ELSE NULL 
       END`,
+      profileDescription: driver.profileDescription,
     })
       .from(driver)
       .innerJoin(user, eq(driver.userId, user.id))

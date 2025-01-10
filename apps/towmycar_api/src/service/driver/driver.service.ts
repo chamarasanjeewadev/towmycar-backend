@@ -3,7 +3,7 @@ import {
   IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
-
+import * as userService from "../user/user.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
 import {
@@ -42,7 +42,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 });
 
 const MINIMUM_PAYMENT_AMOUNT = 50; // $0.50 in cents (minimum allowed by Stripe for USD)
-
+const PER_TRIP_PAYMENT_AMOUNT = 1.99; // $1 in cents (minimum allowed by Stripe for USD)
 interface UpdateAssignmentData {
   driverStatus: string;
   estimation?: string;
@@ -332,52 +332,43 @@ export class DriverService {
     dataToUpdate: UpdateAssignmentData,
   ): Promise<void> {
     const driver = await this.getDriverWithPaymentMethod(driverId);
-    if (driver.approvalStatus !== DriverApprovalStatus.APPROVED) {
-      throw new CustomError(
-        ERROR_CODES.DRIVER_NOT_APPROVED,
-        400,
-        "Driver not approved. Complete your profile first and submit for approval.",
-      );
-    }
-    // if driver is not trial period, then check if they have a stripe payment method
-    if (isTrialPeriodExpired(driver.createdAt)) {
-      if (!driver?.stripePaymentMethodId) {
+    const isDriverTrialPeriodExpired = isTrialPeriodExpired(driver.createdAt);
+    let paymentIntent = null;
+    try {
+      if (driver.approvalStatus !== DriverApprovalStatus.APPROVED) {
+        throw new CustomError(
+          ERROR_CODES.DRIVER_NOT_APPROVED,
+          400,
+          "Driver not approved. Complete your profile first and submit for approval.",
+        );
+      }
+      // if driver is not trial period, then check if they have a stripe payment method
+      if (isDriverTrialPeriodExpired && !driver?.stripePaymentMethodId) {
         throw new CustomError(
           ERROR_CODES.STRIPE_CARD_NOT_ADDED,
           400,
           "Unable to process payment. Please add a valid payment method in profile section.",
         );
       }
-    }
-
-    // Convert estimation to cents and ensure it meets minimum
-    const amount = MINIMUM_PAYMENT_AMOUNT;
-
-    try {
-      //   const paymentIntent = await stripe.paymentIntents.create({
-      //     amount,
-      //     currency: "usd",
-      //     customer: driver.stripeId,
-      //     payment_method: driver.stripePaymentMethodId,
-      //     off_session: true,
-      //     confirm: true,
-      //   });
-
-      //   if (paymentIntent.status !== "succeeded") {
-      //     throw new CustomError(
-      //       ERROR_CODES.INVALID_PAYMENT_AMOUNT,
-      //       400,
-      //       "Payment failed",
-      //     );
-      //   }
-      //will throw if not successful, TODO change logic
-      const paymentIntent = await this.getDriverPayment(amount, driver);
-      
+      // charge for drivers who exceed the trial period, might need to check subscription status later
+      if (isDriverTrialPeriodExpired) {
+        paymentIntent = await this.getDriverPayment(
+          PER_TRIP_PAYMENT_AMOUNT,
+          driver,
+        );
+        if (paymentIntent.status !== "succeeded") {
+          throw new CustomError(
+            ERROR_CODES.INVALID_PAYMENT_AMOUNT,
+            400,
+            "Payment Failed",
+          );
+        }
+      }
 
       // Save payment and update assignment
-      await DriverRepository.createPaymentAndUpdateAssignment({
+      await DriverRepository.createPaymentRecordAndUpdateAssignment({
         payment: {
-          stripePaymentIntentId: paymentIntent.id,
+          stripePaymentIntentId: paymentIntent?.id,
           amount: estimation,
           currency: "usd",
           status: paymentIntent.status,
@@ -439,9 +430,12 @@ export class DriverService {
     }
   }
 
-  async markAllNotificationsAsSeen(userId: number) {
-    await DriverRepository.markAllNotificationsAsSeen(userId);
-  }
+  // async markAllNotificationsAsSeen(userId: number) {
+  //   await DriverRepository.markAllNotificationsAsSeen(userId);
+  // }
+  // async markAllChatNotificationsAsSeen(userId: number) {
+  //   await DriverRepository.markAllChatNotificationsAsSeen(userId);
+  // }
 
   async markNotificationAsSeen(notificationId: number) {
     try {
@@ -508,7 +502,7 @@ export class DriverService {
     return updatedDriver;
   }
 
-  async getDriverProfile(driverId: number) {
+  async getDriverDashboardStatsProfile(driverId: number) {
     return DriverRepository.getDriverStatsProfile(driverId);
   }
 }

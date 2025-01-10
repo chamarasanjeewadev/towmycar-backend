@@ -138,8 +138,8 @@ export function createBaseTemplate({
           <!-- Footer -->
           <tr>
             <td style="padding: 20px; text-align: center; font-size: 14px; line-height: 1.5; background-color: ${
-              COLORS.primaryLight
-            }; color: ${COLORS.textLight};">
+              COLORS.white
+            }; color: ${COLORS.white};">
               <p style="margin: 0;">© ${new Date().getFullYear()} TowMyCar. All rights reserved.</p>
               <p style="margin: 0;">
                 Need help? Contact our support team at 

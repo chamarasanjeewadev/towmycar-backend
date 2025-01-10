@@ -28,6 +28,10 @@ import {
   DocumentApprovalStatus,
   DriverAvailabilityStatus,
   DriverApprovalStatus,
+  BreakdownRequestClosedBy,
+  NotificationType,
+  isTrialPeriodExpired,
+  TRIAL_PERIOD_DAYS,
 } from "@towmycar/common";
 import crypto from "crypto"; // Added import for crypto
 import { CloseDriverAssignmentParams, DriverProfile } from "./../types/types";
@@ -42,6 +46,7 @@ import {
   DeliveryNotificationType,
 } from "@towmycar/common";
 import { maskSensitiveData } from "../utils/maskData";
+import { getIsInTrialPeriod } from "../utils/sql-helpers";
 
 interface UpdateAssignmentData {
   driverStatus: string;
@@ -144,13 +149,14 @@ export interface IDriverRepository {
   closeBreakdownRequestAndRequestRating(
     params: CloseDriverAssignmentParams,
   ): Promise<void>;
-  createPaymentAndUpdateAssignment({
+  createPaymentRecordAndUpdateAssignment({
     payment,
     assignmentData,
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void>;
   getUserNotifications: (userId: number) => Promise<Notifications[]>;
   markNotificationAsSeen: (notificationId: number) => Promise<void>;
-  markAllNotificationsAsSeen: (userId: number) => Promise<void>;
+  // markAllNotificationsAsSeen: (userId: number) => Promise<void>;
+  // markAllChatNotificationsAsSeen: (userId: number) => Promise<void>;
   getUnseenNotificationsCount: (userId: number) => Promise<number>;
   uploadDocument(
     userId: number,
@@ -236,6 +242,7 @@ export const DriverRepository: IDriverRepository = {
             driverUser.email,
             sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
           ),
+          isInTrialPeriod: getIsInTrialPeriod(driver.createdAt),
           imageUrl: driverUser.imageUrl,
           vehicleType: driver.vehicleType,
           regNo: driver.vehicleRegistration,
@@ -323,6 +330,8 @@ export const DriverRepository: IDriverRepository = {
       toAddress: breakdownRequest.toAddress,
       postCode: breakdownRequest.postCode,
       toPostCode: breakdownRequest.toPostCode,
+      closedBy: breakdownAssignment.closedBy,
+      closedAt: breakdownAssignment.closedAt,
       userLocation: {
         latitude:
           sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
@@ -691,6 +700,7 @@ export const DriverRepository: IDriverRepository = {
       ...user,
       driver: {
         ...driver,
+        isInTrialPeriod: getIsInTrialPeriod(driver.createdAt),
         primaryLocation: {
           //@ts-ignore
           latitude:
@@ -852,26 +862,28 @@ export const DriverRepository: IDriverRepository = {
       .from(documents)
       .where(eq(documents.userId, userId));
   },
-  async createPaymentAndUpdateAssignment({
+  async createPaymentRecordAndUpdateAssignment({
     payment,
     assignmentData,
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void> {
     await DB.transaction(async tx => {
       // Create payment record
-      const [paymentRecord] = await tx
-        .insert(payments)
-        //@ts-ignore
-        .values({
-          stripePaymentIntentId: payment.stripePaymentIntentId,
-          amount: payment.amount,
-          currency: payment.currency,
-          status: payment.status,
-          driverId: payment.driverId,
-          requestId: payment.requestId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .returning();
+      if (payment.stripePaymentIntentId) {
+        const [paymentRecord] = await tx
+          .insert(payments)
+          //@ts-ignore
+          .values({
+            stripePaymentIntentId: payment.stripePaymentIntentId,
+            amount: payment.amount,
+            currency: payment.currency,
+            status: payment.status,
+            driverId: payment.driverId,
+            requestId: payment.requestId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+      }
 
       // Update breakdown assignment with payment reference
       await tx
@@ -879,7 +891,7 @@ export const DriverRepository: IDriverRepository = {
         .set({
           ...assignmentData,
           //@ts-ignore
-          paymentId: paymentRecord.id,
+          paymentId: paymentRecord?.id ?? "TRIALUSER",
           updatedAt: new Date(),
         })
         .where(
@@ -895,6 +907,8 @@ export const DriverRepository: IDriverRepository = {
           driverStatus: DriverStatus.CLOSED,
           updatedAt: new Date(),
           reasonToClose: "admin closed the job",
+          closedBy: BreakdownRequestClosedBy.SYSTEM,
+          closedAt: new Date(),
         })
         .where(
           and(
@@ -932,19 +946,7 @@ export const DriverRepository: IDriverRepository = {
       throw new DataBaseError(`Failed to mark notification as seen: ${error}`);
     }
   },
-  async markAllNotificationsAsSeen(userId: number): Promise<void> {
-    try {
-      await DB.update(notifications)
-        //@ts-ignore
-        .set({ isSeen: true })
-        .where(eq(notifications.userId, userId));
-    } catch (error) {
-      logger.error("Error in markAllNotificationsAsSeen:", error);
-      throw new DataBaseError(
-        `Failed to mark all notifications as seen: ${error}`,
-      );
-    }
-  },
+
   async getUnseenNotificationsCount(userId: number): Promise<number> {
     try {
       const result = await DB.select({ count: sql<number>`count(*)` })
@@ -973,7 +975,10 @@ export const DriverRepository: IDriverRepository = {
         phoneNumber: driver.phoneNumber,
         imageUrl: user.imageUrl,
         approvalStatus: driver.approvalStatus,
+        availabilityStatus: driver.availabilityStatus,
+        createdAt: driver.createdAt,
         postcode: driver.postcode,
+        isInTrialPeriod: getIsInTrialPeriod(driver.createdAt),
       })
         .from(driver)
         .innerJoin(user, eq(driver.userId, user.id))
@@ -991,7 +996,10 @@ export const DriverRepository: IDriverRepository = {
       })
         .from(serviceRatings)
         .where(eq(serviceRatings.driverId, driverId));
-
+      const rows = await DB.select()
+        .from(serviceRatings)
+        .where(eq(serviceRatings.driverId, driverId));
+      console.log("Matching rows:", rows);
       // Get completed jobs count
       const completedJobsResult = await DB.select({
         completedJobs: count(),
@@ -1028,7 +1036,7 @@ export const DriverRepository: IDriverRepository = {
         )
         .orderBy(desc(serviceRatings.createdAt))
         .limit(10); // Limit to last 10 reviews
-
+      //@ts-ignore
       return {
         ...driverInfo[0],
         ratings: {

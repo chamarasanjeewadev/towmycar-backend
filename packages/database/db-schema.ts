@@ -12,6 +12,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import {
+  BreakdownRequestClosedBy,
   BreakdownRequestStatus,
   DocumentApprovalStatus,
   DriverApprovalStatus,
@@ -177,6 +178,10 @@ export const breakdownAssignment = pgTable(
     paymentId: integer("payment_id").references(() => payments.id, {
       onDelete: "set null",
     }),
+    closedAt: timestamp("closed_at").defaultNow().notNull(),
+    closedBy: varchar("closed_by", { length: 20 }).default(
+      BreakdownRequestClosedBy.DRIVER,
+    ),
   },
   table => ({
     // Adding the unique constraint

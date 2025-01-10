@@ -61,6 +61,12 @@ export enum BreakdownRequestStatus {
   QUOTED = "QUOTED",
 }
 
+export enum BreakdownRequestClosedBy {
+  ADMIN = "ADMIN",
+  DRIVER = "DRIVER",
+  SYSTEM = "SYSTEM",
+}
+
 export enum DriverApprovalStatus {
   INITIAL = "INITIAL",
   PENDING = "PENDING",

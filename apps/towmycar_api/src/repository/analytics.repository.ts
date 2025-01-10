@@ -57,9 +57,12 @@ export const AnalyticsRepository: AnalyticsRepositoryType = {
       rating: serviceRatings.customerRating,
       feedback: serviceRatings.customerFeedback,
       createdAt: serviceRatings.createdAt,
+      requestId: serviceRatings.requestId,
     })
       .from(serviceRatings)
-      .where(eq(serviceRatings.driverId, driverId));
+      .where(eq(serviceRatings.driverId, driverId))
+      .orderBy(desc(serviceRatings.createdAt));
+
     return result;
   },
 };

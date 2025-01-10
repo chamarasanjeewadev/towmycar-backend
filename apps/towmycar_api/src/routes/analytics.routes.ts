@@ -1,5 +1,6 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { AnalyticsService } from "../service/analytics/analytics.service";
+import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 const router = express.Router();
 
 router.get(
@@ -15,10 +16,18 @@ router.get("/site-ratings", async (req: Request, res: Response) => {
   res.json(result);
 });
 
-router.get("/driver-ratings", async (req: Request, res: Response) => {
-  const driverId = req.userInfo.driverId;
-  const result = await AnalyticsService.getDriverRatings(driverId);
-  res.json(result);
-});
+router.get(
+  "/driver-ratings",
+  clerkAuthMiddleware("driver"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const driverId = req?.userInfo?.driverId;
+      const result = await AnalyticsService.getDriverRatings(driverId);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;

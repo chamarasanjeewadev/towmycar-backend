@@ -74,7 +74,7 @@ const findNearbyDrivers = async (
       .leftJoin(user, eq(driver.userId, user.id))
       .where(
         and(
-          eq(driver.approvalStatus, DriverApprovalStatus.APPROVED),
+          // eq(driver.approvalStatus, DriverApprovalStatus.APPROVED), //Note: Users who are not approved must get requests
           eq(driver.availabilityStatus, DriverAvailabilityStatus.AVAILABLE),
           sql`ST_DWithin(
           ${driver.primaryLocation}::geography,

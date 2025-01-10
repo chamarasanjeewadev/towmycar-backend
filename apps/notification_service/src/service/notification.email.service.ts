@@ -71,6 +71,8 @@ export function getEmailContent(type: NotificationType, payload: any) {
       return userRejectedEmail(payload);
     case NotificationType.DRIVER_REJECTED:
       return driverRejectEmail(payload);
+    case NotificationType.DRIVER_QUOTED:
+      return driverQuotationUpdatedEmail(payload);
     case NotificationType.DRIVER_QUOTATION_UPDATED:
       return driverQuotationUpdatedEmail(payload);
     case NotificationType.USER_CREATED:

@@ -1,25 +1,22 @@
-import {
-  DriverNotificationPayload,
-  formatDate,
-} from "@towmycar/common";
+import { DriverNotificationPayload, formatDate } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
 export function driverNotificationEmail(payload: DriverNotificationPayload) {
   const content = `
     <h1>New Breakdown Request: Your Assistance Needed!</h1>
-    <p>Hi ${payload?.driver?.firstName??""},</p>
-    <p>We have an <strong>urgent breakdown request</strong> in your area that needs your expertise!</p>
+    <p>Hi ${payload?.driver?.firstName ?? ""},</p>
+    <p>We have an <strong>Breakdown request </strong> in your area that needs your expertise!</p>
     
     <h2>Request Details:</h2>
     <ul>
-      <li><strong>Request ID:</strong> #${payload.breakdownRequestId}</li>
+      <li><strong>Request Id:</strong> ${payload.breakdownRequestId}</li>
       ${
         payload.googleMapsLink
           ? `<li><strong>Location:</strong> <a href="${payload.googleMapsLink}" target="_blank">View on Google Maps</a></li>`
           : ""
       }
       <li><strong>Time Submitted:</strong> ${formatDate(
-        payload.createdAt
+        payload.createdAt,
       )} </li>
     </ul>
     
@@ -40,10 +37,8 @@ export function driverNotificationEmail(payload: DriverNotificationPayload) {
     
     <p>Thank you for your dedication to helping drivers in need.</p>
 
-    <div style="text-align: center; button">
-      <a href="${
-        payload.viewRequestLink
-      }" class="button">View and Accept Request</a>
+    <div style="text-align: center; ">
+       <a href="${payload.viewRequestLink}" class="button">View and Accept Request</a>
     </div>
   `;
 
