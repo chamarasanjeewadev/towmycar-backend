@@ -27,7 +27,7 @@ const COLORS = {
 
 export function createBaseTemplate({
   content,
-  logoUrl = `${process.env.VIEW_REQUEST_BASE_URL??""}/towmycarlogo.png`,
+  logoUrl = `${process.env.VIEW_REQUEST_BASE_URL ?? ""}/towmycarlogo.png`,
   subject = "",
   from = "",
   fromEmail = "",
@@ -46,8 +46,8 @@ export function createBaseTemplate({
       margin: 0;
       padding: 0;
       background: linear-gradient(135deg, ${COLORS.primary}, ${
-    COLORS.secondary
-  });
+        COLORS.secondary
+      });
       font-family: Arial, sans-serif;
       color: ${COLORS.text};
     }
@@ -149,6 +149,12 @@ export function createBaseTemplate({
                   support@towmycar.uk
                 </a>
               </p>
+              <p style="margin-top: 10px;">
+      <a href="https://${process.env.VIEW_REQUEST_BASE_URL}/unsubscribe?email=${encodeURIComponent(to)}" 
+         style="color: ${COLORS.textLight}; text-decoration: underline;">
+        Unsubscribe from these emails
+      </a>
+    </p>
             </td>
           </tr>
         </table>

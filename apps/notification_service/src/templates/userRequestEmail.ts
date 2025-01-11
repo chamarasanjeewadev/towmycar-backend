@@ -26,7 +26,7 @@ export const userRequestEmail = (payload: any) => {
           ? `${payload.userLocation.latitude}, ${payload.userLocation.longitude}`
           : "N/A"
       }</li>
-      <li>Request ID: #${payload.breakdownRequestId ?? "N/A"}</li>
+      <li>Reference Id: #${payload.breakdownRequestId ?? "N/A"}</li>
       <li>Status: We're searching for a driver</li>
     </ul>
     

@@ -33,7 +33,7 @@ const findAndNotifyNearbyDrivers = async (
 
     // Validate location data
     if (!request.location?.latitude || !request.location?.longitude) {
-      throw new Error(`Invalid pickup location for request ID: ${requestId}`);
+      throw new Error(`Invalid pickup location for Reference Id: ${requestId}`);
     }
 
     // Find nearby drivers with validated parameters

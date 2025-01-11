@@ -9,7 +9,7 @@ export function driverNotificationEmail(payload: DriverNotificationPayload) {
     
     <h2>Request Details:</h2>
     <ul>
-      <li><strong>Request Id:</strong> ${payload.breakdownRequestId}</li>
+      <li><strong>Reference Id:</strong> ${payload.breakdownRequestId}</li>
       ${
         payload.googleMapsLink
           ? `<li><strong>Location:</strong> <a href="${payload.googleMapsLink}" target="_blank">View on Google Maps</a></li>`
