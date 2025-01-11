@@ -388,6 +388,7 @@ export const DriverRepository: IDriverRepository = {
           sql`${breakdownAssignment.userStatus} = 'ACCEPTED'`,
         ),
         imageUrl: driverUser.imageUrl,
+        isInTrialPeriod: getIsInTrialPeriod(driver.createdAt),
         vehicleType: driver.vehicleType,
         regNo: driver.vehicleRegistration,
         phoneNumber: maskSensitiveData(
@@ -866,57 +867,63 @@ export const DriverRepository: IDriverRepository = {
     payment,
     assignmentData,
   }: CreatePaymentAndUpdateAssignmentParams): Promise<void> {
-    await DB.transaction(async tx => {
-      // Create payment record
-      if (payment.stripePaymentIntentId) {
+    try {
+      await DB.transaction(async tx => {
+        // Create payment record
         const [paymentRecord] = await tx
           .insert(payments)
           //@ts-ignore
           .values({
-            stripePaymentIntentId: payment.stripePaymentIntentId,
-            amount: payment.amount,
-            currency: payment.currency,
-            status: payment.status,
-            driverId: payment.driverId,
-            requestId: payment.requestId,
+            stripePaymentIntentId:
+              payment?.stripePaymentIntentId ?? "TRIAL_PAYMENT",
+            amount: payment?.amount,
+            currency: payment?.currency,
+            status: payment?.status ?? "TRIAL_PAYMENT",
+            driverId: payment?.driverId,
+            requestId: payment?.requestId,
             createdAt: new Date(),
             updatedAt: new Date(),
           })
           .returning();
-      }
 
-      // Update breakdown assignment with payment reference
-      await tx
-        .update(breakdownAssignment)
-        .set({
-          ...assignmentData,
-          //@ts-ignore
-          paymentId: paymentRecord?.id ?? "TRIALUSER",
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(breakdownAssignment.driverId, payment.driverId),
-            eq(breakdownAssignment.requestId, payment.requestId),
-          ),
-        );
-      await tx
-        .update(breakdownAssignment)
-        .set({
-          //@ts-ignore
-          driverStatus: DriverStatus.CLOSED,
-          updatedAt: new Date(),
-          reasonToClose: "admin closed the job",
-          closedBy: BreakdownRequestClosedBy.SYSTEM,
-          closedAt: new Date(),
-        })
-        .where(
-          and(
-            not(eq(breakdownAssignment.driverId, payment.driverId)),
-            eq(breakdownAssignment.requestId, payment.requestId),
-          ),
-        );
-    });
+        // Update breakdown assignment with payment reference
+        await tx
+          .update(breakdownAssignment)
+          .set({
+            ...assignmentData,
+            //@ts-ignore
+            paymentId: paymentRecord ? paymentRecord?.id : null,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(breakdownAssignment.driverId, payment.driverId),
+              eq(breakdownAssignment.requestId, payment.requestId),
+            ),
+          );
+        await tx
+          .update(breakdownAssignment)
+          .set({
+            //@ts-ignore
+            driverStatus: DriverStatus.CLOSED,
+            updatedAt: new Date(),
+            reasonToClose: "admin closed the job",
+            closedBy: BreakdownRequestClosedBy.SYSTEM,
+            closedAt: new Date(),
+          })
+          .where(
+            and(
+              not(eq(breakdownAssignment.driverId, payment.driverId)),
+              eq(breakdownAssignment.requestId, payment.requestId),
+            ),
+          );
+      });
+    } catch (error) {
+      logger.error("Error in createPaymentRecordAndUpdateAssignment:", error);
+      throw new DataBaseError(
+        `Failed to create payment record and update assignment: ${error}`,
+      );
+    }
   },
 
   async getUserNotifications(userId: number): Promise<Notifications[]> {

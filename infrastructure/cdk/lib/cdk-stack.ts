@@ -157,6 +157,7 @@ export class CdkStack extends cdk.Stack {
         PUSHER_APP_CLUSTER: process.env.PUSHER_APP_CLUSTER || "",
         GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || "",
         RATING_SECRET_KEY: process.env.RATING_SECRET_KEY || "",
+        S3_BUCKET_NAME: "",
       },
     });
 
@@ -172,6 +173,7 @@ export class CdkStack extends cdk.Stack {
         DB_URL: process.env.DB_URL || "",
         REGION: process.env.REGION || "eu-west-2",
         SOURCE_EMAIL: process.env.SOURCE_EMAIL || "towmycar.uk@gmail.com",
+        
         RATING_SECRET_KEY: process.env.RATING_SECRET_KEY || "",
         SERVICE_ACCOUNT: process.env.SERVICE_ACCOUNT || "",
         TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",

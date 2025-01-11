@@ -371,7 +371,7 @@ export class DriverService {
           stripePaymentIntentId: paymentIntent?.id,
           amount: estimation,
           currency: "usd",
-          status: paymentIntent.status,
+          status: paymentIntent?.status,
           driverId,
           requestId,
         },
