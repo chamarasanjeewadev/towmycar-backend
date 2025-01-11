@@ -422,7 +422,7 @@ router.patch(
   "/notifications/other/all/isSeen",
   clerkAuthMiddleware("driver"),
   async (req: Request, res: Response, next: NextFunction) => {
-    await userService.markAllChatNotificationsAsSeen(
+    await userService.markAllNotificationsAsSeen(
       req.userInfo.userId,
       UserRepository,
     );

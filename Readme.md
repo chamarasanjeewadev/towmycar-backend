@@ -97,3 +97,14 @@ After changing the parameter group, reboot your RDS instance to apply the change
  might be due to credentials issue for environemnts
  if runs locally might be because webhook is not running
  might be due to webhook api is wrong....
+
+
+
+ deployment to production usin cdk
+ Thngs to remember
+ location service is deployed manually , since its a seperate project written in go
+ - after deploying /location api needs to be connected to location service function
+ - custom domain needs to be connected to tow-api api gateway manually
+ - if total stack is recreated , need to update cloudflare with new api domain name from custom domain name section
+- if endpoints are not working, lambdas are not connected to api gateway endpoints correctly
+ - for location need to create new integration route for /location/{proxy+} and attach to that
