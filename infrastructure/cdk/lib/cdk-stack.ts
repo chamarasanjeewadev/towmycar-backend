@@ -8,6 +8,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+
 
 import {
   HttpApi,
@@ -157,7 +159,10 @@ export class CdkStack extends cdk.Stack {
         PUSHER_APP_CLUSTER: process.env.PUSHER_APP_CLUSTER || "",
         GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || "",
         RATING_SECRET_KEY: process.env.RATING_SECRET_KEY || "",
-        S3_BUCKET_NAME: "",
+        S3_BUCKET_NAME: process.env.S3_BUCKET_NAME|| "",
+        CLOUDFRONT_KEY_PAIR_ID:process.env.CLOUDFRONT_KEY_PAIR_ID|| "",
+        CLOUDFRONT_DOMAIN:process.env.CLOUDFRONT_DOMAIN||"",
+        CLOUDFRONT_PRIVATE_KEY:process.env.CLOUDFRONT_PRIVATE_KEY|| ""
       },
     });
 
@@ -424,7 +429,31 @@ export class CdkStack extends cdk.Stack {
         },
       ],
     });
+    const documentsBucket = this.documentsBucket;
 
+    // Create an Origin Access Identity
+    const oai = new cloudfront.OriginAccessIdentity(this, 'DocumentsBucketOAI');
+    
+    // Create a CloudFront distribution for the documents bucket
+    const distribution = new cloudfront.CloudFrontWebDistribution(this, 'DocumentsBucketDistribution', {
+      originConfigs: [{
+        s3OriginSource: {
+          s3BucketSource: documentsBucket,
+          originAccessIdentity: oai,
+        },
+        behaviors: [{
+          isDefaultBehavior: true,
+        }],
+      }],
+    });
+    
+    // Grant the OAI read access to the documents bucket
+    documentsBucket.grantRead(oai);
+    
+    // Output the CloudFront URL
+    new cdk.CfnOutput(this, 'DocumentsBucketCloudFrontURL', {
+      value: distribution.distributionDomainName,
+    });
     // Grant all functions permissions to access the bucket
     this.documentsBucket.grantReadWrite(this.apiFunction);
     this.documentsBucket.grantReadWrite(this.finderFunction);

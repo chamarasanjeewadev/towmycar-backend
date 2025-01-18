@@ -1,17 +1,34 @@
 import { ChatRepository } from "../../repository/chat.repository";
 import { Chat } from "@towmycar/database";
+import Pusher from "pusher";
 import {
+  BreakdownAssignmentDetails,
+  CustomError,
+  DriverStatus,
+  ERROR_CODES,
   logger,
   mapToUserWithCustomer,
   mapToUserWithDriver,
+  maskString,
   MessageSender,
   NotificationType,
   registerNotificationListener,
+  UserStatus,
 } from "@towmycar/common";
 import EventEmitter from "events";
 import { DriverRepository } from "../../repository/driver.repository";
 import { VIEW_REQUEST_BASE_URL } from "../../config";
 import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
+import { BreakdownRequestRepository } from "../../repository/breakdownRequest.repository";
+
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.PUSHER_APP_KEY!,
+  secret: process.env.PUSHER_APP_SECRET!,
+  cluster: process.env.PUSHER_APP_CLUSTER!,
+  useTLS: true,
+});
+
 export const getChatsForRequest = async (
   requestId: number,
 ): Promise<Chat[]> => {
@@ -20,6 +37,65 @@ export const getChatsForRequest = async (
   } catch (error) {
     console.error("Error in getChatsForRequest:", error);
     throw new Error("Failed to retrieve chats for request");
+  }
+};
+
+export const sendPusherMessage = async ({
+  message,
+  username,
+  requestId,
+  driverId,
+  sender,
+}: {
+  message: string;
+  username: string;
+  requestId: number;
+  driverId: number;
+  sender: MessageSender;
+}) => {
+  try {
+    const assignments = await getBreakdownAssignmentsByRequestId(requestId);
+    if (assignments.length === 0) {
+      throw new CustomError(ERROR_CODES.CHAT_ASSIGNMENT_CLOSED, 403);
+    }
+    const pusherEventName =
+      sender === MessageSender.Driver
+        ? "user-chat-message"
+        : "driver-chat-message";
+    const maskedMessage = maskString(message);
+
+    // Trigger Pusher event
+    await pusher.trigger(
+      `breakdown-${requestId}-${driverId}`,
+      pusherEventName,
+      {
+        username,
+        message: maskedMessage,
+        sender,
+      },
+    );
+    await SendNewChatPushNotification({
+      driverId,
+      requestId,
+      sender,
+    });
+
+    logger.info(
+      `Message sent to channel: breakdown-${requestId}-${driverId}, Event: ${pusherEventName}`,
+    );
+
+    // Save the message to the database
+    await upsertChat({
+      requestId: requestId,
+      driverId: driverId,
+      message,
+      sender,
+      sentAt: new Date(),
+    });
+  } catch (error) {
+    logger.error("Error in sending new chat push notification:", error);
+    console.log("Error in sending new chat push notification:", error);
+    throw error;
   }
 };
 
@@ -39,38 +115,37 @@ export const SendNewChatPushNotification = async ({
       sender,
     );
     // if (!result.length) {
-      const driverInfo =
-        await DriverRepository.getSpecificDriverRequestWithInfo(
-          driverId,
-          requestId,
-        );
-      const customerDetails =
-        await DriverRepository.getCustomerByRequestId(requestId);
+    const driverInfo = await DriverRepository.getSpecificDriverRequestWithInfo(
+      driverId,
+      requestId,
+    );
+    const customerDetails =
+      await DriverRepository.getCustomerByRequestId(requestId);
 
-      const userWithDriver = mapToUserWithDriver(driverInfo);
-      const userWithCustomer = mapToUserWithCustomer(customerDetails);
-      const notificationEmitter = new EventEmitter();
-      registerNotificationListener(notificationEmitter);
-      const notificationType =
-        sender === MessageSender.Driver
-          ? NotificationType.DRIVER_CHAT_INITIATED
-          : NotificationType.USER_CHAT_INITIATED;
-      const viewRequestLink = getViewRequestUrl(
-        notificationType,
-        VIEW_REQUEST_BASE_URL,
-        {
-          requestId,
-          driverId,
-        },
-      );
-      const payload = {
-        driver: userWithDriver,
-        user: userWithCustomer,
-        breakdownRequestId: requestId,
-        sender,
-        viewRequestLink,
-      };
-      notificationEmitter.emit(notificationType, payload);
+    const userWithDriver = mapToUserWithDriver(driverInfo);
+    const userWithCustomer = mapToUserWithCustomer(customerDetails);
+    const notificationEmitter = new EventEmitter();
+    registerNotificationListener(notificationEmitter);
+    const notificationType =
+      sender === MessageSender.Driver
+        ? NotificationType.DRIVER_CHAT_INITIATED
+        : NotificationType.USER_CHAT_INITIATED;
+    const viewRequestLink = getViewRequestUrl(
+      notificationType,
+      VIEW_REQUEST_BASE_URL,
+      {
+        requestId,
+        driverId,
+      },
+    );
+    const payload = {
+      driver: userWithDriver,
+      user: userWithCustomer,
+      breakdownRequestId: requestId,
+      sender,
+      viewRequestLink,
+    };
+    notificationEmitter.emit(notificationType, payload);
     // }
   } catch (error) {
     logger.error("Error in sending new chat push notification:", error);
@@ -102,6 +177,21 @@ export const upsertChat = async (chatData: Partial<Chat>): Promise<Chat> => {
     console.error("Error in upsertChat:", error);
     throw new Error("Failed to upsert chat");
   }
+};
+
+export const getBreakdownAssignmentsByRequestId = async (
+  requestId: number,
+): Promise<BreakdownAssignmentDetails[]> => {
+  const assignments =
+    await BreakdownRequestRepository.getBreakdownAssignmentsByRequestId(
+      requestId,
+    );
+  const filteredAssignments = assignments.filter(
+    assignment =>
+      assignment.driverStatus !== DriverStatus.CLOSED &&
+      assignment.userStatus !== UserStatus.CLOSED,
+  );
+  return filteredAssignments;
 };
 
 export const getChatsForDriverAndRequest = async (

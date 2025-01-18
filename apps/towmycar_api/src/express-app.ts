@@ -10,6 +10,7 @@ import chatRoutes from "./routes/chat.routes";
 import adminRoutes from "./routes/admin.routes";
 import { errorMiddleware } from "./middleware/errorHandlingMiddleware";
 import analyticsRoutes from "./routes/analytics.routes";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -24,20 +25,24 @@ const limiter = rateLimit({
 
 // Updated CORS configuration
 const corsOptions = {
-  origin: "*", // Allow all origins, or specify your frontend domain
+  origin: [
+    "http://localhost:3000",
+    "https://towmycar.uk",
+    "https://l3uz0btv4l.execute-api.eu-west-2.amazonaws.com",
+    "https://dev.towmycar.uk",
+  ], // Allow all origins, or specify your frontend domain
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 };
 
 // Apply rate limiter to all requests
 // app.use(limiter);
-
+app.use(cookieParser());
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(httpLogger);
-
 // Routes setup
 app.use("/user", userRoutes);
 app.use("/driver", driverRoutes);

@@ -3,7 +3,7 @@ import * as service from "../service/user/userBreakdownRequest.service";
 import { BreakdownRequestInput } from "../dto/breakdownRequest.dto";
 import { PaginationQuerySchema } from "../dto/query.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-import { combinedAuthMiddleware } from "../middleware/combinedAuth";
+import { tokenAuthMiddleware } from "../middleware/tokenAuth";
 import {
   RequestIdParamSchema,
   DriverIdParamSchema,
@@ -29,14 +29,14 @@ router.post(
 
       const response =
         await service.BreakdownRequestService.createAnonymousCustomerAndBreakdownRequest(
-          validatedData.body as BreakdownRequestInput
+          validatedData.body as BreakdownRequestInput,
         );
 
       return res.status(200).json(response?.breakdownRequestResult);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -50,13 +50,13 @@ router.get(
 
       const assignments =
         await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
-          requestId
+          requestId,
         );
       res.status(200).json(assignments);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.post(
@@ -67,14 +67,14 @@ router.post(
       const response =
         await service.BreakdownRequestService.CreateBreakdownRequest(
           req.body as BreakdownRequestInput,
-          req.userInfo
+          req.userInfo,
         );
 
       return res.status(200).json(response);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -89,7 +89,7 @@ router.get(
         await service.BreakdownRequestService.getPaginatedBreakdownRequestsByCustomerId(
           page,
           pageSize,
-          customerId
+          customerId,
         );
 
       res.status(200).json({
@@ -104,7 +104,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -118,13 +118,13 @@ router.get(
 
       const assignments =
         await service.BreakdownRequestService.getBreakdownAssignmentsByRequestId(
-          requestId
+          requestId,
         );
       res.status(200).json(assignments);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -142,7 +142,7 @@ router.patch(
         await service.BreakdownRequestService.updateUserStatusInBreakdownAssignment(
           assignmentId,
           userStatus,
-          userId
+          userId,
         );
 
       if (updated) {
@@ -157,12 +157,12 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.post(
   "/close-and-rate/:requestId",
-  combinedAuthMiddleware,
+  tokenAuthMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { requestId } = RequestIdParamSchema.parse({
@@ -183,7 +183,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Add this new route
@@ -198,14 +198,14 @@ router.get(
 
       const breakdownRequest =
         await service.BreakdownRequestService.getBreakdownRequestById(
-          requestId
+          requestId,
         );
 
       res.status(200).json(breakdownRequest);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Add this new route
@@ -225,7 +225,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Update the driver profile route to support review pagination
@@ -247,14 +247,14 @@ router.get(
           driverId,
           requestId,
           page,
-          pageSize
+          pageSize,
         );
 
       res.status(200).json(driverProfile);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 export default router;

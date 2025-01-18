@@ -1,4 +1,3 @@
-import { markAllChatNotificationsAsSeen } from "./../service/user/user.service";
 import express, { Request, Response, NextFunction } from "express";
 import {} from "../service/driver/driver.service";
 import { DriverRepository } from "../repository/driver.repository";
@@ -8,16 +7,27 @@ import {
   adminApprovalSchema,
   driverBasicProfileSchema,
   DriverProfileDtoType,
-  driverProfileSchema,
   driverSettingsSchema,
 } from "../dto/driver.dto";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
 import axios from "axios";
-import { CustomError, ERROR_CODES, UploadDocumentType } from "@towmycar/common";
+import {
+  APIError,
+  CustomError,
+  ERROR_CODES,
+  getExtension,
+  UploadDocumentType,
+  ValidationError,
+} from "@towmycar/common";
 import { DriverStatus } from "@towmycar/common";
-import { getPresignedUrls } from "../utils";
-import { Driver } from "@towmycar/database";
+import {
+  generateCloudFrontFilePath,
+  getCloudFrontPresignedUrl,
+  getPresignedUrls,
+} from "../utils";
 import { UserRepository } from "../repository/user.repository";
+import { Upload } from "aws-sdk/clients/devicefarm";
+import { UploadDocumentsResponse } from "aws-sdk/clients/cloudsearchdomain";
 
 const router = express.Router();
 const driverService = new DriverService();
@@ -350,8 +360,10 @@ router.get(
     try {
       const userId = req.userInfo.userId;
       const documentType = req.query?.documentType as UploadDocumentType;
+      const docType=req.query?.docType as string;
+     const extention= getExtension(docType);
 
-      const presignedUrls = await getPresignedUrls(userId, [documentType]);
+      const presignedUrls = await getPresignedUrls(userId, [documentType],extention);
       res.json(presignedUrls?.[0]);
     } catch (error) {
       next(error);
@@ -365,10 +377,10 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.userInfo.userId;
-      const { documentType } = req.body;
+      const { documentType,docType } = req.body;
       await driverService.uploadDocument(
         userId,
-        documentType as UploadDocumentType,
+        documentType as UploadDocumentType,docType
       );
       res.json({ message: "Document uploaded successfully" });
     } catch (error) {
@@ -481,5 +493,26 @@ router.post(
     }
   },
 );
+
+router.get("/signed-url", clerkAuthMiddleware("driver"), async (req, res) => {
+  try {
+    const { documentType } = req.query;
+    const { userId } = req.userInfo;
+    if (!documentType) {
+      throw new ValidationError("Document type is required");
+    }
+
+    const signedUrl =await driverService.getCloudfrontPresignedUrl(userId,documentType as UploadDocumentType) ;
+
+    res.json({ signedUrl });
+  } catch (error) {
+    throw new APIError(
+      ERROR_CODES.INTERNAL_SERVER_ERROR,
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while getting presigned url",
+    );
+  }
+});
 
 export default router;

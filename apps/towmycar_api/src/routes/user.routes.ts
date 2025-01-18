@@ -124,7 +124,6 @@ async function updateClerkUser(
     };
 
     const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
-    console.log("updatedUser.....", updatedUser);
 
     if (userInfo?.userId) {
       await clerkClient.users.updateUserMetadata(clerkUserId, {

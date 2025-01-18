@@ -1,12 +1,11 @@
 import {
   BaseNotificationPayload,
-  DriverNotificationPayload,
 } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
 export const driverAcceptEmail = (payload: BaseNotificationPayload) => {
   const content = `
-    <h1>🎉 Breakdown Assistance Request Accepted</h1>
+    <h1>🎉 Your request has been accepted</h1>
     <p>Dear ${payload?.user?.firstName ?? "Valued Customer"},</p>
     <p style="font-weight: bold; font-size: 16px; color: #2C3E50;">
       ${payload?.driver?.firstName} has <span style="color: #27AE60;">ACCEPTED</span> your breakdown assistance request, Reference Id: ${payload.breakdownRequestId}

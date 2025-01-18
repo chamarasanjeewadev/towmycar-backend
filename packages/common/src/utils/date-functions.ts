@@ -8,6 +8,10 @@ export const formatDate = (
   return format(new Date(date), "PPp");
 };
 
+export const cloudfrontDocExpieryDate=()=>{
+ return addDays (Date.now(),1)
+}
+
 export const isTrialPeriodExpired = (
   driverCreatedDate: string | number | Date | null | undefined,
 ): boolean => {

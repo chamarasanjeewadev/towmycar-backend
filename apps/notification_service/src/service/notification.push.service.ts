@@ -6,6 +6,8 @@ import {
   ListnerPayload,
   maskText,
 } from "@towmycar/common";
+import { BatchResponse } from "firebase-admin/lib/messaging/messaging-api";
+import { Null } from "@sinclair/typebox";
 
 interface NotificationMessage {
   title: string;
@@ -57,28 +59,29 @@ async function sendGenericPushNotification(
       data: url ? { url } : undefined,
     };
 
-    const notificationPromises = uniqueTokens.map(token =>
-      sendPush(token, notificationMessage),
-    );
+    // const notificationPromises = uniqueTokens.map(token =>
+    //   sendPush(token, notificationMessage),
+    // );
+    const batchResponses:BatchResponse=await sendPush(uniqueTokens, notificationMessage)
 
-    const results = await Promise.allSettled(notificationPromises);
+    //const results = await Promise.allSettled(notificationPromises);
 
-    const successfulTokens = results
-      .map((result, index) =>
-        result.status === "fulfilled" ? uniqueTokens[index] : null,
-      )
-      .filter((token): token is string => token !== null);
+    // const successfulTokens = batchResponses.responses
+    //   .map((result, index) =>
+    //     result. === "fulfilled" ? uniqueTokens[index] : null,
+    //   )
+    //   .filter((token): token is string => token !== null);
 
-    const failedTokens = results
-      .map((result, index) =>
-        result.status === "rejected" ? uniqueTokens[index] : null,
-      )
-      .filter((token): token is string => token !== null);
-
+    // const failedTokens = results
+    //   .map((result, index) =>
+    //     result.status === "rejected" ? uniqueTokens[index] : null,
+    //   )
+    //   .filter((token): token is string => token !== null);
+//TODO
     return {
-      success: successfulTokens.length > 0,
-      sentTo: successfulTokens,
-      failedTokens,
+      success: batchResponses?.successCount > 0,
+      sentTo:null,
+      failedTokens:[]
     };
   } catch (error) {
     return {

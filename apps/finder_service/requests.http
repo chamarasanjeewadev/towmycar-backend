@@ -27,3 +27,12 @@ Content-Type: "application/json"
 #   "status": "Breakdown reported successfully."
 # }
 
+###
+
+POST http://localhost:9000/driver/sign-url
+
+Content-Type: "application/json"
+{
+  "path": "79/driver_license_front.jpg",
+}
+

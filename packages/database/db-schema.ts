@@ -189,6 +189,20 @@ export const breakdownAssignment = pgTable(
   }),
 );
 
+export const unsubscribe = pgTable("unsubscribe", {
+  id: serial("id").primaryKey().notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  userId: integer("user_id")
+    .references(() => user.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 // New vehicles table
 export const vehicles = pgTable("vehicles", {
   id: serial("id").primaryKey().notNull(),
@@ -354,3 +368,4 @@ export type Payment = typeof payments.$inferSelect;
 export type Notifications = typeof notifications.$inferSelect;
 export type Admin = typeof admin.$inferSelect;
 export type Documents = typeof documents.$inferSelect;
+export type Unsubscribe = typeof unsubscribe.$inferSelect;

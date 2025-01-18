@@ -15,6 +15,7 @@ import {
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
   DriverStatus,
+  getExtension,
   isTrialPeriodExpired,
   logger,
   registerNotificationListener,
@@ -32,7 +33,10 @@ import {
   mapToUserWithCustomer,
 } from "@towmycar/common/src/mappers/user.mapper";
 import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
-import { generateFilePath } from "../../utils/s3utils";
+import {
+  generateS3FilePath,
+  getCloudFrontPresignedUrl,
+} from "../../utils/s3utils";
 import { UserRepository } from "../../repository/user.repository";
 import { driver, Driver } from "@towmycar/database";
 
@@ -266,9 +270,35 @@ export class DriverService {
     return DriverRepository.getDriverWithPaymentMethod(driverId);
   }
 
-  async uploadDocument(userId: number, documentType: UploadDocumentType) {
-    const filePath = await generateFilePath(userId, documentType);
+  async uploadDocument(
+    userId: number,
+    documentType: UploadDocumentType,
+    docType: string,
+  ) {
+    const extention = getExtension(docType);
+    const filePath = await generateS3FilePath(userId, documentType, extention);
+    // reset admin approval
     return DriverRepository.uploadDocument(userId, documentType, filePath);
+  }
+  async getCloudfrontPresignedUrl(
+    userId: number,
+    documentType: UploadDocumentType,
+  ) {
+    const documents = await DriverRepository.getDocuments(userId);
+    const document = documents.filter(
+      x => x.documentType === documentType,
+    )?.[0];
+    if (document?.filePath) {
+      const extension = document.filePath.split(".").pop() || '';
+  
+      const signedUrl = await getCloudFrontPresignedUrl(
+        userId,
+        documentType as UploadDocumentType,
+        `.${extension}`,
+      );
+      return signedUrl;
+    }
+    return null;
   }
 
   async getDocuments(userId: number) {

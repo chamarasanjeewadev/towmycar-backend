@@ -9,7 +9,7 @@ interface BaseTemplateProps {
 }
 
 const COLORS = {
-  primary: "#f9761f",
+  primary: "#0A293F",
   primaryDark: "#f9761f",
   primaryLight: "#f9761f",
   secondary: "#FFF7E6",
@@ -138,7 +138,7 @@ export function createBaseTemplate({
           <!-- Footer -->
           <tr>
             <td style="padding: 20px; text-align: center; font-size: 14px; line-height: 1.5; background-color: ${
-              COLORS.white
+              COLORS.primary
             }; color: ${COLORS.white};">
               <p style="margin: 0;">© ${new Date().getFullYear()} TowMyCar. All rights reserved.</p>
               <p style="margin: 0;">
@@ -150,7 +150,7 @@ export function createBaseTemplate({
                 </a>
               </p>
               <p style="margin-top: 10px;">
-      <a href="https://${process.env.VIEW_REQUEST_BASE_URL}/unsubscribe?email=${encodeURIComponent(to)}" 
+      <a href="https://${process.env.VIEW_REQUEST_BASE_URL}/admin/unsubscribe?email=${encodeURIComponent(to)}" 
          style="color: ${COLORS.textLight}; text-decoration: underline;">
         Unsubscribe from these emails
       </a>
