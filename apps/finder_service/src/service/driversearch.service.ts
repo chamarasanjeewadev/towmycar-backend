@@ -1,6 +1,6 @@
 import { DriverSearchRepository } from "../repository/driversearch.repository";
-import { VIEW_REQUEST_BASE_URL } from "../config";
-import { getViewRequestUrl } from "@towmycar/common";
+import { VIEW_REQUEST_BASE_URL ,GOOGLE_MAPS_API_KEY} from "../config";
+import { getDistance, getViewRequestUrl } from "@towmycar/common";
 import {
   createGoogleMapsDirectionsLink,
   NearbyDriver,
@@ -8,6 +8,7 @@ import {
   registerNotificationListener,
 } from "@towmycar/common";
 import { EventEmitter } from "events";
+import { driver } from "@towmycar/database";
 
 // Initialize listeners
 const notificationEmitter = new EventEmitter();
@@ -37,6 +38,7 @@ const findAndNotifyNearbyDrivers = async (
     }
 
     // Find nearby drivers with validated parameters
+    //TODO wrap this in a try catch block
     const nearbyDrivers = await DriverSearchRepository.findNearbyDrivers(
       request.location.latitude,
       request.location.longitude,
@@ -44,13 +46,36 @@ const findAndNotifyNearbyDrivers = async (
       request?.toLocation?.longitude ?? null,
       request?.weight ?? null
     );
+    if(!nearbyDrivers || nearbyDrivers.length === 0)return [];
+   
+   const firstFiveNearbyDrivers = nearbyDrivers.sort((a, b) => a.distance - b.distance).slice(0, 5);
 
+   const distanceCalculatedNearbyDrivers = await Promise.allSettled(
+    firstFiveNearbyDrivers.map(async (driver) => {
+      try {
+        const userLocation = { lat: request?.location?.latitude!, lng: request?.location?.longitude! };
+        const driverLocation = { lat: driver?.primaryLocation?.latitude!, lng: driver?.primaryLocation?.longitude! };
+        const pickupDistance = await getDistance(userLocation, driverLocation, GOOGLE_MAPS_API_KEY!);
+        driver.pickupDistance = `${pickupDistance}`;
+        return driver;
+      } catch (error) {
+        console.error("Error in getDistance:", error);
+        throw error; // Re-throw the error if you want it to be caught by Promise.allSettled
+      }
+    })
+  );
+  
+  // Process the results
+  const successfulDrivers = distanceCalculatedNearbyDrivers
+    .filter((result) => result.status === 'fulfilled')
+    .map((result) => (result as PromiseFulfilledResult<any>).value);
+  
     // Only update and return if nearby drivers are available
-    if (nearbyDrivers && nearbyDrivers.length > 0) {
+    if (successfulDrivers && successfulDrivers.length > 0) {
       // Pass the full nearbyDrivers array to updateDriverRequests
       await DriverSearchRepository.updateDriverRequests(
         requestId,
-        nearbyDrivers
+        successfulDrivers
       );
 
       const user = await DriverSearchRepository.getUserByCustomerId(
@@ -70,6 +95,8 @@ const findAndNotifyNearbyDrivers = async (
         breakdownRequestId: requestId,
         user,
         location: request?.location,
+        make: request?.make,
+        model: request?.makeModel,
         toLocation: request.toLocation,
         createdAt: request.createdAt,
         viewRequestLink,

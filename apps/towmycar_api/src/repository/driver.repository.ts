@@ -51,7 +51,8 @@ import { getIsInTrialPeriod } from "../utils/sql-helpers";
 interface UpdateAssignmentData {
   driverStatus: string;
   estimation?: string; // Change to string
-  explanation?: string; // Rename to explanation
+  explanation?: string; // Rename to explanation,
+  vehicleNo?: string;
 }
 
 interface CreatePaymentAndUpdateAssignmentParams {
@@ -190,6 +191,7 @@ export const DriverRepository: IDriverRepository = {
         estimation: breakdownAssignment.estimation,
         explanation: breakdownAssignment.explanation,
         updatedAt: breakdownAssignment.updatedAt,
+        pickupDistance:breakdownAssignment?.pickupDistance,
         userLocation: {
           latitude:
             sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
@@ -225,6 +227,7 @@ export const DriverRepository: IDriverRepository = {
           createdAt: breakdownRequest.createdAt,
           updatedAt: breakdownRequest.updatedAt,
           make: breakdownRequest.make,
+          deliveryDistance: breakdownRequest.deliveryDistance,
           deliveryTimeframe: breakdownRequest.deliveryTimeframe,
           makeModel: breakdownRequest.model,
           mobileNumber: maskSensitiveData(
@@ -326,6 +329,7 @@ export const DriverRepository: IDriverRepository = {
       estimation: breakdownAssignment.estimation,
       explanation: breakdownAssignment.explanation,
       updatedAt: breakdownAssignment.updatedAt,
+      pickupDistance:breakdownAssignment?.pickupDistance,
       address: breakdownRequest.address,
       toAddress: breakdownRequest.toAddress,
       postCode: breakdownRequest.postCode,
@@ -360,6 +364,7 @@ export const DriverRepository: IDriverRepository = {
         customerId: breakdownRequest.customerId,
         status: breakdownRequest.status,
         description: breakdownRequest.description,
+        deliveryDistance: breakdownRequest.deliveryDistance,
         regNo: breakdownRequest.regNo,
         weight: breakdownRequest.weight,
         deliveryTimeframe: breakdownRequest.deliveryTimeframe,
@@ -460,6 +465,7 @@ export const DriverRepository: IDriverRepository = {
       driverStatus: data.driverStatus,
       ...(data.estimation !== undefined && { estimation: data.estimation }),
       ...(data.explanation !== undefined && { explanation: data.explanation }),
+      ...(data?.vehicleNo !== undefined && { vehicleNo: data.vehicleNo }),
     };
 
     // Perform the operation atomically within a transaction
@@ -881,6 +887,7 @@ export const DriverRepository: IDriverRepository = {
             status: payment?.status ?? "TRIAL_PAYMENT",
             driverId: payment?.driverId,
             requestId: payment?.requestId,
+            vehicleNo: assignmentData?.vehicleNo,
             createdAt: new Date(),
             updatedAt: new Date(),
           })

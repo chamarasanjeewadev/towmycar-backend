@@ -3,7 +3,6 @@ import {
   IDriverRepository,
   DriverRepository,
 } from "../../repository/driver.repository";
-import * as userService from "../user/user.service";
 import { VIEW_REQUEST_BASE_URL } from "../../config"; // Add this import at the top of the file
 import { Stripe } from "stripe";
 import {
@@ -38,20 +37,20 @@ import {
   getCloudFrontPresignedUrl,
 } from "../../utils/s3utils";
 import { UserRepository } from "../../repository/user.repository";
-import { driver, Driver } from "@towmycar/database";
+import { driver, Driver, vehicles } from "@towmycar/database";
 
 // Initialize Stripe client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20", // Use the latest API version
 });
 
-const MINIMUM_PAYMENT_AMOUNT = 50; // $0.50 in cents (minimum allowed by Stripe for USD)
 const PER_TRIP_PAYMENT_AMOUNT = 1.99; // $1 in cents (minimum allowed by Stripe for USD)
 interface UpdateAssignmentData {
   driverStatus: string;
   estimation?: string;
   description?: string;
   explanation?: string;
+  vehicleNo?: string;
 }
 
 export class DriverService {
@@ -76,7 +75,6 @@ export class DriverService {
 
   async getDriverRequestsWithInfo(driverId: number) {
     const requests = await DriverRepository.getDriverRequestsWithInfo(driverId);
-
     return requests;
   }
 
@@ -151,6 +149,7 @@ export class DriverService {
     if (data.driverStatus === DriverStatus.ACCEPTED) {
       const dataToUpdate = {
         driverStatus: data.driverStatus,
+        vehicleNo: data.vehicleNo,
       };
       let estimation = null;
       // check if any other driver has accepted the request
@@ -209,7 +208,7 @@ export class DriverService {
         estimation: +data.estimation,
         user: userWithCustomer,
         newPrice: +data.estimation,
-        description: "",
+        explanation: data?.explanation,
       };
       this.notificationEmitter.emit(
         NotificationType.DRIVER_QUOTATION_UPDATED,
@@ -258,6 +257,7 @@ export class DriverService {
       user: userWithCustomer,
       newPrice: +data.estimation,
       description: "",
+      vehicleNo: data?.vehicleNo,
     };
     this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
   }

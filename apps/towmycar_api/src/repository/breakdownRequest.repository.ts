@@ -99,6 +99,7 @@ const saveBreakdownRequest = async (data: BreakdownRequestInput) => {
       customerId: data.customerId,
       requestType: data.requestType,
       deliveryTimeframe: data.deliveryTimeframe,
+      deliveryDistance: data.deliveryDistance,
       address: data.address,
       toAddress: data.toAddress,
       postCode: data.postCode,
@@ -188,6 +189,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
           estimation: number | null;
           explanation: string | null;
           updatedAt: Date;
+          pickupDistance: string | null;
           driver: {
             id: number;
             email: string | null;
@@ -207,6 +209,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
               'estimation', ${breakdownAssignment.estimation},
               'explanation', ${breakdownAssignment.explanation},
               'updatedAt', ${breakdownAssignment.updatedAt},
+              'pickupDistance', ${breakdownAssignment.pickupDistance},
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
                 'email', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.email} ELSE NULL END,
@@ -359,6 +362,7 @@ const getBreakdownAssignmentsByRequestId = async (
     closedBy: breakdownAssignment.closedBy,
     closedAt: breakdownAssignment.closedAt,
     estimation: breakdownAssignment.estimation,
+    pickupDistance: breakdownAssignment.pickupDistance,
     explanation: breakdownAssignment.explanation,
     updatedAt: breakdownAssignment.updatedAt,
     driver: {

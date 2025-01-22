@@ -4,7 +4,7 @@ import { pollMessagesFromSQS, handler } from "./utils/pollFinderMessages";
 import dotenv from "dotenv";
 dotenv.config();
 
-const PORT = process.env.APP_PORT || 9000;
+const PORT = process.env.APP_PORT || 9002;
 const isProduction = process.env.NODE_ENV === "production";
 
 export { handler };

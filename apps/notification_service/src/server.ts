@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const PORT = process.env.APP_PORT || 9005;
+const PORT = 9005;//process.env.APP_PORT || 9005;
 
 export const StartServer = async () => {
   console.log("Starting the server...");

@@ -5,6 +5,7 @@ import {
   NotificationType,
   ListnerPayload,
   maskText,
+  DriverAcceptPayload,
 } from "@towmycar/common";
 import { BatchResponse } from "firebase-admin/lib/messaging/messaging-api";
 import { Null } from "@sinclair/typebox";
@@ -58,26 +59,7 @@ async function sendGenericPushNotification(
       body: message,
       data: url ? { url } : undefined,
     };
-
-    // const notificationPromises = uniqueTokens.map(token =>
-    //   sendPush(token, notificationMessage),
-    // );
     const batchResponses:BatchResponse=await sendPush(uniqueTokens, notificationMessage)
-
-    //const results = await Promise.allSettled(notificationPromises);
-
-    // const successfulTokens = batchResponses.responses
-    //   .map((result, index) =>
-    //     result. === "fulfilled" ? uniqueTokens[index] : null,
-    //   )
-    //   .filter((token): token is string => token !== null);
-
-    // const failedTokens = results
-    //   .map((result, index) =>
-    //     result.status === "rejected" ? uniqueTokens[index] : null,
-    //   )
-    //   .filter((token): token is string => token !== null);
-//TODO
     return {
       success: batchResponses?.successCount > 0,
       sentTo:null,
@@ -150,10 +132,12 @@ export function generatePushNotificationPayload(
         url: payload?.viewRequestLink,
       };
     case NotificationType.DRIVER_ACCEPTED:
+      const driverAcceptedPayload=payload as DriverAcceptPayload
       return {
-        userId: payload?.sendToId,
+        userId: driverAcceptedPayload?.sendToId,
         title: `Request Accepted ${requestId}`,
-        message: `Driver ${payload?.driver?.firstName} has accepted your request`,
+        message: `Driver ${driverAcceptedPayload?.driver?.firstName} has accepted your request. 
+        estimated cost ${driverAcceptedPayload?.estimation} vehicle no ${driverAcceptedPayload?.vehicleNo}`,
         url: payload?.viewRequestLink,
       };
 
@@ -169,8 +153,8 @@ export function generatePushNotificationPayload(
     case NotificationType.DRIVER_NOTIFICATION:
       return {
         userId: payload?.driver?.userId,
-        title: `New Breakdown Request ${requestId}`,
-        message: "A new breakdown request is available in your area",
+        title: `New Assistance Request ${requestId}`,
+        message: "New assistance request is available in your area",
         url: payload?.viewRequestLink,
       };
 

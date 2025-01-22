@@ -113,6 +113,7 @@ export const breakdownRequest = pgTable("breakdown_request", {
   requestType: varchar("request_type", { length: 50 }),
   address: text("address"),
   toAddress: text("to_address"),
+  deliveryDistance: varchar("delivery_distance", { length: 20 }),
 
   userLocation: geometry("user_location", {
     type: "point",
@@ -173,6 +174,7 @@ export const breakdownAssignment = pgTable(
     userStatus: varchar("user_status", { length: 20 }),
     estimation: numeric("estimated_cost", { precision: 10, scale: 2 }),
     explanation: text("estimate_explanation"),
+    vehicleNo: varchar("vehicle_no", { length: 20 }),
     assignedAt: timestamp("assigned_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     paymentId: integer("payment_id").references(() => payments.id, {
@@ -182,11 +184,15 @@ export const breakdownAssignment = pgTable(
     closedBy: varchar("closed_by", { length: 20 }).default(
       BreakdownRequestClosedBy.DRIVER,
     ),
+  deliveryDistance: varchar("delivery_distance", { length: 20 }),
+  pickupDistance: varchar("pickup_distance", { length: 20 }),
+  geoDistance: varchar("geo_distance", { length: 20 }),
   },
   table => ({
     // Adding the unique constraint
     requestDriverUnique: unique().on(table.requestId, table.driverId),
   }),
+  
 );
 
 export const unsubscribe = pgTable("unsubscribe", {

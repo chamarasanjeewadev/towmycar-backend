@@ -86,7 +86,7 @@ export const pollMessagesFromSQS = async () => {
   }
 
   logger.info("Scheduling next poll in 2 minutes");
-  setTimeout(pollMessagesFromSQS, 120000);
+  setTimeout(pollMessagesFromSQS, 600000);
 };
 
 export const handler = async (

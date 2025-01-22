@@ -57,6 +57,7 @@ export interface BreakdownRequestInput {
   email: string;
   firstName: string;
   lastName: string;
+  deliveryDistance?:string;
 }
 
 export interface BreakdownRequestWithUserDetails {

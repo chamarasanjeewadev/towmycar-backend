@@ -1,40 +1,38 @@
 import {
   BaseNotificationPayload,
+  COLORS,
+  DriverAcceptPayload,
+  notificationIcons,
 } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
-export const driverAcceptEmail = (payload: BaseNotificationPayload) => {
+export const driverAcceptEmail = (payload: DriverAcceptPayload) => {
   const content = `
-    <h1>🎉 Your request has been accepted</h1>
     <p>Dear ${payload?.user?.firstName ?? "Valued Customer"},</p>
-    <p style="font-weight: bold; font-size: 16px; color: #2C3E50;">
-      ${payload?.driver?.firstName} has <span style="color: #27AE60;">ACCEPTED</span> your breakdown assistance request, Reference Id: ${payload.breakdownRequestId}
+    <p style="font-weight: bold;  color: #2C3E50;">
+     We are pleased to inform you that your assistance request has been <span style="color: ${COLORS.textGreen}">ACCEPTED</span> by the driver <span style="color: ${COLORS.textGreen}">${payload?.driver?.firstName}</span>
     </p>
     
-    <h2>Service Provider Details:</h2>
+    <h3>More details:</h3>
     <ul>
-      <li><strong>Name:</strong> ${payload?.driver?.firstName}</li>
+    <li><strong>Reference Id:</strong> ${payload.breakdownRequestId}</li>
+    ${payload?.driver?.firstName && ` <li><strong>Name:</strong> ${payload?.driver?.firstName} ${payload?.driver?.lastName??""}</li>`}  
       <li><strong>Phone:</strong> ${payload?.driver?.phoneNumber}</li>
       <li><strong>Email:</strong> ${payload?.driver?.email}</li>
+      <li><strong>Tow truck no:</strong> ${payload?.vehicleNo}</li>
     </ul>
     
     <p style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #1B8B4B;">
       <strong>What is next:</strong><br>
-      Use above contact details to get in touch with the driver to arrange the breakdown assistance.    </p>
+     Please use the contact details provided above to coordinate directly with the driver and finalize arrangements. </p>
     
-    <div style="text-align: center;">
-      <a href="${payload.viewRequestLink}" class="button">View Request</a>
-    </div>
-    
-    <p style="font-size: 14px; color: #666; margin-top: 20px;">
-      Note: Quick confirmation ensures faster assistance and better service coordination.
-    </p>
+ 
   `;
 
-  const htmlBody = createBaseTemplate({ content });
+  const htmlBody = createBaseTemplate({ content, ctaLink: payload.viewRequestLink });
 
   return {
-    subject: `Breakdown Assistance Request Accepted - Request #${payload.breakdownRequestId}`,
+    subject: `${notificationIcons.DRIVER_ACCEPTED} Driver accepted your Request - Reference Id:${payload.breakdownRequestId}`,
     htmlBody,
   };
 };

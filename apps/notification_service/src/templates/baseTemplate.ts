@@ -1,3 +1,5 @@
+import { COLORS } from "@towmycar/common";
+
 interface BaseTemplateProps {
   content: string;
   logoUrl?: string;
@@ -6,24 +8,9 @@ interface BaseTemplateProps {
   fromEmail?: string;
   to?: string;
   date?: string;
+  ctaLink?: string;
+  ctaText?: string;
 }
-
-const COLORS = {
-  primary: "#0A293F",
-  primaryDark: "#f9761f",
-  primaryLight: "#f9761f",
-  secondary: "#FFF7E6",
-  text: "#1A1A1A",
-  textLight: "#6B7280",
-  white: "#FFFFFF",
-  border: "#E5E7EB",
-};
-
-// const DEFAULT_SOCIAL_LINKS = {
-//   instagram: "https://instagram.com/towmycar",
-//   facebook: "https://facebook.com/towmycar",
-//   linkedin: "https://linkedin.com/company/towmycar",
-// } as const;
 
 export function createBaseTemplate({
   content,
@@ -33,6 +20,8 @@ export function createBaseTemplate({
   fromEmail = "",
   to = "",
   date = new Date().toLocaleString(),
+  ctaLink = "",
+  ctaText = "View Request",
 }: BaseTemplateProps): string {
   return `
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -68,9 +57,12 @@ export function createBaseTemplate({
     .button {
       display: inline-block;
       background-color: ${COLORS.primary};
-      color: ${COLORS.white};
+      color: ${COLORS.white} !important;
+      border: 1px solid ${COLORS.secondary};
+      text-decoration: none;
       padding: 12px 24px;
       border-radius: 25px;
+      text-transform: uppercase;
       font-size: 16px;
       font-weight: 600;
       text-align: center;
@@ -80,11 +72,12 @@ export function createBaseTemplate({
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       letter-spacing: 0.5px;
     }
-    .button:hover {
-      background-color: ${COLORS.primaryDark};
-      transform: translateY(-1px);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-    }
+   .button:hover {
+  background-color: ${COLORS.primary};
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  opacity: 0.9; /* Reduces opacity slightly */
+}
     .social-icon {
       padding: 0 8px;
       transition: transform 0.2s ease, opacity 0.2s ease;
@@ -120,21 +113,20 @@ export function createBaseTemplate({
             </td>
           </tr>
 
-          <!-- Main Content -->
-          <tr>
-            <td style="padding: 40px; font-size: 16px; line-height: 1.6; color: ${
+          <!-- Main Content----------------->
+          <tr style="padding: 12px; background-color: ${COLORS.lightgray};">
+            <td style="padding: 20px; font-size: 16px; line-height: 1.6; color: ${
               COLORS.text
             };">
-              <h2 style="margin-top: 0; color: ${
-                COLORS.text
-              }; font-size: 24px;">${subject}</h2>
-              ${content}
               
+              ${content}
+              <p>If you have any questions or require further support, feel free to contact us at support@towmycar.uk.</p>
+             <p>Thank you for choosing TowMyCar!</p>
+    <div style="text-align: center;">
+      <a href="${ctaLink}" class="button">${ctaText}</a>
+    </div> 
             </td>
           </tr>
-
-         
-
           <!-- Footer -->
           <tr>
             <td style="padding: 20px; text-align: center; font-size: 14px; line-height: 1.5; background-color: ${
@@ -151,8 +143,8 @@ export function createBaseTemplate({
               </p>
               <p style="margin-top: 10px;">
       <a href="https://${process.env.VIEW_REQUEST_BASE_URL}/admin/unsubscribe?email=${encodeURIComponent(to)}" 
-         style="color: ${COLORS.textLight}; text-decoration: underline;">
-        Unsubscribe from these emails
+         style="color: ${COLORS.white}; text-decoration: underline;">
+        unsubscribe
       </a>
     </p>
             </td>

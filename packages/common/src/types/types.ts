@@ -67,6 +67,9 @@ export type NearbyDriver = {
   vehicleType: string;
   vehicleWeightCapacity: string | number;
   distance: number;
+  deliveryDistance?: string;
+  pickupDistance?: string;
+  primaryLocation?: {latitude:number,longitude:number};
 };
 export interface UserWithCustomer {
   id: number;
@@ -131,7 +134,7 @@ export interface DriverQuotedEventPayload {
   user: UserWithCustomer;
   newPrice: number;
   estimation: number;
-  description: string;
+  explanation: string;
   viewRequestLink: string;
 }
 
@@ -159,6 +162,7 @@ export interface DriverAcceptedEventPayload {
   newPrice: number;
   estimation: number;
   description: string;
+  vehicleNo?: string;
   viewRequestLink: string;
 }
 
@@ -199,6 +203,8 @@ export interface DriverNotifyEventPayload {
   toLocation: Location;
   createdAt: Date;
   viewRequestLink: string;
+  make: string;
+  model:string;
   googleMapsLink: string;
 }
 
@@ -264,6 +270,7 @@ export interface DriverQuotationUpdatedPayload extends BaseNotificationPayload {
   newPrice: number;
   previousPrice: number;
   estimation: number;
+  explanation?: string;
 }
 
 // Driver Assigned
@@ -289,6 +296,8 @@ export interface DriverAcceptPayload extends BaseNotificationPayload {
   user: UserWithCustomer;
   price: number;
   estimation: number;
+  vehicleNo: string;
+  description?: string;
 }
 
 // Driver Notification
@@ -296,6 +305,9 @@ export interface DriverNotificationPayload extends BaseNotificationPayload {
   driver: UserWithDriver;
   user: UserWithCustomer;
   location: Location;
+  make: string;
+  model: string;
+  vehicleWeight:string;
   googleMapsLink: string;
 }
 
@@ -329,6 +341,7 @@ export interface BreakdownAssignmentDetails {
   driverStatus: string;
   userStatus: string;
   estimation: string;
+  pickupDistance?:string;
   explanation: string;
   updatedAt: Date;
   userLocation: {
@@ -350,6 +363,7 @@ export interface BreakdownAssignmentDetails {
     makeModel: string | null;
     mobileNumber: string | null;
     requestType: string;
+    deliveryDistance?:string;
   };
   driver: {
     id: number;

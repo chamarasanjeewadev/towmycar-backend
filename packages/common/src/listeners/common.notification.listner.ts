@@ -30,6 +30,8 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         viewRequestLink: payload.viewRequestLink,
         createdAt: payload.createdAt,
         googleMapsLink: payload.googleMapsLink,
+        make: payload.make,
+        model: payload.model,
       }));
 
       await sendSNSNotification(
@@ -99,6 +101,7 @@ export function registerNotificationListener(emitter: EventEmitter): void {
         previousPrice: 0, //TODO
         newPrice: payload.newPrice,
         estimation: payload.estimation,
+        explanation:payload.explanation
       };
       await sendSNSNotification(
         process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,

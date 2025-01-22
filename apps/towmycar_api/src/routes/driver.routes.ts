@@ -95,7 +95,7 @@ router.patch(
     try {
       const driverId = req.userInfo.driverId;
       const requestId = parseInt(req.params.requestId);
-      let { driverStatus, estimation, explanation } = req.body;
+      let { driverStatus, estimation, explanation,vehicleNo } = req.body;
 
       if (!driverId || !driverStatus) {
         throw new CustomError(
@@ -136,6 +136,7 @@ router.patch(
           estimation: parsedEstimation.toString(),
         }),
         ...(explanation && { explanation }),
+        ...(vehicleNo && { vehicleNo }),
       };
 
       const updated = await driverService.updateBreakdownAssignment(

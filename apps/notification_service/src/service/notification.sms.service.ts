@@ -25,7 +25,7 @@ function generateSMSNotificationPayload(
   payload: ListnerPayload
 ): { message: string; viewLink?: string; phoneNumber?: string } {
   const requestId = payload.breakdownRequestId
-    ? `(Request, Reference Id: ${payload.breakdownRequestId})`
+    ? `Reference Id: ${payload.breakdownRequestId}`
     : "";
 
   switch (type) {
@@ -73,7 +73,7 @@ function generateSMSNotificationPayload(
     case NotificationType.DRIVER_ACCEPTED:
       return {
         phoneNumber: payload.user?.phoneNumber,
-        message: `Your request has been accepted ${requestId}, he will contact you soon`,
+        message: `Your request has been accepted. ${requestId}, Driver will contact you soon. Click to view details`,
         viewLink: payload.viewRequestLink,
       };
 
@@ -93,7 +93,7 @@ function generateSMSNotificationPayload(
     case NotificationType.DRIVER_NOTIFICATION:
       return {
         phoneNumber: payload.driver?.phoneNumber,
-        message: `A new breakdown request is available in your area ${requestId}`,
+        message: `A new assistance request is available in your area ${requestId}`,
         viewLink: payload.viewRequestLink,
       };
 

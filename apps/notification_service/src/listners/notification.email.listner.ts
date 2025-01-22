@@ -317,10 +317,11 @@ async function checkAndProcessEmail({
       breakdownRequestId:  payload.breakdownRequestId,
     });
 
-    if (isAlreadySent) {
-      console.log(`Email already sent for user: ${userId}`);
-      return false;
-    }
+    // if (isAlreadySent) {
+    //   console.log(`Email already sent for user: ${userId}`);
+    //   logger.info(`Email already sent for user ${userId},${notificationType}, ${payload.breakdownRequestId}`);
+    //   return false;
+    // }
     const emailPayload: EmailPayloadType = {
       recipientEmail,
       subject: emailContent.subject,

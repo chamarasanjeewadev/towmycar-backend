@@ -70,3 +70,44 @@ export function getExtension(docType: string): string {
   const extension = docTypeToExtension[docType.toLowerCase()];
   return extension || '.unknown'; // Default to ".unknown" if docType is not found
 }
+
+import axios from 'axios';
+
+export const getDistance = async (
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+  apiKey: string
+): Promise<number> => {
+  // Validate input coordinates
+  if (!origin.lat || !origin.lng || !destination.lat || !destination.lng) {
+    throw new Error('Invalid origin or destination coordinates');
+  }
+
+  try {
+    // Make a request to the Google Directions API
+    const response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
+      params: {
+        origin: `${origin.lat},${origin.lng}`,
+        destination: `${destination.lat},${destination.lng}`,
+        mode: 'driving', // Travel mode
+        key: apiKey, // Google Maps API key
+      },
+    });
+
+    // Check if the API response is valid
+    if (response.data.status !== 'OK') {
+      throw new Error(`Google Directions API error: ${response.data.status}`);
+    }
+
+    // Extract distance in meters using destructuring
+    const { distance } = response.data.routes[0].legs[0];
+    if (!distance?.value) {
+      throw new Error('Distance not found in API response');
+    }
+    const distanceInMiles = Number((distance.value / 1609.34).toFixed(2));
+    return distanceInMiles;
+  } catch (error) {
+    console.error('Error calculating distance:', error);
+    throw new Error(`Error calculating distance: ${error instanceof Error ? error.message : error}`);
+  }
+};

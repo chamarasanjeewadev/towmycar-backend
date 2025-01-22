@@ -28,6 +28,7 @@ export type DriverSearchRepositoryType = {
     toLatitude: number | null,
     toLongitude: number | null,
     weight: string | number | null,
+    deliveryDistance?: string,
   ) => Promise<NearbyDriver[]>;
 
   updateDriverRequests: (
@@ -63,6 +64,17 @@ const findNearbyDrivers = async (
       phoneNumber: driver.phoneNumber,
       vehicleType: driver.vehicleType,
       vehicleWeightCapacity: driver.maxWeight,
+      primaryLocation: {
+        //@ts-ignore
+        latitude:
+          sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
+            "latitude",
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
+            "longitude",
+          ),
+      },
       distance: sql`
         ST_Distance(
           ${driver.primaryLocation}::geography,
@@ -155,6 +167,17 @@ const findNearbyDriversAroundFromAndToLocations = async (
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      primaryLocation: {
+        //@ts-ignore
+        latitude:
+          sql<number>`CAST(ST_Y(${driver.primaryLocation}) AS FLOAT)`.as(
+            "latitude",
+          ),
+        longitude:
+          sql<number>`CAST(ST_X(${driver.primaryLocation}) AS FLOAT)`.as(
+            "longitude",
+          ),
+      },
       phoneNumber: sql`unique_drivers.phone_number`,
       vehicleType: sql`unique_drivers.vehicle_type`,
       vehicleWeightCapacity: sql`unique_drivers.vehicle_weight_capacity`,
@@ -191,7 +214,6 @@ const updateDriverRequests = async (
   const now = new Date();
 
   try {
-    console.log("nearbyDrivers, before transaction", nearbyDrivers);
     await DB.transaction(async tx => {
       await tx
         .insert(breakdownAssignment)
@@ -204,6 +226,8 @@ const updateDriverRequests = async (
             assignedAt: now,
             createdAt: now,
             updatedAt: now,
+            geoDistance: driver?.distance.toString()??null,
+            pickupDistance: driver?.pickupDistance??null,
           })),
         )
         .onConflictDoUpdate({
