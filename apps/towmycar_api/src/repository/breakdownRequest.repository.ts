@@ -197,6 +197,11 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
             lastName: string;
             phoneNumber: string | null;
             imageUrl: string | null;
+            primaryLocation: {
+              latitude:number,
+              longitude:number,
+            },
+            
           };
         }[]
       >`
@@ -212,11 +217,18 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
               'pickupDistance', ${breakdownAssignment.pickupDistance},
               'driver', JSON_BUILD_OBJECT(
                 'id', ${driver.id},
-                'email', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.email} ELSE NULL END,
-                'firstName', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.firstName} ELSE NULL END,
-                'lastName', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.lastName} ELSE NULL END,
-                'phoneNumber', CASE WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driver.phoneNumber} ELSE NULL END,
-                'imageUrl', ${driverUser.imageUrl}
+                'email', ${maskSensitiveData(driverUser.email, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'firstName', ${maskSensitiveData(driverUser.firstName, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'lastName', ${maskSensitiveData(driverUser.lastName, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'phoneNumber', ${maskSensitiveData(driver.phoneNumber, sql`${breakdownAssignment.paymentId} IS NOT NULL`)},
+                'primaryLocation', JSON_BUILD_OBJECT(
+                  'latitude', CAST(ST_Y(${driver.primaryLocation}) AS FLOAT),
+                  'longitude', CAST(ST_X(${driver.primaryLocation}) AS FLOAT)
+                ),
+                'imageUrl', CASE 
+                  WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.imageUrl} 
+                  ELSE ${driverUser.imageUrl}  
+                END
               )
             )
           ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.driverStatus} IN (${DriverStatus.QUOTED}, ${DriverStatus.ACCEPTED},${DriverStatus.CLOSED})),

@@ -49,7 +49,7 @@ export const driverSettingsSchema = z.object({
   serviceRadius: z
     .number()
     .min(1, { message: "Please enter a valid service radius greater than 0" }),
-  maxWeight: z.number().min(0).max(3000),
+  maxWeight: z.number().min(0).max(5000),
   primaryLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),
