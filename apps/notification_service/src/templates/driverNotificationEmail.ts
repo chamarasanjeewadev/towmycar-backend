@@ -1,4 +1,4 @@
-import { COLORS, DriverNotificationPayload, formatDate, notificationIcons } from "@towmycar/common";
+import { COLORS, DriverNotificationPayload, formatDate, notificationIcons, QUOTATION_NO } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
 export function driverNotificationEmail(payload: DriverNotificationPayload) {
@@ -8,7 +8,7 @@ export function driverNotificationEmail(payload: DriverNotificationPayload) {
     
    <h3>More details:</h3>
     <ul>
-    <li><strong>Reference Id:</strong> ${payload.breakdownRequestId}</li> 
+    <li><strong>${QUOTATION_NO}:</strong> ${payload.breakdownRequestId}</li> 
       ${
         payload.googleMapsLink
           ? `<li><strong>Location:</strong> <a href="${payload.googleMapsLink}" target="_blank">View on Google Maps</a></li>`
@@ -27,11 +27,11 @@ export function driverNotificationEmail(payload: DriverNotificationPayload) {
   `;
 
   const htmlBody = createBaseTemplate({
-    content,ctaLink: payload.viewRequestLink,ctaText:"View and Accept"
+    content,ctaLink: payload.viewRequestLink,ctaText:"View Request"
   });
 
   return {
-    subject: `${notificationIcons.USER_REQUEST} New Assistance Request: Your Assistance Needed! - Reference Id: ${payload.breakdownRequestId}`,
+    subject: `${notificationIcons.USER_REQUEST} New Assistance Request: Your Assistance Needed! - ${QUOTATION_NO}: ${payload.breakdownRequestId}`,
     htmlBody,
   };
 }

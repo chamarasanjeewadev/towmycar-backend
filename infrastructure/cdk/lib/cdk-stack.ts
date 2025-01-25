@@ -281,6 +281,8 @@ export class CdkStack extends cdk.Stack {
         NODE_TLS_REJECT_UNAUTHORIZED:
           process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0",
         VIEW_REQUEST_BASE_URL: process.env.VIEW_REQUEST_BASE_URL || "",
+        MAILERSENDER_API_KEY: process.env.MAILERSENDER_API_KEY || "",
+        MAILSENDER: process.env.MAILERSENDER || "",
       },
     });
   }

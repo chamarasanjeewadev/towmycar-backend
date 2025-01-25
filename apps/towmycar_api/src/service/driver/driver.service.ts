@@ -44,7 +44,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20", // Use the latest API version
 });
 
-const PER_TRIP_PAYMENT_AMOUNT = 1.99; // $1 in cents (minimum allowed by Stripe for USD)
+const PER_TRIP_PAYMENT_AMOUNT = 299; // gbp1 in cents (minimum allowed by Stripe for USD)const amountInPence = Math.round(2.99 * 100)
 interface UpdateAssignmentData {
   driverStatus: string;
   estimation?: string;
@@ -423,7 +423,7 @@ export class DriverService {
     try {
       const paymentIntent = await stripe.paymentIntents.create({
         amount,
-        currency: "usd",
+        currency: "gbp",
         customer: driver.stripeId,
         payment_method: driver.stripePaymentMethodId,
         off_session: true,

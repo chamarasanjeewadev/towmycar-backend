@@ -1,6 +1,7 @@
 import {
   DriverQuotationUpdatedPayload,
   notificationIcons,
+  QUOTATION_NO,
 } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
@@ -12,7 +13,7 @@ export const driverQuotationUpdatedEmail = (
     <p>Good news! A driver updated a quotation for your assistance request.</p>
     <h2>Quotation details:</h2>
     <ul>
-    <li><strong>Reference Id:</strong> ${payload.breakdownRequestId}</li>
+    <li><strong>${QUOTATION_NO}:</strong> ${payload.breakdownRequestId}</li>
       <li><strong>Estimated cost:</strong> £${payload.estimation}</li>
       <li><strong>Driver comment:</strong> ${payload?.explanation??"-"}</li>
     </ul>
@@ -26,11 +27,11 @@ export const driverQuotationUpdatedEmail = (
   `;
 
   const htmlBody = createBaseTemplate({
-    content,ctaLink: payload.viewRequestLink,ctaText:"View and Accept"
+    content,ctaLink: payload.viewRequestLink,ctaText:"View Quote"
   });
 
   return {
-    subject: `${notificationIcons.DRIVER_QUOTATION_UPDATED} Quotation updated by driver for your Request, Reference Id: ${payload.breakdownRequestId}`,
+    subject: `${notificationIcons.DRIVER_QUOTATION_UPDATED} Quotation updated by driver for your Request, ${QUOTATION_NO}: ${payload.breakdownRequestId}`,
     htmlBody,
   };
 };

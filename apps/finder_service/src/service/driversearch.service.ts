@@ -8,7 +8,6 @@ import {
   registerNotificationListener,
 } from "@towmycar/common";
 import { EventEmitter } from "events";
-import { driver } from "@towmycar/database";
 
 // Initialize listeners
 const notificationEmitter = new EventEmitter();
@@ -34,7 +33,7 @@ const findAndNotifyNearbyDrivers = async (
 
     // Validate location data
     if (!request.location?.latitude || !request.location?.longitude) {
-      throw new Error(`Invalid pickup location for Reference Id: ${requestId}`);
+      throw new Error(`Invalid pickup location for ${QUOTATION_NO}: ${requestId}`);
     }
 
     // Find nearby drivers with validated parameters

@@ -1,4 +1,4 @@
-import { ListnerPayload, maskText, NotificationType } from "@towmycar/common";
+import { ListnerPayload, maskText, NotificationType, QUOTATION_NO } from "@towmycar/common";
 import { getSMSProvider } from "../utils/sms/smsProviderFactory";
 
 const smsProvider = getSMSProvider();
@@ -25,7 +25,7 @@ function generateSMSNotificationPayload(
   payload: ListnerPayload
 ): { message: string; viewLink?: string; phoneNumber?: string } {
   const requestId = payload.breakdownRequestId
-    ? `Reference Id: ${payload.breakdownRequestId}`
+    ? `${QUOTATION_NO}: ${payload.breakdownRequestId}`
     : "";
 
   switch (type) {

@@ -3,6 +3,7 @@ import {
   COLORS,
   DriverAcceptPayload,
   notificationIcons,
+  QUOTATION_NO,
 } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
@@ -15,7 +16,7 @@ export const driverAcceptEmail = (payload: DriverAcceptPayload) => {
     
     <h3>More details:</h3>
     <ul>
-    <li><strong>Reference Id:</strong> ${payload.breakdownRequestId}</li>
+    <li><strong>${QUOTATION_NO}:</strong> ${payload.breakdownRequestId}</li>
     ${payload?.driver?.firstName && ` <li><strong>Name:</strong> ${payload?.driver?.firstName} ${payload?.driver?.lastName??""}</li>`}  
       <li><strong>Phone:</strong> ${payload?.driver?.phoneNumber}</li>
       <li><strong>Email:</strong> ${payload?.driver?.email}</li>
@@ -32,7 +33,7 @@ export const driverAcceptEmail = (payload: DriverAcceptPayload) => {
   const htmlBody = createBaseTemplate({ content, ctaLink: payload.viewRequestLink });
 
   return {
-    subject: `${notificationIcons.DRIVER_ACCEPTED} Driver accepted your Request - Reference Id:${payload.breakdownRequestId}`,
+    subject: `${notificationIcons.DRIVER_ACCEPTED} Driver accepted your Request - ${QUOTATION_NO}:${payload.breakdownRequestId}`,
     htmlBody,
   };
 };

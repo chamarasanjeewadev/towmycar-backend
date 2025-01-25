@@ -11,14 +11,22 @@ import {
   AdminApprovalRequestPayload,
   DriverNotificationPayload,
   EmailPayloadType,
+  logger,
   NotificationType,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 import { userRejectedEmail } from "../templates/userRejectedEmail";
 import { adminApprovalRequestEmail } from "../templates/adminApprovalRequestEmail";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
+
 
 // Configure the AWS SDK
 const sesClient = new SESClient();
+
+// Configure SendGrid
+// sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+const mailerSenderAPIKEY=process.env.MAILERSENDER_API_KEY!;
+
 
 export const sendEmail = async (payload: EmailPayloadType) => {
   try {
@@ -57,6 +65,56 @@ export const sendEmail = async (payload: EmailPayloadType) => {
     );
   }
 };
+export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
+  try {
+  const mailerSend = new MailerSend({
+    apiKey:mailerSenderAPIKEY,
+  });
+  
+  const sentFrom = new Sender("hello@towmycar.uk", "TowMyCar");
+  const recipients = [
+    new Recipient(payload.recipientEmail, "Your Client")
+  ];
+  
+  const emailParams = new EmailParams()
+    .setFrom(sentFrom)
+    .setTo(recipients)
+    // .setReplyTo(sentFrom)
+    .setSubject(payload.subject)
+    .setHtml(payload.htmlBody)
+  
+ const response =await mailerSend.email.send(emailParams);  
+ return response;
+} catch (error) {
+  logger.error(
+    `Failed to send email to ${payload} for request ${payload}:`,
+    error
+  );
+}
+}
+
+// export const sendEmailWithSendGrid = async (payload: EmailPayloadType) => {
+//   try {
+//     const msg = {
+//       to: [payload.recipientEmail, "chamara.sanjeewa@gmail.com"],
+//       from: "TowMyCar <hello@towmycar.uk>",
+//       subject: payload.subject,
+//       html: payload.htmlBody,
+//     };
+
+//     const response = await sgMail.send(msg);
+//     console.log(
+//       `Email sent via SendGrid to ${payload.recipientEmail}: ${response[0].statusCode}`
+//     );
+//     return response;
+//   } catch (error) {
+//     console.error(
+//       `Failed to send email via SendGrid to ${payload.recipientEmail}:`,
+//       error
+//     );
+//     throw error;
+//   }
+// };
 
 // Update the getEmailContent function
 export function getEmailContent(type: NotificationType, payload: any) {

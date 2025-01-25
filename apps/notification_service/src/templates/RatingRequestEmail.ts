@@ -1,4 +1,4 @@
-import { BaseNotificationPayload, notificationIcons } from "@towmycar/common";
+import { BaseNotificationPayload, notificationIcons, QUOTATION_NO } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
 export function RatingRequestEmail(payload: BaseNotificationPayload)  {
@@ -9,7 +9,7 @@ export function RatingRequestEmail(payload: BaseNotificationPayload)  {
     <p>Your input helps us ensure we're providing the best possible service to all our customers.</p>
   <h2>More details:</h2>
     <ul>
-    <li><strong>Reference Id:</strong> ${payload.breakdownRequestId}</li>
+    <li><strong>${QUOTATION_NO}:</strong> ${payload.breakdownRequestId}</li>
     </ul>  
   `;
 
@@ -18,7 +18,7 @@ export function RatingRequestEmail(payload: BaseNotificationPayload)  {
   });
 
   return {
-    subject: `${notificationIcons.RATING_REVIEW} Rate Your TowMyCar Experience - Reference Id: ${payload.breakdownRequestId}`,
+    subject: `${notificationIcons.RATING_REVIEW} Rate Your TowMyCar Experience - ${QUOTATION_NO}: ${payload.breakdownRequestId}`,
     htmlBody,
   };
 }

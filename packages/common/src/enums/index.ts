@@ -6,6 +6,11 @@ export enum UserGroup {
   DRIVER = "driver",
 }
 
+export enum MailSender{
+  SES="SES",
+  MAILERSENDER="MAILERSENDER"
+}
+
 export const notificationIcons = {
   DRIVER_REGISTERED: "🧰", // Toolbox, representing driver registration or preparation
   USER_REQUEST: "🗣️", // Speaking head, representing a user request or inquiry
@@ -13,14 +18,14 @@ export const notificationIcons = {
   USER_ACCEPTED: "🤝", // Handshake, symbolizing user acceptance
   DRIVER_REJECTED: "🚷", // No entry, representing driver rejection
   DRIVER_CLOSED: "🔒", // Lock, representing closure or locked status
-  DRIVER_QUOTATION_UPDATED: "📊", // Bar chart, symbolizing an updated quotation or estimate
+  DRIVER_QUOTATION_UPDATED: "📝", // Bar chart, symbolizing an updated quotation or estimate
   DRIVER_ASSIGNED: "🛻", // Tow truck, representing the driver being assigned to the request
   DRIVER_QUOTED: "💰", // Money bag, symbolizing the quote given by the driver
   DRIVER_ACCEPTED: "🚀", // Rocket, representing the driver's acceptance and moving forward
   DRIVER_NOTIFICATION: "📲", // Mobile phone, representing a notification for the driver
   USER_NOTIFICATION: "🔔", // Bell, representing a notification for the user
   USER_REJECTED: "❌", // Cross mark, symbolizing user rejection
-  RATING_REVIEW: "🏆", // Trophy, symbolizing rating or review (success)
+  RATING_REVIEW: "⭐", // Trophy, symbolizing rating or review (success)
   DRIVER_CHAT_INITIATED: "💬", // Speech bubble, representing chat initiation by driver
   USER_CHAT_INITIATED: "💬", // Speech bubble, representing chat initiation by user
   ADMIN_APPROVAL_REQUEST: "📝", // Clipboard, representing admin approval request

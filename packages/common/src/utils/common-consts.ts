@@ -1,5 +1,7 @@
 export const TRIAL_PERIOD_DAYS = 90;
 
+export const QUOTATION_NO="Quotation No";
+
 export const COLORS = {
     primary: "#0A293F",
     primaryDark: "#f9761f",

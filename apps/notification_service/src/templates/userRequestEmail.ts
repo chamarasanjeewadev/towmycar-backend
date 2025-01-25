@@ -1,3 +1,4 @@
+import { QUOTATION_NO } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
 interface UserRequestEmailPayload {
@@ -26,7 +27,7 @@ export const userRequestEmail = (payload: any) => {
           ? `${payload.userLocation.latitude}, ${payload.userLocation.longitude}`
           : "N/A"
       }</li>
-      <li>Reference Id: #${payload.breakdownRequestId ?? "N/A"}</li>
+      <li>${QUOTATION_NO}: ${payload.breakdownRequestId ?? "N/A"}</li>
       <li>Status: We're searching for a driver</li>
     </ul>
     

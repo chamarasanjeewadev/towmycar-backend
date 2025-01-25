@@ -9,10 +9,13 @@ import {
   ListnerPayload,
   UserRejectedPayload,
   AdminApprovalRequestPayload,
+  MailSender,
 } from "@towmycar/common";
 import {
   getEmailContent,
   sendEmail,
+  // sendEmailWithSendGrid,
+  sendEmailWithMailerSend
 } from "../service/notification.email.service";
 import { NotificationRepository } from "../repository/notification.repository";
 import { logger } from "@towmycar/common";
@@ -27,6 +30,8 @@ interface CheckAndProcessEmailParams {
   };
   recipientEmail: string;
 }
+
+const mailSender=process.env.MAILSENDER
 
 export function registerEmailListener(emitter: EventEmitter): void {
   emitter.on(
@@ -328,7 +333,8 @@ async function checkAndProcessEmail({
       htmlBody: emailContent.htmlBody,
     };
 
-    const result = await sendEmail(emailPayload);
+    // const result = await sendEmail(emailPayload);
+    const result=mailSender===MailSender.MAILERSENDER?await sendEmailWithMailerSend(emailPayload): await sendEmail(emailPayload);
     if (result) {
       await NotificationRepository.saveNotification({
         userId,

@@ -6,6 +6,7 @@ import {
   ListnerPayload,
   maskText,
   DriverAcceptPayload,
+  QUOTATION_NO,
 } from "@towmycar/common";
 import { BatchResponse } from "firebase-admin/lib/messaging/messaging-api";
 import { Null } from "@sinclair/typebox";
@@ -80,7 +81,7 @@ export function generatePushNotificationPayload(
   payload: ListnerPayload,
 ): PushNotificationPayload {
   const requestId = payload.breakdownRequestId
-    ? `(Request, Reference Id: ${payload.breakdownRequestId})`
+    ? `(Request, ${QUOTATION_NO}: ${payload.breakdownRequestId})`
     : "";
 
   switch (type) {
