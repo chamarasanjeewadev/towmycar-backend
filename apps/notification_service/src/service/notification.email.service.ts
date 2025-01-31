@@ -9,10 +9,18 @@ import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
   AdminApprovalRequestPayload,
+  DriverAcceptPayload,
+  DriverCreatedAdminNotificationPayload,
   DriverNotificationPayload,
+  DriverQuotationUpdatedPayload,
+  DriverQuotedPayload,
+  DriverRejectPayload,
   EmailPayloadType,
+  ListnerPayload,
   logger,
   NotificationType,
+  RatingReviewPayload,
+  UserAcceptedPayload,
 } from "@towmycar/common";
 import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 import { userRejectedEmail } from "../templates/userRejectedEmail";
@@ -84,33 +92,36 @@ export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
     .setSubject(payload.subject)
     .setHtml(payload.htmlBody)
   
- const response =await mailerSend.email.send(emailParams);  
- return response;
+ const response =await mailerSend.email.send(emailParams); 
+ logger.info(`Send email to ${payload} for request ${payload}`) 
+ logger.info(`Email sent to response, ${JSON.stringify(response)}`)
+ return true;
 } catch (error) {
   logger.error(
     `Failed to send email to ${payload} for request ${payload}:`,
     error
   );
+  return false
 }
 }
 
 // Update the getEmailContent function
-export function getEmailContent(type: NotificationType, payload: any) {
+export function getEmailContent(type: NotificationType, payload: ListnerPayload) {
   switch (type) {
     case NotificationType.USER_REQUEST:
       return userRequestEmail(payload);
     case NotificationType.DRIVER_ACCEPTED:
-      return driverAcceptEmail(payload);
+      return driverAcceptEmail(payload as DriverAcceptPayload);
     case NotificationType.USER_ACCEPTED:
-      return userAcceptEmail(payload);
+      return userAcceptEmail(payload as UserAcceptedPayload);
     case NotificationType.USER_REJECTED:
       return userRejectedEmail(payload);
     case NotificationType.DRIVER_REJECTED:
-      return driverRejectEmail(payload);
+      return driverRejectEmail(payload as DriverRejectPayload);
     case NotificationType.DRIVER_QUOTED:
-      return driverQuotationUpdatedEmail(payload);
+      return driverQuotationUpdatedEmail(payload as DriverQuotedPayload);
     case NotificationType.DRIVER_QUOTATION_UPDATED:
-      return driverQuotationUpdatedEmail(payload);
+      return driverQuotationUpdatedEmail(payload as DriverQuotationUpdatedPayload);
     case NotificationType.USER_CREATED:
       return userCreatedEmail(payload);
     case NotificationType.DRIVER_ASSIGNED:
@@ -120,11 +131,11 @@ export function getEmailContent(type: NotificationType, payload: any) {
     case NotificationType.DRIVER_NOTIFICATION:
       return driverNotificationEmail(payload as DriverNotificationPayload);
     case NotificationType.RATING_REVIEW:
-      return RatingRequestEmail(payload);
+      return RatingRequestEmail(payload as RatingReviewPayload);
     case NotificationType.ADMIN_APPROVAL_REQUEST:
       return adminApprovalRequestEmail(payload as AdminApprovalRequestPayload);
     case NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION:
-      return driverCreatedAdminNotificationEmail(payload as AdminApprovalRequestPayload);
+      return driverCreatedAdminNotificationEmail(payload as DriverCreatedAdminNotificationPayload);
     default:
       throw new Error(`Invalid email notification type: ${type}`);
   }

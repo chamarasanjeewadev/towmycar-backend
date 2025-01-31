@@ -15,6 +15,7 @@ import {
   DriverQuotationUpdatedPayload,
   AdminApprovalRequestPayload,
   DriverCreatedAdminNotificationEventPayload,
+  DriverCreatedAdminNotificationPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -295,10 +296,10 @@ export function registerNotificationListener(emitter: EventEmitter): void {
   emitter.on(
     NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
     async (payload: DriverCreatedAdminNotificationEventPayload) => {
-      payload.admins.forEach(async admin => {
-        const notificationPayload = {
-          ...payload,
-          sendToId: admin.userId,
+        const notificationPayload:DriverCreatedAdminNotificationPayload = {
+         userInfo:payload?.userInfo, 
+         viewRequestLink:"/",//TODO admins must dynamically attached
+         
         };
         await sendSNSNotification(
           process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
@@ -307,7 +308,6 @@ export function registerNotificationListener(emitter: EventEmitter): void {
             payload: notificationPayload,
           },
         );
-      });
     
     },
   );

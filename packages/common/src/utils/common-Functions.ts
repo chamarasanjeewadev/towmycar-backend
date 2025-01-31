@@ -1,10 +1,20 @@
 export function maskText(text: string): string {
-  return text.slice(3, text.length).replace(text, "*");
+  return text.replace(/\b(\w{0,3})?\w*\b/g, (match) => {
+    if (match.length <= 3) {
+      return "*".repeat(match.length);
+    }
+    return match.slice(0, 3) + "*".repeat(match.length - 3);
+  });
 }
 
 export function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
-  return `${local.slice(0, 3)}*****@${domain}`;
+
+  if (local.length <= 3) {
+    return `${"*".repeat(local.length)}@${domain}`;
+  }
+
+  return `${local.slice(0, 3)}${"*".repeat(local.length - 3)}@${domain}`;
 }
 
 export function maskString(data: string) {

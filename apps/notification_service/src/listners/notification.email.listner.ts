@@ -10,6 +10,8 @@ import {
   UserRejectedPayload,
   AdminApprovalRequestPayload,
   MailSender,
+  NotificationStatus,
+  DriverCreatedAdminNotificationPayload,
 } from "@towmycar/common";
 import {
   getEmailContent,
@@ -153,7 +155,7 @@ export function registerEmailListener(emitter: EventEmitter): void {
       });
     },
   );
-
+// admin email notifications
   emitter.on(
     `${DeliveryNotificationType.EMAIL}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
     async (payload: AdminApprovalRequestPayload) => {
@@ -164,6 +166,24 @@ export function registerEmailListener(emitter: EventEmitter): void {
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.ADMIN_APPROVAL_REQUEST,
+        userId: payload?.sendToId,
+        breakdownRequestId: null, // payload?.breakdownRequestId,
+        emailContent,
+        recipientEmail: "hello.towmycar.uk@gmail.com",
+      });
+    },
+  );
+
+  emitter.on(
+    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION}`,
+    async (payload: DriverCreatedAdminNotificationPayload) => {
+      const emailContent = getEmailContent(
+        NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+        payload,
+      );
+      await checkAndProcessEmail({
+        payload,
+        notificationType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
         userId: payload?.sendToId,
         breakdownRequestId: null, // payload?.breakdownRequestId,
         emailContent,
@@ -315,12 +335,13 @@ async function checkAndProcessEmail({
   recipientEmail,
 }: CheckAndProcessEmailParams) {
   try {
-    const isAlreadySent = await NotificationRepository.checkNotificationSent({
-      userId,
-      notificationType,
-      deliveryType: DeliveryNotificationType.EMAIL,
-      breakdownRequestId:  payload.breakdownRequestId,
-    });
+    //Is alreaysent logic must be checked before
+    // const isAlreadySent = await NotificationRepository.checkNotificationSent({
+    //   userId,
+    //   notificationType,
+    //   deliveryType: DeliveryNotificationType.EMAIL,
+    //   breakdownRequestId:  payload.breakdownRequestId,
+    // });
 
     // if (isAlreadySent) {
     //   console.log(`Email already sent for user: ${userId}`);
@@ -335,7 +356,6 @@ async function checkAndProcessEmail({
 
     // const result = await sendEmail(emailPayload);
     const result=mailSender===MailSender.MAILERSENDER?await sendEmailWithMailerSend(emailPayload): await sendEmail(emailPayload);
-    if (result) {
       await NotificationRepository.saveNotification({
         userId,
         breakdownRequestId,
@@ -345,11 +365,10 @@ async function checkAndProcessEmail({
         notificationType: notificationType,
         payload: JSON.stringify(payload),
         url: payload.viewRequestLink,
+        status: result ? NotificationStatus.SENT: NotificationStatus.FAILED,
       });
-      return true;
-    }
+     return result; 
 
-    return false;
   } catch (error) {
     console.error(`Failed to process email for user ${userId}:`, error);
     logger.error(`Failed to process email for user ${userId}:`, error);

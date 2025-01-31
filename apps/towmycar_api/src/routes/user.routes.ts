@@ -5,7 +5,7 @@ import { UserRegisterInput } from "../dto/userRequest.dto";
 import { UserRepository } from "../repository/user.repository";
 import {
   saveFcmToken,
-  sendAdminApprovalNotification,
+  // SendUserCreatedPushNotification,
 } from "../service/user/user.service";
 import { FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
@@ -41,7 +41,7 @@ router.post(
         case "user.created":
           return handleUserCreated(evt, res, next);
         case "user.updated":
-          return handleUserUpdated(evt, res);
+          return handleUserUpdated(evt, res,next);
         default:
           return handleOtherEvents(evt, res);
       }
@@ -78,14 +78,16 @@ function validateSvixHeaders(headers: any) {
 async function handleUserCreated(evt: any, res: Response, next: NextFunction) {
   try {
     const userData = evt.data;
-    const userInfo = await service.createUserFromWebhook(userData, repo);
-    const stripeCustomerId = await createStripeCustomerIfDriver(
-      userInfo,
-      userData,
-    );
-    await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
-    // TODO
-    // await sendAdminApprovalNotification(userInfo);
+    const result = await service.handleUserCreated(userData, repo);
+    // const userData = evt.data;
+    // const userInfo = await service.createUserFromWebhook(userData, repo);
+    // const stripeCustomerId = await createStripeCustomerIfDriver(
+    //   userInfo,
+    //   userData,
+    // );
+    // await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
+    // await SendUserCreatedPushNotification(userInfo);
+
     return res.status(200).json({
       success: true,
       message:
@@ -102,64 +104,70 @@ async function handleUserCreated(evt: any, res: Response, next: NextFunction) {
   }
 }
 
-async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
-  if (userInfo?.driverId) {
-    const stripeCustomer = await stripe.customers.create({
-      email: userData.email_addresses[0].email_address,
-      metadata: { driverId: userInfo.driverId?.toString() },
-    });
-    await DriverRepository.updateDriver(userInfo.driverId, {
-      stripeId: stripeCustomer.id,
-    });
-    return stripeCustomer.id;
-  }
-  return undefined;
-}
+// async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
+//   if (userInfo?.driverId) {
+//     const stripeCustomer = await stripe.customers.create({
+//       email: userData.email_addresses[0].email_address,
+//       metadata: { driverId: userInfo.driverId?.toString() },
+//     });
+//     await DriverRepository.updateDriver(userInfo.driverId, {
+//       stripeId: stripeCustomer.id,
+//     });
+//     return stripeCustomer.id;
+//   }
+//   return undefined;
+// }
 
-async function updateClerkUser(
-  clerkUserId: string,
-  userInfo: any,
-  stripeCustomerId: string | undefined,
-) {
-  try {
-    const params = {
-      userInfo: {
-        ...userInfo,
-        ...(stripeCustomerId && { stripeCustomerId }),
-      },
-    };
+// async function updateClerkUser(
+//   clerkUserId: string,
+//   userInfo: any,
+//   stripeCustomerId: string | undefined,
+// ) {
+//   try {
+//     const params = {
+//       userInfo: {
+//         ...userInfo,
+//         ...(stripeCustomerId && { stripeCustomerId }),
+//       },
+//     };
 
-    const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
+//     const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
 
-    if (userInfo?.userId) {
-      await clerkClient.users.updateUserMetadata(clerkUserId, {
-        privateMetadata: {
-          userInfo: {
-            ...userInfo,
-            ...(stripeCustomerId && { stripeCustomerId }),
-          },
-        },
-        publicMetadata: {
-          userInfo: {
-            ...userInfo,
-            ...(stripeCustomerId && { stripeCustomerId }),
-          },
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Error updating user metadata:", error);
-    throw error;
-  }
-}
+//     if (userInfo?.userId) {
+//       await clerkClient.users.updateUserMetadata(clerkUserId, {
+//         privateMetadata: {
+//           userInfo: {
+//             ...userInfo,
+//             ...(stripeCustomerId && { stripeCustomerId }),
+//           },
+//         },
+//         publicMetadata: {
+//           userInfo: {
+//             ...userInfo,
+//             ...(stripeCustomerId && { stripeCustomerId }),
+//           },
+//         },
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error updating user metadata:", error);
+//     throw error;
+//   }
+// }
 
-async function handleUserUpdated(evt: any, res: Response) {
+async function handleUserUpdated(evt: any, res: Response, next: NextFunction) {
   const userData = evt.data;
-  await service.createUserFromWebhook(userData, repo);
-  return res.status(200).json({
-    success: true,
-    message: "User updated successfully",
-  });
+  try {
+    service.handleUserUpdated(userData, repo);
+    // const userData = evt.data;
+    // await service.createUserFromWebhook(userData, repo);
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 function handleOtherEvents(evt: any, res: Response) {

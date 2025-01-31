@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { httpLogger } from "@towmycar/common";
+import { httpLogger, NotificationListener } from "@towmycar/common";
 import userRoutes from "./routes/user.routes";
 import breakdownRequestRoutes from "./routes/breakdownRequest.routes";
 import driverRoutes from "./routes/driver.routes";
@@ -51,11 +51,11 @@ app.use("/user", breakdownRequestRoutes);
 app.use("/stripe", stripeRoutes);
 app.use("/admin", adminRoutes);
 app.use("/analytics", analyticsRoutes);
-
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "I am healthy!" });
 });
+NotificationListener.getInstance();
 
 // Error handling middleware
 app.use(errorMiddleware);

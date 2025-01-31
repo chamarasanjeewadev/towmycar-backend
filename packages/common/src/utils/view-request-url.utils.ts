@@ -84,6 +84,9 @@ export function getViewRequestUrl(
     [NotificationType.ADMIN_APPROVAL_REQUEST]: ({
       requestId,
     }: ViewRequestUrlParams) => `${userRequestBaseUrl}/${requestId}`,
+    [NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION]: ({
+      requestId,
+    }: ViewRequestUrlParams) => `${userRequestBaseUrl}/${requestId}`,
   };
 
   const urlGenerator = urlMappings[type];

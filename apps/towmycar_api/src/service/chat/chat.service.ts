@@ -5,6 +5,7 @@ import {
   BreakdownAssignmentDetails,
   CustomError,
   DriverStatus,
+  emitNotificationEvent,
   ERROR_CODES,
   logger,
   mapToUserWithCustomer,
@@ -128,8 +129,8 @@ export const SendNewChatPushNotification = async ({
 
     const userWithDriver = mapToUserWithDriver(driverInfo);
     const userWithCustomer = mapToUserWithCustomer(customerDetails);
-    const notificationEmitter = new EventEmitter();
-    registerNotificationListener(notificationEmitter);
+    // const notificationEmitter = new EventEmitter();
+    // registerNotificationListener(notificationEmitter);
     const notificationType =
       sender === MessageSender.Driver
         ? NotificationType.DRIVER_CHAT_INITIATED
@@ -149,7 +150,8 @@ export const SendNewChatPushNotification = async ({
       sender,
       viewRequestLink,
     };
-    notificationEmitter.emit(notificationType, payload);
+    // notificationEmitter.emit(notificationType, payload);
+    emitNotificationEvent(notificationType, payload);
     // }
   } catch (error) {
     logger.error("Error in sending new chat push notification:", error);

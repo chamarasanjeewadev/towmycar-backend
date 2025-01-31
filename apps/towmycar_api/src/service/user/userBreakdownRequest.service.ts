@@ -14,15 +14,19 @@ import {
   UserStatus,
   APIError,
   isTrialPeriodExpired,
+  emitNotificationEvent,
+  UserRequestPayload,
+  UserAcceptedEventPayload,
+  UserAcceptedPayload,
 } from "@towmycar/common";
-import EventEmitter from "events";
+// import EventEmitter from "events";
 import { CloseBreakdownParams } from "./../../types/types";
 import { DriverRepository } from "./../../repository/driver.repository";
 import { mapToUserWithCustomer, mapToUserWithDriver } from "@towmycar/common";
 import { getViewRequestUrl } from "@towmycar/common/src/utils/view-request-url.utils";
 
-const notificationEmitter = new EventEmitter();
-registerNotificationListener(notificationEmitter);
+// const notificationEmitter = new EventEmitter();
+// registerNotificationListener(notificationEmitter);
 
 const CreateBreakdownRequest = async (
   combinedInput: BreakdownRequestInput,
@@ -126,10 +130,9 @@ const updateUserStatusInBreakdownAssignment = async (
 
     const userWithDriver = mapToUserWithDriver(driverInfo);
     const userWithCustomer = mapToUserWithCustomer(customerDetails);
-
-    // send notification to driver
-    notificationEmitter.emit(notificationType, {
-      requestId: updatedAssignment.requestId,
+    const payload: UserAcceptedPayload = {
+      breakdownRequestId: updatedAssignment.requestId,
+      sendToId: userWithDriver.userId,
       driver: userWithDriver,
       user: userWithCustomer,
       userStatus,
@@ -141,7 +144,23 @@ const updateUserStatusInBreakdownAssignment = async (
           requestId: updatedAssignment.requestId,
         },
       ),
-    });
+    };
+    emitNotificationEvent(notificationType, payload);
+    // send notification to driver
+    // notificationEmitter.emit(notificationType, {
+    //   requestId: updatedAssignment.requestId,
+    //   driver: userWithDriver,
+    //   user: userWithCustomer,
+    //   userStatus,
+    //   userId,
+    //   viewRequestLink: getViewRequestUrl(
+    //     notificationType,
+    //     VIEW_REQUEST_BASE_URL,
+    //     {
+    //       requestId: updatedAssignment.requestId,
+    //     },
+    //   ),
+    // });
 
     return true;
   }

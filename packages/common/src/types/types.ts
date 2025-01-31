@@ -1,4 +1,9 @@
-import { DriverApprovalStatus, MessageSender, NotificationType } from "../enums";
+import {
+  DriverApprovalStatus,
+  MessageSender,
+  NotificationType,
+  UserStatus,
+} from "../enums";
 
 export type ListnerPayload =
   // | DriverNotificationPayload[]
@@ -10,11 +15,27 @@ export type ListnerPayload =
   | UserCreatedPayload
   | DriverRejectPayload
   | DriverAssignedPayload
+  | DriverQuotationUpdatedPayload
   | DriverAcceptPayload
   | UserRejectPayload
-  |ChatNotificationPayload
+  | ChatNotificationPayload
   | RatingReviewPayload
-  | AdminApprovalRequestPayload|DriverCreatedAdminNotificationPayload;
+  | AdminApprovalRequestPayload
+  | DriverCreatedAdminNotificationPayload;
+
+
+  export type EventPayload=DriverNotifyEventPayload|
+  DriverQuotedEventPayload|
+  DriverQuotedPayload|
+  UserAcceptedPayload|
+  UserAcceptedEventPayload|
+  UserRejectedPayload|
+  DriverClosedEventPayload|
+  ChatNotificationEventPayload|
+  DriverQuotationUpdatedPayload|
+  AdminApprovalRequestPayload|
+  DriverCreatedAdminNotificationEventPayload|
+  DriverCreatedAdminNotificationPayload
 
 export type NotificationPayload = {
   sendToId: number;
@@ -69,7 +90,7 @@ export type NearbyDriver = {
   distance: number;
   deliveryDistance?: string;
   pickupDistance?: string;
-  primaryLocation?: {latitude:number,longitude:number};
+  primaryLocation?: { latitude: number; longitude: number };
 };
 export interface UserWithCustomer {
   id: number;
@@ -138,22 +159,32 @@ export interface DriverQuotedEventPayload {
   viewRequestLink: string;
 }
 
+export interface UserInfo{
+  
+    userId: number;
+    role: string;
+    customerId?: number;
+    driverId?: number;
+    stripeCustomerId?: string;
+  
+}
+
 export interface AdminApprovalRequestPayload {
   driver: UserWithDriver;
   admins: UserWithAdmin[];
   user: UserWithCustomer;
   viewRequestLink: string;
-  breakdownRequestId?: number;// TODO: remove this
+  breakdownRequestId?: number; // TODO: remove this
   sendToId?: number;
   userId?: number;
 }
 
 export interface DriverCreatedAdminNotificationPayload {
-  driver: UserWithDriver;
-  admins: UserWithAdmin[];
-  user: UserWithCustomer;
+  userInfo:UserInfo
+  // driver?: UserWithDriver;
+  admins?: UserWithAdmin[];
+  // user?: UserWithCustomer;
   viewRequestLink: string;
-  breakdownRequestId?: number;// TODO: remove this
   sendToId?: number;
   userId?: number;
 }
@@ -193,28 +224,23 @@ export interface DriverClosedEventPayload {
   viewRequestLink: string;
 }
 
-
-
-
-
 export interface ChatNotificationEventPayload {
   breakdownRequestId: number;
   viewRequestLink: string;
   driver: UserWithDriver;
   user: UserWithCustomer;
-  sender:MessageSender;
+  sender: MessageSender;
 }
 
 export interface DriverCreatedAdminNotificationEventPayload {
-  
-  driver: UserWithDriver;
-  admins: UserWithAdmin[];
-  user: UserWithCustomer;
-  viewRequestLink: string;
-  breakdownRequestId?: number;// TODO: remove this
-  sendToId?: number;
-  userId?: number;
-  
+  userInfo:UserInfo;
+  // driver: UserWithDriver;
+  // admins: UserWithAdmin[];
+  // user: UserWithCustomer;
+  // viewRequestLink: string;
+  // breakdownRequestId?: number; // TODO: remove this
+  // sendToId?: number;
+  // userId?: number;
 }
 
 export interface DriverNotifyEventPayload {
@@ -226,17 +252,17 @@ export interface DriverNotifyEventPayload {
   createdAt: Date;
   viewRequestLink: string;
   make: string;
-  model:string;
+  model: string;
   googleMapsLink: string;
 }
 
 // Base notification payload interface
 export interface BaseNotificationPayload {
   sendToId: number;
-  breakdownRequestId: number;
-  viewRequestLink: string;
-  user: UserWithCustomer;
-  driver: UserWithDriver;
+  breakdownRequestId?: number;
+  viewRequestLink?: string;
+  user?: UserWithCustomer;
+  driver?: UserWithDriver;
   createdAt?: Date;
 }
 
@@ -247,9 +273,9 @@ export interface DriverRegisteredPayload extends BaseNotificationPayload {
 }
 
 export interface ChatNotificationPayload extends BaseNotificationPayload {
-  driverId:number;
-  userId:number;
-  sender:MessageSender;
+  driverId: number;
+  userId: number;
+  sender: MessageSender;
 }
 
 // User Request
@@ -267,8 +293,14 @@ export interface UserCreatedPayload extends BaseNotificationPayload {
 }
 
 // User Accept
-export interface UserAcceptedPayload extends BaseNotificationPayload {}
-export interface UserRejectedPayload extends BaseNotificationPayload {}
+export interface UserAcceptedPayload extends BaseNotificationPayload {
+  userStatus?:UserStatus,
+  userId?:number
+}
+export interface UserRejectedPayload extends BaseNotificationPayload {
+  userStatus:UserStatus
+  userId?:number
+}
 
 // Driver Reject
 export interface DriverRejectPayload extends BaseNotificationPayload {
@@ -310,6 +342,7 @@ export interface DriverQuotedPayload extends BaseNotificationPayload {
   price: number;
   estimation: number;
   description?: string;
+  explanation?: string;
 }
 
 // Driver Accept
@@ -329,7 +362,7 @@ export interface DriverNotificationPayload extends BaseNotificationPayload {
   location: Location;
   make: string;
   model: string;
-  vehicleWeight:string;
+  vehicleWeight: string;
   googleMapsLink: string;
 }
 
@@ -363,7 +396,7 @@ export interface BreakdownAssignmentDetails {
   driverStatus: string;
   userStatus: string;
   estimation: string;
-  pickupDistance?:string;
+  pickupDistance?: string;
   explanation: string;
   updatedAt: Date;
   userLocation: {
@@ -385,19 +418,19 @@ export interface BreakdownAssignmentDetails {
     makeModel: string | null;
     mobileNumber: string | null;
     requestType: string;
-    deliveryDistance?:string;
+    deliveryDistance?: string;
   };
   driver: {
     id: number;
-    userId:number;
+    userId: number;
     firstName: string | null;
     lastName: string | null;
     email: string | null;
     imageUrl: string | null;
     vehicleType: string;
     regNo: string;
-    phoneNumber:string;
-    approvalStatus:DriverApprovalStatus;
+    phoneNumber: string;
+    approvalStatus: DriverApprovalStatus;
     vehicleRegistration: string;
     licenseNumber: string;
     serviceRadius: number;

@@ -1,7 +1,13 @@
+import { DriverRepository } from './../../repository/driver.repository';
 import { UserRegisterInput } from "../../dto/userRequest.dto";
 import { UserRepositoryType } from "../../repository/user.repository";
 import { UserData } from "../../dto/userRequest.dto"; // Make sure to import UserData
-
+import { DriverCreatedAdminNotificationPayload, emitNotificationEvent, NotificationType, registerNotificationListener, UserInfo} from "@towmycar/common";
+import { clerkClient } from "@clerk/clerk-sdk-node";
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-06-20",
+});
 export const getUserProfileByEmail = async (
   email: string,
   repo: UserRepositoryType
@@ -99,6 +105,7 @@ export const createUserFromWebhook = async (
 ) => {
   try {
     const result = await repo.createUserFromWebhook(userData);
+   
     return result;
   } catch (error) {
     console.error("Error creating user from webhook:", error);
@@ -146,45 +153,94 @@ export const markAllChatNotificationsAsSeen = async (
   await repo.markAllChatNotificationsAsSeen(userId);
 };
 
-export const sendAdminApprovalNotification=(userId: number)=> {
+export async function handleUserCreated(userData:any,repo: UserRepositoryType) {
   try {
-    // const driverInfo = await DriverRepository.getDriverById(driverId);
-    // const user = await UserRepository.getUserProfileById(driverInfo?.userId);
-    // const userWithDriver = {
-    //   userId: driverInfo?.userId,
-    //   email: user?.email ?? "",
-    //   firstName: user?.firstName || undefined,
-    //   lastName: user?.lastName || undefined,
-    //   phoneNumber: user?.phoneNumber || undefined,
-    //   driver: {
-    //     id: driverInfo?.id,
-    //     phoneNumber: driverInfo?.phoneNumber,
-    //   },
-    // };
-    // const admins = await DriverRepository.getAllAdmins();
-    // const userWithAdmin = admins.map(admin => ({
-    //   ...admin,
-    //   userId: admin.id,
-    // }));
-    // const payload: AdminApprovalRequestPayload = {
-    //   admins: userWithAdmin,
-    //   user: null,
-    //   driver: userWithDriver,
-    //   breakdownRequestId: null,
-    //   viewRequestLink: getViewRequestUrl(
-    //     NotificationType.ADMIN_APPROVAL_REQUEST,
-    //     VIEW_REQUEST_BASE_URL,
-    //     {
-    //       requestId: null,
-    //     },
-    //   ),
-    // };
-    // await this.notificationEmitter.emit(
-    //   NotificationType.ADMIN_APPROVAL_REQUEST,
-    //   payload,
-    // );
+    
+    const userInfo:UserInfo = await createUserFromWebhook(userData, repo);
+    const stripeCustomerId = await createStripeCustomerIfDriver(
+      userInfo,
+      userData
+    );
+    await updateClerkUser(userData?.id, userInfo, stripeCustomerId);
+    const payload:DriverCreatedAdminNotificationPayload={userInfo:userInfo ,viewRequestLink:"/"}
+    emitNotificationEvent(NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION, 
+    payload 
+    );
+   return userInfo;
+   
   } catch (error) {
-    // logger.error('Failed to send admin approval notification:', error);
-    // Don't throw error as this is a non-critical operation
+    console.error("Error processing webhook:", error);
+    throw error;
+    // return res.status(500).json({
+    //   success: false,
+    //   message: "Error processing webhook",
+    //   error: error instanceof Error ? error.message : String(error),
+    // });
   }
 }
+
+async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
+  if (userInfo?.driverId) {
+    const stripeCustomer = await stripe.customers.create({
+      email: userData.email_addresses[0].email_address,
+      metadata: { driverId: userInfo.driverId?.toString() },
+    });
+    await DriverRepository.updateDriver(userInfo.driverId, {
+      stripeId: stripeCustomer.id,
+    });
+    return stripeCustomer.id;
+  }
+  return undefined;
+}
+
+async function updateClerkUser(
+  clerkUserId: string,
+  userInfo: any,
+  stripeCustomerId: string | undefined,
+) {
+  try {
+    const params = {
+      userInfo: {
+        ...userInfo,
+        ...(stripeCustomerId && { stripeCustomerId }),
+      },
+    };
+
+    const updatedUser = await clerkClient.users.updateUser(clerkUserId, params);
+
+    if (userInfo?.userId) {
+      await clerkClient.users.updateUserMetadata(clerkUserId, {
+        privateMetadata: {
+          userInfo: {
+            ...userInfo,
+            ...(stripeCustomerId && { stripeCustomerId }),
+          },
+        },
+        publicMetadata: {
+          userInfo: {
+            ...userInfo,
+            ...(stripeCustomerId && { stripeCustomerId }),
+          },
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error updating user metadata:", error);
+    throw error;
+  }
+}
+
+export async function handleUserUpdated(userData:any,repo: UserRepositoryType) {
+  await createUserFromWebhook(userData, repo);
+  return 
+}
+
+
+// export const SendUserCreatedPushNotification=async(
+//   userInfo:UserInfo
+// )=>{
+//   notificationEmitter.emit(NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION, {userInfo}
+//   )
+    
+// }
+

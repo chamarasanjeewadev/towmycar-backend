@@ -1,12 +1,13 @@
 import {
   DriverQuotationUpdatedPayload,
+  DriverQuotedPayload,
   notificationIcons,
   QUOTATION_NO,
 } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
 export const driverQuotationUpdatedEmail = (
-  payload: DriverQuotationUpdatedPayload,
+  payload: DriverQuotationUpdatedPayload|DriverQuotedPayload,
 ) => {
   const content = `
     <p>Hi ${payload?.user?.firstName ?? ""},</p>

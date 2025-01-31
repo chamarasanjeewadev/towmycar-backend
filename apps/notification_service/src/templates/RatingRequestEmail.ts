@@ -1,7 +1,7 @@
-import { BaseNotificationPayload, notificationIcons, QUOTATION_NO } from "@towmycar/common";
+import { BaseNotificationPayload, notificationIcons, QUOTATION_NO, RatingReviewPayload } from "@towmycar/common";
 import { createBaseTemplate } from "./baseTemplate";
 
-export function RatingRequestEmail(payload: BaseNotificationPayload)  {
+export function RatingRequestEmail(payload: RatingReviewPayload)  {
   const content = `
     <p>Dear ${payload?.user?.firstName ?? "Customer"},</p>
     <p>We hope your recent towing experience with TowMyCar met your expectations. Your feedback is crucial in helping us improve our services.</p>

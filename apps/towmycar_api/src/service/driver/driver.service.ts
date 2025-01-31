@@ -15,6 +15,7 @@ import {
   DriverQuotedEventPayload,
   DriverRejectedEventPayload,
   DriverStatus,
+  emitNotificationEvent,
   getExtension,
   isTrialPeriodExpired,
   logger,
@@ -56,11 +57,11 @@ interface UpdateAssignmentData {
 }
 
 export class DriverService {
-  notificationEmitter = null;
-  constructor() {
-    this.notificationEmitter = new EventEmitter();
-    registerNotificationListener(this.notificationEmitter);
-  }
+  // notificationEmitter = null;
+  // constructor() {
+  //   this.notificationEmitter = new EventEmitter();
+  //   registerNotificationListener(this.notificationEmitter);
+  // }
 
   async getDriverByEmail(email: string, repository: IDriverRepository) {
     return repository.findByEmail(email);
@@ -137,10 +138,11 @@ export class DriverService {
           },
         ),
       };
-      await this.notificationEmitter.emit(
-        NotificationType.ADMIN_APPROVAL_REQUEST,
-        payload,
-      );
+      // await this.notificationEmitter.emit(
+      //   NotificationType.ADMIN_APPROVAL_REQUEST,
+      //   payload,
+      // );
+    emitNotificationEvent(NotificationType.ADMIN_APPROVAL_REQUEST, payload);
     } catch (error) {
       logger.error('Failed to send admin approval notification:', error);
       // Don't throw error as this is a non-critical operation
@@ -211,7 +213,7 @@ export class DriverService {
         dataToUpdate,
       );
       // send notification to customer
-      this.sendNotification(requestId, userWithDriver, data, userWithCustomer);
+      this.sendNotification(requestId, userWithDriver, {...data,estimation}, userWithCustomer);
       return true;
     }
     // if not driver status is accepted, then update the breakdown assignment
@@ -238,10 +240,11 @@ export class DriverService {
         newPrice: +data.estimation,
         explanation: data?.explanation,
       };
-      this.notificationEmitter.emit(
-        NotificationType.DRIVER_QUOTATION_UPDATED,
-        payload,
-      );
+      // this.notificationEmitter.emit(
+      //   NotificationType.DRIVER_QUOTATION_UPDATED,
+      //   payload,
+      // );
+      emitNotificationEvent(NotificationType.DRIVER_QUOTATION_UPDATED, payload);
     } else if (data.driverStatus === DriverStatus.REJECTED) {
       const payload: DriverRejectedEventPayload = {
         breakdownRequestId: requestId,
@@ -258,7 +261,8 @@ export class DriverService {
         newPrice: +data.estimation,
         description: "",
       };
-      this.notificationEmitter.emit(NotificationType.DRIVER_REJECTED, payload);
+      // this.notificationEmitter.emit(NotificationType.DRIVER_REJECTED, payload);
+      emitNotificationEvent(NotificationType.DRIVER_REJECTED, payload);
     } else {
       throw new Error("Invalid status or estimation amount");
     }
@@ -281,13 +285,16 @@ export class DriverService {
           requestId,
         },
       ),
-      estimation: +data.estimation,
+      estimation: +data?.estimation,
       user: userWithCustomer,
       newPrice: +data.estimation,
       description: "",
       vehicleNo: data?.vehicleNo,
     };
-    this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
+    // this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
+
+    emitNotificationEvent(NotificationType.DRIVER_ACCEPTED, payload);
+    
   }
 
   async getDriverProfileByEmail(email: string) {
@@ -379,7 +386,8 @@ export class DriverService {
       user: userWithCustomer,
     };
 
-    this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
+    // this.notificationEmitter.emit(NotificationType.DRIVER_CLOSED, payload);
+    emitNotificationEvent(NotificationType.DRIVER_CLOSED, payload);
     // TODO: Send notifications to customers
   }
 
