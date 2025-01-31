@@ -10,15 +10,21 @@ export function maskEmail(email: string): string {
 export function maskString(data: string) {
   if (!data || typeof data !== "string") return "";
 
-  // Regex patterns to identify components
-  const phoneRegex = /\b\d{3,}\b/g; // Matches sequences of digits (likely phone numbers)
-  const emailRegex = /[^\s@]+@[^\s@]+\.[^\s@]+/g; // Matches email addresses
-  const postcodeRegex = /\b[A-Z0-9]{2,4}\s?[A-Z0-9]{3}\b/gi; // Matches UK postcodes
+  // More precise regex patterns
+  const phoneRegex = /(\+?\d{1,3}[- ]?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b/g; // Targets common phone number formats
+  const emailRegex = /([^\s@]+)@([^\s@]+\.[^\s@]+)/g; // More explicit email masking
+  const postcodeRegex = /\b[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}\b/gi; // Strict UK postcode format
 
-  // Replace matched patterns with their masked versions
-  let maskedText = data.replace(phoneRegex, match => maskPhone(match));
-  maskedText = maskedText.replace(emailRegex, match => maskChatEmail(match));
-  maskedText = maskedText.replace(postcodeRegex, match => maskPostcode(match));
+  // Replace in order: emails -> phone numbers -> postcodes
+  let maskedText = data.replace(emailRegex, (match, user, domain) => 
+    `${user[0]}***@${domain}`
+  );
+  maskedText = maskedText.replace(phoneRegex, match => 
+    match.replace(/\d/g, (char, index) => index < 2 ? char : '*')
+  );
+  maskedText = maskedText.replace(postcodeRegex, match => 
+    `${match.slice(0, -3)}***`
+  );
 
   return maskedText;
 }
@@ -77,7 +83,7 @@ export const getDistance = async (
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
   apiKey: string
-): Promise<number> => {
+): Promise<number|null> => {
   // Validate input coordinates
   if (!origin.lat || !origin.lng || !destination.lat || !destination.lng) {
     throw new Error('Invalid origin or destination coordinates');
@@ -96,7 +102,7 @@ export const getDistance = async (
 
     // Check if the API response is valid
     if (response.data.status !== 'OK') {
-      throw new Error(`Google Directions API error: ${response.data.status}`);
+      throw new Error(`Google Directions API error: ${response.data}`);
     }
 
     // Extract distance in meters using destructuring
@@ -108,6 +114,7 @@ export const getDistance = async (
     return distanceInMiles;
   } catch (error) {
     console.error('Error calculating distance:', error);
-    throw new Error(`Error calculating distance: ${error instanceof Error ? error.message : error}`);
+    return null;
+    // throw new Error(`Error calculating distance: ${error instanceof Error ? error.message : error}`);
   }
 };

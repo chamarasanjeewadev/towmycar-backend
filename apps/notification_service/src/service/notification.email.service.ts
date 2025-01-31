@@ -18,6 +18,7 @@ import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 import { userRejectedEmail } from "../templates/userRejectedEmail";
 import { adminApprovalRequestEmail } from "../templates/adminApprovalRequestEmail";
 import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
+import { driverCreatedAdminNotificationEmail } from "templates/driverCreatedAdminNotificationEmail";
 
 
 // Configure the AWS SDK
@@ -93,29 +94,6 @@ export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
 }
 }
 
-// export const sendEmailWithSendGrid = async (payload: EmailPayloadType) => {
-//   try {
-//     const msg = {
-//       to: [payload.recipientEmail, "chamara.sanjeewa@gmail.com"],
-//       from: "TowMyCar <hello@towmycar.uk>",
-//       subject: payload.subject,
-//       html: payload.htmlBody,
-//     };
-
-//     const response = await sgMail.send(msg);
-//     console.log(
-//       `Email sent via SendGrid to ${payload.recipientEmail}: ${response[0].statusCode}`
-//     );
-//     return response;
-//   } catch (error) {
-//     console.error(
-//       `Failed to send email via SendGrid to ${payload.recipientEmail}:`,
-//       error
-//     );
-//     throw error;
-//   }
-// };
-
 // Update the getEmailContent function
 export function getEmailContent(type: NotificationType, payload: any) {
   switch (type) {
@@ -145,6 +123,8 @@ export function getEmailContent(type: NotificationType, payload: any) {
       return RatingRequestEmail(payload);
     case NotificationType.ADMIN_APPROVAL_REQUEST:
       return adminApprovalRequestEmail(payload as AdminApprovalRequestPayload);
+    case NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION:
+      return driverCreatedAdminNotificationEmail(payload as AdminApprovalRequestPayload);
     default:
       throw new Error(`Invalid email notification type: ${type}`);
   }

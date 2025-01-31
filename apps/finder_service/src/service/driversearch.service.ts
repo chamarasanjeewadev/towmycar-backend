@@ -1,6 +1,6 @@
 import { DriverSearchRepository } from "../repository/driversearch.repository";
 import { VIEW_REQUEST_BASE_URL ,GOOGLE_MAPS_API_KEY} from "../config";
-import { getDistance, getViewRequestUrl } from "@towmycar/common";
+import { getDistance, getViewRequestUrl, logger, QUOTATION_NO } from "@towmycar/common";
 import {
   createGoogleMapsDirectionsLink,
   NearbyDriver,
@@ -47,19 +47,19 @@ const findAndNotifyNearbyDrivers = async (
     );
     if(!nearbyDrivers || nearbyDrivers.length === 0)return [];
    
-   const firstFiveNearbyDrivers = nearbyDrivers.sort((a, b) => a.distance - b.distance).slice(0, 5);
+   const firsttwentyNearbyDrivers = nearbyDrivers.sort((a, b) => a.distance - b.distance).slice(0, 20);
 
    const distanceCalculatedNearbyDrivers = await Promise.allSettled(
-    firstFiveNearbyDrivers.map(async (driver) => {
+    firsttwentyNearbyDrivers.map(async (driver) => {
       try {
         const userLocation = { lat: request?.location?.latitude!, lng: request?.location?.longitude! };
         const driverLocation = { lat: driver?.primaryLocation?.latitude!, lng: driver?.primaryLocation?.longitude! };
         const pickupDistance = await getDistance(userLocation, driverLocation, GOOGLE_MAPS_API_KEY!);
-        driver.pickupDistance = `${pickupDistance}`;
+        if(pickupDistance){driver.pickupDistance = `${pickupDistance}`;}
         return driver;
       } catch (error) {
-        console.error("Error in getDistance:", error);
-        throw error; // Re-throw the error if you want it to be caught by Promise.allSettled
+        logger.error("Error in getDistance:", error);
+        // throw error; // Re-throw the error if you want it to be caught by Promise.allSettled
       }
     })
   );

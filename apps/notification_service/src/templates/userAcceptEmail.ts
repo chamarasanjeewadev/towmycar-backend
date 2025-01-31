@@ -15,9 +15,6 @@ export const userAcceptEmail = (payload: any) => {
      Once you confirm the quotation, we will securely share your contact information with the customer and provide you with their contact details. Please call or text them to coordinate directly. </p>
     
     
-    <div style="text-align: center;">
-      <a href="${payload.viewRequestLink}" class="button">Confirm Participation</a>
-    </div>
   `;
 
   const htmlBody = createBaseTemplate({ content, ctaLink: payload.viewRequestLink, ctaText: "Confirm Participation" });

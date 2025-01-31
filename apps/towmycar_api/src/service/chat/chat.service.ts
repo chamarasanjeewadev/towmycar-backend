@@ -54,15 +54,19 @@ export const sendPusherMessage = async ({
   sender: MessageSender;
 }) => {
   try {
-    const assignments = await getBreakdownAssignmentsByRequestId(requestId);
-    if (assignments.length === 0) {
+    //TODO cache this
+    const assignment =
+    await BreakdownRequestRepository.getBreakdownAssignmentsByDriverIdAndRequestId(driverId,
+      requestId
+    );
+    if (!assignment||assignment.driverStatus === DriverStatus.CLOSED|| assignment.userStatus === UserStatus.CLOSED) {
       throw new CustomError(ERROR_CODES.CHAT_ASSIGNMENT_CLOSED, 403);
     }
     const pusherEventName =
       sender === MessageSender.Driver
         ? "user-chat-message"
         : "driver-chat-message";
-    const maskedMessage = maskString(message);
+    const maskedMessage = assignment?.driverStatus === DriverStatus.ACCEPTED ? message : maskString(message);
 
     // Trigger Pusher event
     await pusher.trigger(
@@ -88,7 +92,7 @@ export const sendPusherMessage = async ({
     await upsertChat({
       requestId: requestId,
       driverId: driverId,
-      message,
+      message:maskedMessage,
       sender,
       sentAt: new Date(),
     });
@@ -192,6 +196,21 @@ export const getBreakdownAssignmentsByRequestId = async (
       assignment.userStatus !== UserStatus.CLOSED,
   );
   return filteredAssignments;
+};
+
+export const getBreakdownAssignmentByRequestIdAndDriverId = async (driverId: number,
+  requestId: number,
+): Promise<BreakdownAssignmentDetails> => {
+  const assignment =
+    await BreakdownRequestRepository.getBreakdownAssignmentsByDriverIdAndRequestId(driverId,
+      requestId
+    );
+  // const filteredAssignments = assignments.filter(
+  //   assignment =>
+  //     assignment.driverStatus !== DriverStatus.CLOSED &&
+  //     assignment.userStatus !== UserStatus.CLOSED,
+  // );
+  return assignment;
 };
 
 export const getChatsForDriverAndRequest = async (

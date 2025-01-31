@@ -76,10 +76,15 @@ const findNearbyDrivers = async (
           ),
       },
       distance: sql`
-        ST_Distance(
-          ${driver.primaryLocation}::geography,
-          ST_MakePoint(${longitude}, ${latitude})::geography
-        ) / 1000
+        ROUND(
+          CAST(
+            ST_Distance(
+              ${driver.primaryLocation}::geography,
+              ST_MakePoint(${longitude}, ${latitude})::geography
+            ) / 1000 AS NUMERIC
+          ),
+          2
+        )
       `.as("distance"),
     })
       .from(driver)

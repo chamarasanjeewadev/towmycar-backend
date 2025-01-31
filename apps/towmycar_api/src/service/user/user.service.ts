@@ -145,3 +145,46 @@ export const markAllChatNotificationsAsSeen = async (
 ) => {
   await repo.markAllChatNotificationsAsSeen(userId);
 };
+
+export const sendAdminApprovalNotification=(userId: number)=> {
+  try {
+    // const driverInfo = await DriverRepository.getDriverById(driverId);
+    // const user = await UserRepository.getUserProfileById(driverInfo?.userId);
+    // const userWithDriver = {
+    //   userId: driverInfo?.userId,
+    //   email: user?.email ?? "",
+    //   firstName: user?.firstName || undefined,
+    //   lastName: user?.lastName || undefined,
+    //   phoneNumber: user?.phoneNumber || undefined,
+    //   driver: {
+    //     id: driverInfo?.id,
+    //     phoneNumber: driverInfo?.phoneNumber,
+    //   },
+    // };
+    // const admins = await DriverRepository.getAllAdmins();
+    // const userWithAdmin = admins.map(admin => ({
+    //   ...admin,
+    //   userId: admin.id,
+    // }));
+    // const payload: AdminApprovalRequestPayload = {
+    //   admins: userWithAdmin,
+    //   user: null,
+    //   driver: userWithDriver,
+    //   breakdownRequestId: null,
+    //   viewRequestLink: getViewRequestUrl(
+    //     NotificationType.ADMIN_APPROVAL_REQUEST,
+    //     VIEW_REQUEST_BASE_URL,
+    //     {
+    //       requestId: null,
+    //     },
+    //   ),
+    // };
+    // await this.notificationEmitter.emit(
+    //   NotificationType.ADMIN_APPROVAL_REQUEST,
+    //   payload,
+    // );
+  } catch (error) {
+    // logger.error('Failed to send admin approval notification:', error);
+    // Don't throw error as this is a non-critical operation
+  }
+}

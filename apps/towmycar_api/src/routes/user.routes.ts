@@ -3,7 +3,10 @@ import * as service from "../service/user/user.service";
 import * as repository from "../repository/user.repository";
 import { UserRegisterInput } from "../dto/userRequest.dto";
 import { UserRepository } from "../repository/user.repository";
-import { saveFcmToken } from "../service/user/user.service";
+import {
+  saveFcmToken,
+  sendAdminApprovalNotification,
+} from "../service/user/user.service";
 import { FcmTokenInput } from "../dto/fcmToken.dto";
 import bodyParser from "body-parser";
 import { clerkClient } from "@clerk/clerk-sdk-node";
@@ -13,6 +16,7 @@ import { Driver } from "@towmycar/database";
 import { DriverRepository } from "../repository/driver.repository";
 import { CustomError, ERROR_CODES } from "@towmycar/common";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+import { nextTick } from "process";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -35,7 +39,7 @@ router.post(
 
       switch (evt.type) {
         case "user.created":
-          return handleUserCreated(evt, res);
+          return handleUserCreated(evt, res, next);
         case "user.updated":
           return handleUserUpdated(evt, res);
         default:
@@ -71,7 +75,7 @@ function validateSvixHeaders(headers: any) {
   }
 }
 
-async function handleUserCreated(evt: any, res: Response) {
+async function handleUserCreated(evt: any, res: Response, next: NextFunction) {
   try {
     const userData = evt.data;
     const userInfo = await service.createUserFromWebhook(userData, repo);
@@ -80,7 +84,8 @@ async function handleUserCreated(evt: any, res: Response) {
       userData,
     );
     await updateClerkUser(evt.data.id, userInfo, stripeCustomerId);
-
+    // TODO
+    // await sendAdminApprovalNotification(userInfo);
     return res.status(200).json({
       success: true,
       message:
@@ -88,11 +93,12 @@ async function handleUserCreated(evt: any, res: Response) {
     });
   } catch (error) {
     console.error("Error processing webhook:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error processing webhook",
-      error: error instanceof Error ? error.message : String(error),
-    });
+    next(error);
+    // return res.status(500).json({
+    //   success: false,
+    //   message: "Error processing webhook",
+    //   error: error instanceof Error ? error.message : String(error),
+    // });
   }
 }
 

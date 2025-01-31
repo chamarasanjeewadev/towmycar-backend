@@ -44,18 +44,17 @@ export const clerkAuthMiddleware = (requiredRole: string) => {
         const clerkUserId = req.auth?.userId ?? null;
         if (clerkUserId) {
           try {
-            const { role, userId, customerId, driverId } =
-              //@ts-ignore
-              verifiedToken.metadata.userInfo;
-            // const user = await clerkClient.users.getUser(clerkUserId);
-            //NOTE: this is the old way of getting the user info, since it calls cleark backend try to get it from token itself,
-            // TODO: make sure this is safe and not a security risk,
-            // //@ts-ignore
-            // const { role, userId, customerId, driverId } =
-            //   user.privateMetadata?.userInfo || {};
+            //@ts-ignore
+            let userInfo = verifiedToken?.metadata?.userInfo;
+            
+            if (!userInfo) {
+              const user = await clerkClient?.users?.getUser(clerkUserId);
+              userInfo = user?.privateMetadata?.userInfo || {};
+            }
+
+            const { role, userId, customerId, driverId } = userInfo;
 
             if (role !== requiredRole) {
-              // Use AuthorizeError for insufficient permissions as well
               return next(
                 new AuthorizeError("Insufficient permissions from clerk"),
               );

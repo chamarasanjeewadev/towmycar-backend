@@ -45,13 +45,13 @@ export function getViewRequestUrl(
     [NotificationType.DRIVER_QUOTATION_UPDATED]: ({
       requestId,
     }: ViewRequestUrlParams) =>
-      `${userRequestBaseUrl}/${requestId}?tab=pending`,
+      `${userRequestBaseUrl}/${requestId}`,
 
     [NotificationType.DRIVER_ASSIGNED]: ({ requestId }: ViewRequestUrlParams) =>
       `${userRequestBaseUrl}/${requestId}`,
 
     [NotificationType.DRIVER_QUOTED]: ({ requestId }: ViewRequestUrlParams) =>
-      `${userRequestBaseUrl}/${requestId}?tab=pending`,
+      `${userRequestBaseUrl}/${requestId}`,
 
     [NotificationType.DRIVER_ACCEPTED]: ({ requestId }: ViewRequestUrlParams) =>
       `${userRequestBaseUrl}/${requestId}?tab=accepted`,

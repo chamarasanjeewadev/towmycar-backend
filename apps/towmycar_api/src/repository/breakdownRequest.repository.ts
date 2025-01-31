@@ -231,7 +231,7 @@ const getPaginatedBreakdownRequestsByCustomerId = async (
                 END
               )
             )
-          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.driverStatus} IN (${DriverStatus.QUOTED}, ${DriverStatus.ACCEPTED},${DriverStatus.CLOSED})),
+          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.estimation} IS NOT NULL),
           '[]'::json
         )
       `.as("assignments"),
@@ -395,10 +395,11 @@ const getBreakdownAssignmentsByRequestId = async (
         driverUser.lastName,
         sql`${breakdownAssignment.paymentId} IS NOT NULL`,
       ),
-      imageUrl: sql<string>`CASE 
-        WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.imageUrl} 
-        ELSE NULL 
-      END`,
+      imageUrl: driverUser.imageUrl
+      // sql<string>`CASE 
+      //   WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${driverUser.imageUrl} 
+      //   ELSE NULL 
+      // END`,
     },
 
     customer: {
@@ -410,18 +411,20 @@ const getBreakdownAssignmentsByRequestId = async (
     },
   })
     .from(breakdownAssignment)
-    .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
     .innerJoin(
       breakdownRequest,
       eq(breakdownAssignment.requestId, breakdownRequest.id),
     )
+    .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
+    
     .leftJoin(customer, eq(breakdownRequest.customerId, customer.id))
     .leftJoin(user, eq(customer.userId, user.id))
     .leftJoin(driverUser, eq(driverUser.id, driver.userId))
     .where(
       and(
         eq(breakdownAssignment.requestId, requestId),
-        ne(breakdownAssignment.driverStatus, DriverStatus.PENDING),
+        // ne(breakdownAssignment.driverStatus, DriverStatus.PENDING),
+         isNotNull(breakdownAssignment.estimation)  
       ),
     )
     .orderBy(desc(breakdownAssignment.updatedAt));
@@ -436,7 +439,7 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
   let query = DB.select({
     id: breakdownAssignment.id,
     requestId: breakdownAssignment.requestId,
-    status: breakdownAssignment.driverStatus,
+    driverStatus: breakdownAssignment.driverStatus,
     userStatus: breakdownAssignment.userStatus,
     estimation: breakdownAssignment.estimation,
     explanation: breakdownAssignment.explanation,
@@ -463,13 +466,13 @@ const getBreakdownAssignmentsByDriverIdAndRequestId = async (
       eq(breakdownAssignment.requestId, breakdownRequest.id),
     )
     .innerJoin(customer, eq(breakdownRequest.customerId, customer.id))
-    .where(eq(driver.id, driverId));
+    .where(
+      and(
+        eq(breakdownAssignment.driverId, driverId),
+        eq(breakdownAssignment.requestId, requestId),
+      ),
 
-  if (requestId) {
-    // @ts-ignore
-    query = query.where(eq(breakdownAssignment.requestId, requestId));
-  }
-
+    );
   const result = await query
     .orderBy(desc(breakdownAssignment.updatedAt))
     .limit(1);
@@ -553,89 +556,89 @@ const getBreakdownRequestById = async (
       createdAt: breakdownRequest.createdAt,
       userId: breakdownRequest.customerId,
       location: {
-        latitude:
-          sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "latitude",
-          ),
-        longitude:
-          sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
-            "longitude",
-          ),
+      latitude:
+        sql<number>`CAST(ST_Y(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+        "latitude",
+        ),
+      longitude:
+        sql<number>`CAST(ST_X(${breakdownRequest.userLocation}) AS FLOAT)`.as(
+        "longitude",
+        ),
       },
       toLocation: {
-        latitude:
-          sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "latitude",
-          ),
-        longitude:
-          sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
-            "longitude",
-          ),
+      latitude:
+        sql<number>`CAST(ST_Y(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+        "latitude",
+        ),
+      longitude:
+        sql<number>`CAST(ST_X(${breakdownRequest.userToLocation}) AS FLOAT)`.as(
+        "longitude",
+        ),
       },
       assignments: sql<
-        {
-          id: number;
-          driverStatus: string;
-          userStatus: string;
-          estimation: number | null;
-          explanation: string | null;
-          updatedAt: Date;
-          driver: {
-            id: number;
-            email: string;
-            firstName: string;
-            lastName: string;
-            phoneNumber: string | null;
-            imageUrl: string | null;
-          };
-        }[]
+      {
+        id: number;
+        driverStatus: string;
+        userStatus: string;
+        estimation: number | null;
+        explanation: string | null;
+        updatedAt: Date;
+        driver: {
+        id: number;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber: string | null;
+        imageUrl: string | null;
+        };
+      }[]
       >`
-        COALESCE(
-          JSON_AGG(
-            JSON_BUILD_OBJECT(
-              'id', ${breakdownAssignment.id},
-              'driverStatus', ${breakdownAssignment.driverStatus},
-              'userStatus', ${breakdownAssignment.userStatus},
-              'closedBy', ${breakdownAssignment.closedBy},
-              'closedAt', ${breakdownAssignment.closedAt},
-              'estimation', ${breakdownAssignment.estimation},
-              'explanation', ${breakdownAssignment.explanation},
-              'updatedAt', ${breakdownAssignment.updatedAt},
-              'driver', JSON_BUILD_OBJECT(
-                'id', ${driver.id},
-                'email', ${maskSensitiveData(
-                  user.email,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
-                )},
-                'firstName', ${maskSensitiveData(
-                  user.firstName,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
-                )},
-                'lastName', ${maskSensitiveData(
-                  user.lastName,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
-                )},
-                'phoneNumber', ${maskSensitiveData(
-                  driver.phoneNumber,
-                  sql`${breakdownAssignment.paymentId} IS NOT NULL`,
-                )},
-                'imageUrl', CASE 
-                  WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${
-                    user.imageUrl
-                  } 
-                  ELSE NULL 
-                END
-              )
-            )
-          ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL),
-          '[]'::json
+      COALESCE(
+        JSON_AGG(
+        JSON_BUILD_OBJECT(
+          'id', ${breakdownAssignment.id},
+          'driverStatus', ${breakdownAssignment.driverStatus},
+          'userStatus', ${breakdownAssignment.userStatus},
+          'closedBy', ${breakdownAssignment.closedBy},
+          'closedAt', ${breakdownAssignment.closedAt},
+          'estimation', ${breakdownAssignment.estimation},
+          'explanation', ${breakdownAssignment.explanation},
+          'updatedAt', ${breakdownAssignment.updatedAt},
+          'driver', JSON_BUILD_OBJECT(
+          'id', ${driver.id},
+          'email', ${maskSensitiveData(
+            user.email,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
+          )},
+          'firstName', ${maskSensitiveData(
+            user.firstName,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
+          )},
+          'lastName', ${maskSensitiveData(
+            user.lastName,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
+          )},
+          'phoneNumber', ${maskSensitiveData(
+            driver.phoneNumber,
+            sql`${breakdownAssignment.paymentId} IS NOT NULL`,
+          )},
+          'imageUrl', CASE 
+            WHEN ${breakdownAssignment.paymentId} IS NOT NULL THEN ${
+            user.imageUrl
+            } 
+            ELSE NULL 
+          END
+          )
         )
+        ) FILTER (WHERE ${breakdownAssignment.id} IS NOT NULL AND ${breakdownAssignment.estimation} IS NOT NULL),
+        '[]'::json
+      )
       `.as("assignments"),
     })
       .from(breakdownRequest)
       .leftJoin(
-        breakdownAssignment,
-        eq(breakdownAssignment.requestId, breakdownRequest.id),
+      breakdownAssignment,
+      eq(breakdownAssignment.requestId, breakdownRequest.id),
       )
       .leftJoin(driver, eq(breakdownAssignment.driverId, driver.id))
       .leftJoin(user, eq(driver.userId, user.id))

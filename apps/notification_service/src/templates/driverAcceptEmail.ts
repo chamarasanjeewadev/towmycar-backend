@@ -26,8 +26,6 @@ export const driverAcceptEmail = (payload: DriverAcceptPayload) => {
     <p style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #1B8B4B;">
       <strong>What is next:</strong><br>
      Please use the contact details provided above to coordinate directly with the driver and finalize arrangements. </p>
-    
- 
   `;
 
   const htmlBody = createBaseTemplate({ content, ctaLink: payload.viewRequestLink });

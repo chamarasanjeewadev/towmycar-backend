@@ -14,6 +14,7 @@ import {
   ChatNotificationEventPayload,
   DriverQuotationUpdatedPayload,
   AdminApprovalRequestPayload,
+  DriverCreatedAdminNotificationEventPayload,
 } from "@towmycar/common";
 
 export function registerNotificationListener(emitter: EventEmitter): void {
@@ -250,6 +251,9 @@ export function registerNotificationListener(emitter: EventEmitter): void {
       );
     },
   );
+
+  
+  
   emitter.on(
     NotificationType.USER_CHAT_INITIATED,
     async (payload: ChatNotificationEventPayload) => {
@@ -287,4 +291,25 @@ export function registerNotificationListener(emitter: EventEmitter): void {
     
     },
   );
+
+  emitter.on(
+    NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+    async (payload: DriverCreatedAdminNotificationEventPayload) => {
+      payload.admins.forEach(async admin => {
+        const notificationPayload = {
+          ...payload,
+          sendToId: admin.userId,
+        };
+        await sendSNSNotification(
+          process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
+          {
+            subType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+            payload: notificationPayload,
+          },
+        );
+      });
+    
+    },
+  );
+
 }

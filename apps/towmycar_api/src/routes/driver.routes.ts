@@ -483,7 +483,7 @@ router.post(
       //   );
       // }
 
-      const response = await driverService.adminApproval(
+      const response = await driverService.requestAdminApproval(
         driverId,
         req.body as Partial<DriverProfileDtoType>,
       );

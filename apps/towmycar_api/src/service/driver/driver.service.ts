@@ -8,6 +8,7 @@ import { Stripe } from "stripe";
 import {
   AdminApprovalRequestPayload,
   ConflictError,
+  DataBaseError,
   DriverAcceptedEventPayload,
   DriverApprovalStatus,
   DriverClosedEventPayload,
@@ -18,6 +19,7 @@ import {
   isTrialPeriodExpired,
   logger,
   registerNotificationListener,
+  STATUS_CODES,
   TokenService,
   UserWithCustomer,
   UserWithDriver,
@@ -78,48 +80,71 @@ export class DriverService {
     return requests;
   }
 
-  async adminApproval(driverId: number, data: Partial<DriverProfileDtoType>) {
-    const driverInfo = await DriverRepository.getDriverById(driverId);
-    const user = await UserRepository.getUserProfileById(driverInfo?.userId);
-    const userWithDriver = {
-      userId: driverInfo?.userId,
-      email: user?.email ?? "",
-      firstName: user?.firstName || undefined,
-      lastName: user?.lastName || undefined,
-      phoneNumber: user?.phoneNumber || undefined,
-      driver: {
-        id: driverInfo?.id,
-        phoneNumber: driverInfo?.phoneNumber,
-      },
-    };
-    const admins = await DriverRepository.getAllAdmins();
-    const userWithAdmin = admins.map(admin => ({
-      ...admin,
-      userId: admin.id,
-    }));
-    const payload: AdminApprovalRequestPayload = {
-      admins: userWithAdmin,
-      user: null,
-      driver: userWithDriver,
-      breakdownRequestId: null,
-      viewRequestLink: getViewRequestUrl(
-        NotificationType.ADMIN_APPROVAL_REQUEST,
-        VIEW_REQUEST_BASE_URL,
-        {
-          requestId: null,
-        },
-      ),
-    };
-    await this.notificationEmitter.emit(
-      NotificationType.ADMIN_APPROVAL_REQUEST,
-      payload,
-    );
-    const response = await this.updateDriverProfile(
-      driverId,
-      { ...data, approvalStatus: DriverApprovalStatus.PENDING },
-      DriverRepository,
-    );
+  async requestAdminApproval(driverId: number, data: Partial<DriverProfileDtoType>) {
+    let response;
+    try {
+      // First, update the driver profile
+      response = await this.updateDriverProfile(
+        driverId,
+        { ...data, approvalStatus: DriverApprovalStatus.PENDING },
+        DriverRepository,
+      );
+
+      // Then, try to send notification
+      await this.sendAdminApprovalNotification(driverId);
+    } catch (error) {
+      logger.error('Error in adminApproval:', error);
+     
+        throw new DataBaseError(
+          'Failed to update driver profile'
+        );
+    
+    }
+
     return response;
+  }
+
+  private async sendAdminApprovalNotification(driverId: number) {
+    try {
+      const driverInfo = await DriverRepository.getDriverById(driverId);
+      const user = await UserRepository.getUserProfileById(driverInfo?.userId);
+      const userWithDriver = {
+        userId: driverInfo?.userId,
+        email: user?.email ?? "",
+        firstName: user?.firstName || undefined,
+        lastName: user?.lastName || undefined,
+        phoneNumber: user?.phoneNumber || undefined,
+        driver: {
+          id: driverInfo?.id,
+          phoneNumber: driverInfo?.phoneNumber,
+        },
+      };
+      const admins = await DriverRepository.getAllAdmins();
+      const userWithAdmin = admins.map(admin => ({
+        ...admin,
+        userId: admin.id,
+      }));
+      const payload: AdminApprovalRequestPayload = {
+        admins: userWithAdmin,
+        user: null,
+        driver: userWithDriver,
+        breakdownRequestId: null,
+        viewRequestLink: getViewRequestUrl(
+          NotificationType.ADMIN_APPROVAL_REQUEST,
+          VIEW_REQUEST_BASE_URL,
+          {
+            requestId: null,
+          },
+        ),
+      };
+      await this.notificationEmitter.emit(
+        NotificationType.ADMIN_APPROVAL_REQUEST,
+        payload,
+      );
+    } catch (error) {
+      logger.error('Failed to send admin approval notification:', error);
+      // Don't throw error as this is a non-critical operation
+    }
   }
 
   async updateBreakdownAssignment(
@@ -141,9 +166,12 @@ export class DriverService {
       throw new Error(`User not found for request ${requestId}`);
     }
     if (driverInfo?.driver?.approvalStatus !== DriverApprovalStatus.APPROVED) {
-      throw new ConflictError(
+      throw new CustomError(
+        ERROR_CODES.ADMIN_APPROVAL_REQUIRED,
+        STATUS_CODES.UN_AUTHORISED,
         "You need to get your profile approved first to respond to this job",
       );
+     
     }
 
     if (data.driverStatus === DriverStatus.ACCEPTED) {
@@ -368,7 +396,7 @@ export class DriverService {
       if (driver.approvalStatus !== DriverApprovalStatus.APPROVED) {
         throw new CustomError(
           ERROR_CODES.DRIVER_NOT_APPROVED,
-          400,
+          STATUS_CODES.UN_AUTHORISED,
           "Driver not approved. Complete your profile first and submit for approval.",
         );
       }
@@ -376,7 +404,7 @@ export class DriverService {
       if (isDriverTrialPeriodExpired && !driver?.stripePaymentMethodId) {
         throw new CustomError(
           ERROR_CODES.STRIPE_CARD_NOT_ADDED,
-          400,
+          STATUS_CODES.UN_AUTHORISED,
           "Unable to process payment. Please add a valid payment method in profile section.",
         );
       }
@@ -389,7 +417,7 @@ export class DriverService {
         if (paymentIntent.status !== "succeeded") {
           throw new CustomError(
             ERROR_CODES.INVALID_PAYMENT_AMOUNT,
-            400,
+            STATUS_CODES.UN_AUTHORISED,
             "Payment Failed",
           );
         }
@@ -411,7 +439,7 @@ export class DriverService {
       logger.error("Payment processing error:", error);
       throw new CustomError(
         ERROR_CODES.PAYMENT_FAILED,
-        400,
+        STATUS_CODES.UN_AUTHORISED,
         error instanceof CustomError
           ? error.message
           : "Payment processing failed. Please try again or contact support.",
@@ -433,7 +461,7 @@ export class DriverService {
       if (paymentIntent.status !== "succeeded") {
         throw new CustomError(
           ERROR_CODES.INVALID_PAYMENT_AMOUNT,
-          400,
+          STATUS_CODES.UN_AUTHORISED,
           "Payment failed",
         );
       }
@@ -442,7 +470,7 @@ export class DriverService {
       logger.error("Payment processing error:", error);
       throw new CustomError(
         ERROR_CODES.PAYMENT_FAILED,
-        400,
+        STATUS_CODES.UN_AUTHORISED,
         error instanceof CustomError
           ? error.message
           : "Payment processing failed. Please try again or contact support.",

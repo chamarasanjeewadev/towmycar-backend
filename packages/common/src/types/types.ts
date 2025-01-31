@@ -14,7 +14,7 @@ export type ListnerPayload =
   | UserRejectPayload
   |ChatNotificationPayload
   | RatingReviewPayload
-  | AdminApprovalRequestPayload;
+  | AdminApprovalRequestPayload|DriverCreatedAdminNotificationPayload;
 
 export type NotificationPayload = {
   sendToId: number;
@@ -148,6 +148,16 @@ export interface AdminApprovalRequestPayload {
   userId?: number;
 }
 
+export interface DriverCreatedAdminNotificationPayload {
+  driver: UserWithDriver;
+  admins: UserWithAdmin[];
+  user: UserWithCustomer;
+  viewRequestLink: string;
+  breakdownRequestId?: number;// TODO: remove this
+  sendToId?: number;
+  userId?: number;
+}
+
 export interface UserAcceptedEventPayload {
   breakdownRequestId: number;
   driver: UserWithDriver;
@@ -193,6 +203,18 @@ export interface ChatNotificationEventPayload {
   driver: UserWithDriver;
   user: UserWithCustomer;
   sender:MessageSender;
+}
+
+export interface DriverCreatedAdminNotificationEventPayload {
+  
+  driver: UserWithDriver;
+  admins: UserWithAdmin[];
+  user: UserWithCustomer;
+  viewRequestLink: string;
+  breakdownRequestId?: number;// TODO: remove this
+  sendToId?: number;
+  userId?: number;
+  
 }
 
 export interface DriverNotifyEventPayload {

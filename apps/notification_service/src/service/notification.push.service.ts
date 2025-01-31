@@ -81,7 +81,7 @@ export function generatePushNotificationPayload(
   payload: ListnerPayload,
 ): PushNotificationPayload {
   const requestId = payload.breakdownRequestId
-    ? `(Request, ${QUOTATION_NO}: ${payload.breakdownRequestId})`
+    ? ` ${QUOTATION_NO}: ${payload.breakdownRequestId}`
     : "";
 
   switch (type) {
