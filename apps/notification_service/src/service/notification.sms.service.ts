@@ -24,8 +24,8 @@ function generateSMSNotificationPayload(
   type: NotificationType,
   payload: ListnerPayload
 ): { message: string; viewLink?: string; phoneNumber?: string } {
-  const requestId = payload.breakdownRequestId
-    ? `${QUOTATION_NO}: ${payload.breakdownRequestId}`
+  const requestId = payload?.breakdownRequestId
+    ? `${QUOTATION_NO}: ${payload?.breakdownRequestId}`
     : "";
 
   switch (type) {
@@ -104,12 +104,12 @@ function generateSMSNotificationPayload(
         viewLink: payload.viewRequestLink,
       };
 
-    default:
-      return {
-        phoneNumber: payload.user?.phoneNumber,
-        message: `You have a new notification ${requestId}`,
-        viewLink: payload.viewRequestLink,
-      };
+    // default:
+    //   return {
+    //     phoneNumber: payload.user?.phoneNumber,
+    //     message: `You have a new notification ${requestId}`,
+    //     viewLink: payload.viewRequestLink,
+    //   };
   }
 }
 

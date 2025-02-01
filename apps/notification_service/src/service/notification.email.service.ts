@@ -28,7 +28,7 @@ import { RatingRequestEmail } from "../templates/RatingRequestEmail";
 import { userRejectedEmail } from "../templates/userRejectedEmail";
 import { adminApprovalRequestEmail } from "../templates/adminApprovalRequestEmail";
 import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
-import { driverCreatedAdminNotificationEmail } from "templates/driverCreatedAdminNotificationEmail";
+import { driverCreatedAdminNotificationEmail } from "../templates/driverCreatedAdminNotificationEmail";
 
 
 // Configure the AWS SDK

@@ -194,7 +194,7 @@ export class NotificationListener {
     };
 
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-      subType: NotificationType.DRIVER_ACCEPTED,
+      subType: NotificationType.ADMIN_CONTACTUS_NOTIFICATION,
       payload: notificationPayload,
     });
   }

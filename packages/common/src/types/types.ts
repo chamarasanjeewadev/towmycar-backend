@@ -182,12 +182,13 @@ export interface AdminApprovalRequestPayload {
 
 export interface DriverCreatedAdminNotificationPayload {
   userInfo:UserInfo
-  // driver?: UserWithDriver;
+   driver?: UserWithDriver;
   admins?: UserWithAdmin[];
-  // user?: UserWithCustomer;
+   user?: UserWithCustomer;
   viewRequestLink: string;
   sendToId?: number;
   userId?: number;
+  breakdownRequestId?:number;
 }
 
 export interface UserAcceptedEventPayload {
@@ -251,6 +252,11 @@ export interface ContactUsPayload {
   message: string;
   admins?:UserWithAdmin[];
   viewRequestLink?  :string;
+  sendToId?: number;
+  userId?: number;
+  breakdownRequestId?:number;
+  user:UserWithCustomer;
+  driver:UserWithDriver;
 }
 export interface ContactUsEventPayload {
   firstName?: string;

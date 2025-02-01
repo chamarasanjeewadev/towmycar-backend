@@ -201,7 +201,7 @@ emitter.on(
     );
     await checkAndProcessEmail({
       payload,
-      notificationType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+      notificationType: NotificationType.ADMIN_CONTACTUS_NOTIFICATION,
       breakdownRequestId: null, // payload?.breakdownRequestId,
       emailContent,
       userId:null,// TODO fix sendToId for admins
@@ -297,10 +297,10 @@ emitter.on(
       await checkAndProcessEmail({
         payload,
         notificationType: NotificationType.DRIVER_ACCEPTED,
-        userId: payload.sendToId,
-        breakdownRequestId: payload.breakdownRequestId,
+        userId: payload?.sendToId,
+        breakdownRequestId: payload?.breakdownRequestId,
         emailContent,
-        recipientEmail: payload.user.email,
+        recipientEmail: payload?.user?.email,
       });
     },
   );
@@ -374,17 +374,20 @@ async function checkAndProcessEmail({
 
     // const result = await sendEmail(emailPayload);
     const result=mailSender===MailSender.MAILERSENDER?await sendEmailWithMailerSend(emailPayload): await sendEmail(emailPayload);
+    logger.info(`email sent to ${JSON.stringify(emailPayload )}`)
+    if(userId){
       await NotificationRepository.saveNotification({
         userId,
         breakdownRequestId,
-        title: emailContent.subject,
-        message: emailContent.htmlBody,
+        title: emailContent?.subject,
+        message: emailContent?.htmlBody,
         deliveryType: DeliveryNotificationType.EMAIL,
         notificationType: notificationType,
         payload: JSON.stringify(payload),
         url: payload.viewRequestLink,
         status: result ? NotificationStatus.SENT: NotificationStatus.FAILED,
       });
+    }
      return result; 
 
   } catch (error) {

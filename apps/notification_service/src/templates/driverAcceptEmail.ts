@@ -28,10 +28,10 @@ export const driverAcceptEmail = (payload: DriverAcceptPayload) => {
      Please use the contact details provided above to coordinate directly with the driver and finalize arrangements. </p>
   `;
 
-  const htmlBody = createBaseTemplate({ content, ctaLink: payload.viewRequestLink });
+  const htmlBody = createBaseTemplate({ content, ctaLink: payload?.viewRequestLink });
 
   return {
-    subject: `${notificationIcons.DRIVER_ACCEPTED} Driver accepted your Request - ${QUOTATION_NO}:${payload.breakdownRequestId}`,
+    subject: `${notificationIcons.DRIVER_ACCEPTED} Driver accepted your Request - ${QUOTATION_NO}:${payload?.breakdownRequestId}`,
     htmlBody,
   };
 };

@@ -166,7 +166,7 @@ async function processNotification(
         userId: payload.sendToId,
         notificationType,
         deliveryType: DeliveryNotificationType.PUSH,
-        breakdownRequestId: payload.breakdownRequestId,
+        breakdownRequestId: payload?.breakdownRequestId,
       });
 
       if (isAlreadySent) {
@@ -192,8 +192,8 @@ async function processNotification(
       : NotificationStatus.FAILED;
 
     await NotificationRepository.saveNotification({
-      userId: payload.sendToId,
-      breakdownRequestId: payload.breakdownRequestId,
+      userId: payload?.sendToId,
+      breakdownRequestId: payload?.breakdownRequestId,
       deliveryType: DeliveryNotificationType.PUSH,
       notificationType: notificationType,
       payload: JSON.stringify(result),
