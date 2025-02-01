@@ -1,3 +1,4 @@
+import { contactUsAdminNotificationEmail } from './../templates/contactusAdminNotificationEmail';
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { userRequestEmail } from "../templates/userRequestEmail";
 import { driverAcceptEmail } from "../templates/driverAcceptEmail";
@@ -9,6 +10,7 @@ import { driverNotificationEmail } from "../templates/driverNotificationEmail";
 import { userNotificationEmail } from "../templates/userNotificationEmail";
 import {
   AdminApprovalRequestPayload,
+  ContactUsPayload,
   DriverAcceptPayload,
   DriverCreatedAdminNotificationPayload,
   DriverNotificationPayload,
@@ -42,7 +44,7 @@ export const sendEmail = async (payload: EmailPayloadType) => {
     const params = {
      Source: "TowMyCar <hello@towmycar.uk>",
       Destination: {
-        ToAddresses: [payload.recipientEmail, "chamara.sanjeewa@gmail.com"],
+        ToAddresses: [payload.recipientEmail ],
       },
       Message: {
         Subject: {
@@ -75,15 +77,16 @@ export const sendEmail = async (payload: EmailPayloadType) => {
   }
 };
 export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
+  const sentFrom = new Sender("hello@towmycar.uk", "TowMyCar");
+  const recipients = [
+    new Recipient(payload?.recipientEmail, "")
+  ];
   try {
   const mailerSend = new MailerSend({
     apiKey:mailerSenderAPIKEY,
   });
   
-  const sentFrom = new Sender("hello@towmycar.uk", "TowMyCar");
-  const recipients = [
-    new Recipient(payload.recipientEmail, "Your Client")
-  ];
+  
   
   const emailParams = new EmailParams()
     .setFrom(sentFrom)
@@ -98,7 +101,7 @@ export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
  return true;
 } catch (error) {
   logger.error(
-    `Failed to send email to ${payload} for request ${payload}:`,
+    `Failed to send email to ${JSON.stringify(recipients)} for request ${JSON.stringify(payload)}:`,
     error
   );
   return false
@@ -136,6 +139,8 @@ export function getEmailContent(type: NotificationType, payload: ListnerPayload)
       return adminApprovalRequestEmail(payload as AdminApprovalRequestPayload);
     case NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION:
       return driverCreatedAdminNotificationEmail(payload as DriverCreatedAdminNotificationPayload);
+      case NotificationType.ADMIN_CONTACTUS_NOTIFICATION:
+        return contactUsAdminNotificationEmail(payload as ContactUsPayload); 
     default:
       throw new Error(`Invalid email notification type: ${type}`);
   }

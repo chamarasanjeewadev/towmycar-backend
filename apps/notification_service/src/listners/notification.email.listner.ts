@@ -12,11 +12,11 @@ import {
   MailSender,
   NotificationStatus,
   DriverCreatedAdminNotificationPayload,
+  ContactUsPayload,
 } from "@towmycar/common";
 import {
   getEmailContent,
   sendEmail,
-  // sendEmailWithSendGrid,
   sendEmailWithMailerSend
 } from "../service/notification.email.service";
 import { NotificationRepository } from "../repository/notification.repository";
@@ -156,41 +156,59 @@ export function registerEmailListener(emitter: EventEmitter): void {
     },
   );
 // admin email notifications
-  emitter.on(
-    `${DeliveryNotificationType.EMAIL}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
-    async (payload: AdminApprovalRequestPayload) => {
-      const emailContent = getEmailContent(
-        NotificationType.ADMIN_APPROVAL_REQUEST,
-        payload,
-      );
-      await checkAndProcessEmail({
-        payload,
-        notificationType: NotificationType.ADMIN_APPROVAL_REQUEST,
-        userId: payload?.sendToId,
-        breakdownRequestId: null, // payload?.breakdownRequestId,
-        emailContent,
-        recipientEmail: "hello.towmycar.uk@gmail.com",
-      });
-    },
-  );
+emitter.on(
+  `${DeliveryNotificationType.EMAIL}:${NotificationType.ADMIN_APPROVAL_REQUEST}`,
+  async (payload: AdminApprovalRequestPayload) => {
+    const emailContent = getEmailContent(
+      NotificationType.ADMIN_APPROVAL_REQUEST,
+      payload,
+    );
+    await checkAndProcessEmail({
+      payload,
+      notificationType: NotificationType.ADMIN_APPROVAL_REQUEST,
+      userId: payload?.sendToId,
+      breakdownRequestId: null, // payload?.breakdownRequestId,
+      emailContent,
+      recipientEmail: "hello.towmycar.uk@gmail.com",
+    });
+  },
+);
 
-  emitter.on(
-    `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION}`,
-    async (payload: DriverCreatedAdminNotificationPayload) => {
-      const emailContent = getEmailContent(
-        NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
-        payload,
-      );
-      await checkAndProcessEmail({
-        payload,
-        notificationType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
-        userId: payload?.sendToId,
-        breakdownRequestId: null, // payload?.breakdownRequestId,
-        emailContent,
-        recipientEmail: "hello.towmycar.uk@gmail.com",
-      });
-    },
-  );
+emitter.on(
+  `${DeliveryNotificationType.EMAIL}:${NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION}`,
+  async (payload: DriverCreatedAdminNotificationPayload) => {
+    const emailContent = getEmailContent(
+      NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+      payload,
+    );
+    await checkAndProcessEmail({
+      payload,
+      notificationType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+      userId: payload?.sendToId,
+      breakdownRequestId: null, // payload?.breakdownRequestId,
+      emailContent,
+      recipientEmail: "hello.towmycar.uk@gmail.com",
+    });
+  },
+);
+
+emitter.on(
+  `${DeliveryNotificationType.EMAIL}:${NotificationType.ADMIN_CONTACTUS_NOTIFICATION}`,
+  async (payload: ContactUsPayload) => {
+    const emailContent = getEmailContent(
+      NotificationType.ADMIN_CONTACTUS_NOTIFICATION,
+      payload,
+    );
+    await checkAndProcessEmail({
+      payload,
+      notificationType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
+      breakdownRequestId: null, // payload?.breakdownRequestId,
+      emailContent,
+      userId:null,// TODO fix sendToId for admins
+      recipientEmail: "hello.towmycar.uk@gmail.com",
+    });
+  },
+);
 
   // USER_CREATED handler
   emitter.on(

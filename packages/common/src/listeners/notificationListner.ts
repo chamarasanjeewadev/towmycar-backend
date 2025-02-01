@@ -1,6 +1,7 @@
 import {
   AdminApprovalRequestPayload,
   ChatNotificationEventPayload,
+  ContactUsPayload,
   DriverAcceptPayload,
   DriverClosedEventPayload,
   DriverCreatedAdminNotificationEventPayload,
@@ -55,114 +56,81 @@ export class NotificationListener {
       this.handleAdminApprovalRequest,
     );
     eventBus.on(
-    NotificationType.DRIVER_QUOTATION_UPDATED,
+      NotificationType.DRIVER_QUOTATION_UPDATED,
       this.handleDriverQuotationUpdated,
     );
-    eventBus.on(
-      NotificationType.DRIVER_REJECTED,
-      this.handleDriverRejected,
-    );
-    eventBus.on(
-      NotificationType.DRIVER_CLOSED,
-      this.handleDriverClosed,
-    );
+    eventBus.on(NotificationType.DRIVER_REJECTED, this.handleDriverRejected);
+    eventBus.on(NotificationType.DRIVER_CLOSED, this.handleDriverClosed);
+
+    eventBus.on(NotificationType.DRIVER_ACCEPTED, this.handleDriverAccepted);
 
     eventBus.on(
-      NotificationType.DRIVER_ACCEPTED,
-      this.handleDriverAccepted,
+      NotificationType.ADMIN_CONTACTUS_NOTIFICATION,
+      this.handleAdminContactUs,
     );
 
     // Register other listeners...
   }
 
-  // private async handleDriverNotification(payload: any) {
-  //   const snsNotificationPayload = payload?.drivers.map((driver: any) => ({
-  //     ...payload,
-  //     sendToId: driver.userId,
-  //     driver: driver,
-  //   }));
+  private async handleUserAcceptedPlayload(payload: UserAcceptedEventPayload) {
+    const userAcceptedPlayload: UserAcceptedPayload = {
+      ...payload,
+      sendToId: payload.driver.userId,
+    };
 
-  //   await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-  //     subType: NotificationType.DRIVER_NOTIFICATION,
-  //     payload: snsNotificationPayload,
-  //   });
-  // }
-
-
- 
-   private async handleUserAcceptedPlayload (payload: UserAcceptedEventPayload) {
-      const userAcceptedPlayload: UserAcceptedPayload = {
-        ...payload,
-        sendToId: payload.driver.userId,
-      };
-
-      await sendSNSNotification(
-        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
-        {
-          subType: NotificationType.USER_ACCEPTED,
-          payload: userAcceptedPlayload,
-        },
-      );
-    
-    } 
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.USER_ACCEPTED,
+      payload: userAcceptedPlayload,
+    });
+  }
 
   private async handleUserCreatedDriverNotification(
     payload: DriverCreatedAdminNotificationPayload,
   ) {
     const notificationPayload: DriverCreatedAdminNotificationPayload = {
       userInfo: payload?.userInfo,
-      viewRequestLink:payload?.viewRequestLink, //TODO admins must dynamically attached
+      viewRequestLink: payload?.viewRequestLink, //TODO admins must dynamically attached
     };
     await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.DRIVER_CREATED_ADMIN_NOTIFICATION,
       payload: notificationPayload,
     });
   }
-// emitter.on(
-//   NotificationType.DRIVER_CHAT_INITIATED,
-private async handleDriverChatTriggered(payload: ChatNotificationEventPayload) {
-  const chatPayload = {
-    ...payload,
-    sendToId: payload?.user.id,
-  };
 
-  await sendSNSNotification(
-    process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
-    {
+  private async handleDriverChatTriggered(
+    payload: ChatNotificationEventPayload,
+  ) {
+    const chatPayload = {
+      ...payload,
+      sendToId: payload?.user.id,
+    };
+
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.DRIVER_CHAT_INITIATED,
       payload: chatPayload,
-    },
-  );
-}
+    });
+  }
 
+  private async handleUserChatInitiated(payload: ChatNotificationEventPayload) {
+    const chatPayload = {
+      ...payload,
+      breakdownRequestId: payload.breakdownRequestId,
+      sendToId: payload.driver?.userId,
+    };
 
-// emitter.on(
-//   NotificationType.USER_CHAT_INITIATED,
-private async handleUserChatInitiated(payload: ChatNotificationEventPayload)  {
-  const chatPayload = {
-    ...payload,
-    breakdownRequestId: payload.breakdownRequestId,
-    sendToId: payload.driver?.userId,
-  };
-  
-
-  await sendSNSNotification(
-    process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
-    {
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
       subType: NotificationType.USER_CHAT_INITIATED,
       payload: chatPayload,
-    },
-  );
+    });
+  }
 
-
-}
-
-
-  private async handleAdminApprovalRequest (payload: AdminApprovalRequestPayload) {
+  private async handleAdminApprovalRequest(
+    payload: AdminApprovalRequestPayload,
+  ) {
     payload.admins.forEach(async admin => {
       const notificationPayload = {
         ...payload,
-        
+
         sendToId: admin.userId,
       };
       await sendSNSNotification(
@@ -173,74 +141,73 @@ private async handleUserChatInitiated(payload: ChatNotificationEventPayload)  {
         },
       );
     });
-  
   }
 
+  private async handleDriverQuotationUpdated(
+    payload: DriverQuotedEventPayload,
+  ) {
+    const driverQuotedPlayload: DriverQuotationUpdatedPayload = {
+      sendToId: payload.user.id,
+      driver: payload.driver,
+      breakdownRequestId: payload.breakdownRequestId,
+      user: payload.user,
+      viewRequestLink: payload.viewRequestLink,
+      previousPrice: 0, //TODO
+      newPrice: payload.newPrice,
+      estimation: payload.estimation,
+      explanation: payload.explanation,
+    };
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.DRIVER_QUOTATION_UPDATED,
+      payload: driverQuotedPlayload,
+    });
+  }
 
-  private  async handleDriverQuotationUpdated (payload: DriverQuotedEventPayload) {
-      const driverQuotedPlayload: DriverQuotationUpdatedPayload = {
-        sendToId: payload.user.id,
-        driver: payload.driver,
-        breakdownRequestId: payload.breakdownRequestId,
-        user: payload.user,
-        viewRequestLink: payload.viewRequestLink,
-        previousPrice: 0, //TODO
-        newPrice: payload.newPrice,
-        estimation: payload.estimation,
-        explanation:payload.explanation
-      };
-      await sendSNSNotification(
-        process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
-        {
-          subType: NotificationType.DRIVER_QUOTATION_UPDATED,
-          payload: driverQuotedPlayload,
-        },
-      );
-    }
+  private async handleDriverRejected(payload: DriverRejectedEventPayload) {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
 
-      private async handleDriverRejected(payload:DriverRejectedEventPayload) {
-      const notificationPayload = {
-        ...payload,
-        sendToId: payload.user.id,
-      };
-      
-  
-      await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        subType: NotificationType.DRIVER_REJECTED,
-        payload: notificationPayload,
-      });
-    }
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.DRIVER_REJECTED,
+      payload: notificationPayload,
+    });
+  }
 
-    private async handleDriverAccepted(payload:DriverAcceptPayload){
-        
-      const notificationPayload:DriverAcceptPayload = {
-        ...payload,
-        sendToId: payload.user.id,
-      };
-  
-      await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
-        subType: NotificationType.DRIVER_ACCEPTED,
-        payload: notificationPayload,
-      });
-    }
+  private async handleDriverAccepted(payload: DriverAcceptPayload) {
+    const notificationPayload: DriverAcceptPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
 
-      async handleDriverClosed(payload: DriverClosedEventPayload) {
-        const notificationPayload = {
-          ...payload,
-          sendToId: payload.user.id,
-        };
-  
-        await sendSNSNotification(
-          process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!,
-          {
-            subType: NotificationType.RATING_REVIEW,
-            payload: notificationPayload,
-          },
-        );
-      }
-    
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.DRIVER_ACCEPTED,
+      payload: notificationPayload,
+    });
+  }
 
+  private async handleAdminContactUs(payload: ContactUsPayload) {
+    const notificationPayload: ContactUsPayload = {
+      ...payload,
+      admins: [],
+    };
 
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.DRIVER_ACCEPTED,
+      payload: notificationPayload,
+    });
+  }
+
+  async handleDriverClosed(payload: DriverClosedEventPayload) {
+    const notificationPayload = {
+      ...payload,
+      sendToId: payload.user.id,
+    };
+
+    await sendSNSNotification(process.env.NOTIFICATION_REQUEST_SNS_TOPIC_ARN!, {
+      subType: NotificationType.RATING_REVIEW,
+      payload: notificationPayload,
+    });
+  }
 }
-
-

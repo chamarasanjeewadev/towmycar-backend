@@ -21,6 +21,7 @@ export type ListnerPayload =
   | ChatNotificationPayload
   | RatingReviewPayload
   | AdminApprovalRequestPayload
+  |ContactUsPayload
   | DriverCreatedAdminNotificationPayload;
 
 
@@ -35,7 +36,7 @@ export type ListnerPayload =
   DriverQuotationUpdatedPayload|
   AdminApprovalRequestPayload|
   DriverCreatedAdminNotificationEventPayload|
-  DriverCreatedAdminNotificationPayload
+  DriverCreatedAdminNotificationPayload|ContactUsPayload;
 
 export type NotificationPayload = {
   sendToId: number;
@@ -243,6 +244,20 @@ export interface DriverCreatedAdminNotificationEventPayload {
   // userId?: number;
 }
 
+export interface ContactUsPayload {
+  firstName?: string;
+  lastName?:string;
+  email?: string;
+  message: string;
+  admins?:UserWithAdmin[];
+  viewRequestLink?  :string;
+}
+export interface ContactUsEventPayload {
+  firstName?: string;
+  lastName?:string;
+  email: string;
+  message: string;
+}
 export interface DriverNotifyEventPayload {
   drivers: NearbyDriver[];
   breakdownRequestId: number;

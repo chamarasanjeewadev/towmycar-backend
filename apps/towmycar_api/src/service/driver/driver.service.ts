@@ -291,7 +291,6 @@ export class DriverService {
       description: "",
       vehicleNo: data?.vehicleNo,
     };
-    // this.notificationEmitter.emit(NotificationType.DRIVER_ACCEPTED, payload);
 
     emitNotificationEvent(NotificationType.DRIVER_ACCEPTED, payload);
     

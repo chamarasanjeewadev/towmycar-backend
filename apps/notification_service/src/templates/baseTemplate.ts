@@ -142,10 +142,7 @@ export function createBaseTemplate({
                 </a>
               </p>
               <p style="margin-top: 10px;">
-      <a href="https://${process.env.VIEW_REQUEST_BASE_URL}/admin/unsubscribe?email=${encodeURIComponent(to)}" 
-         style="color: ${COLORS.white}; text-decoration: underline;">
-        unsubscribe
-      </a>
+      
     </p>
             </td>
           </tr>
@@ -158,3 +155,7 @@ export function createBaseTemplate({
 
   `;
 }
+// <a href="https://${process.env.VIEW_REQUEST_BASE_URL}/admin/unsubscribe?email=${encodeURIComponent(to)}" 
+//          style="color: ${COLORS.white}; text-decoration: underline;">
+//         unsubscribe
+//       </a>
