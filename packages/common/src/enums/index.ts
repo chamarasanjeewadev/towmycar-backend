@@ -8,7 +8,8 @@ export enum UserGroup {
 
 export enum MailSender{
   SES="SES",
-  MAILERSENDER="MAILERSENDER"
+  MAILERSENDER="MAILERSENDER",
+  RESEND="RESEND"
 }
 
 export const notificationIcons = {

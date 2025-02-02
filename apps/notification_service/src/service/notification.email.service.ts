@@ -29,84 +29,108 @@ import { userRejectedEmail } from "../templates/userRejectedEmail";
 import { adminApprovalRequestEmail } from "../templates/adminApprovalRequestEmail";
 import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 import { driverCreatedAdminNotificationEmail } from "../templates/driverCreatedAdminNotificationEmail";
+import { EmailProvider, EmailOptions } from './email/types';
+import { ResendProvider } from './email/providers/resend.provider';
+import { SESProvider } from './email/providers/ses.provider';
+ import { MailerSendProvider } from './email/providers/mailersend.provider';
 
+class EmailFactory {
+  static getProvider(options: EmailOptions): EmailProvider {
+    switch (options.provider) {
+      case 'ses':
+        return new SESProvider();
+      case 'mailersend':
+        return new MailerSendProvider();
+      case 'resend':
+        return new ResendProvider();
+      default:
+        throw new Error(`Unsupported email provider: ${options.provider}`);
+    }
+  }
+}
+
+// Example usage
+export const sendEmailWithProvider = async (payload: EmailPayloadType, options: EmailOptions) => {
+  const emailProvider = EmailFactory.getProvider(options);
+  return await emailProvider.sendEmail(payload);
+};
 
 // Configure the AWS SDK
-const sesClient = new SESClient();
+// const sesClient = new SESClient();
 
 // Configure SendGrid
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-const mailerSenderAPIKEY=process.env.MAILERSENDER_API_KEY!;
+// const mailerSenderAPIKEY=process.env.MAILERSENDER_API_KEY!;
 
 
-export const sendEmail = async (payload: EmailPayloadType) => {
-  try {
-    const params = {
-     Source: "TowMyCar <hello@towmycar.uk>",
-      Destination: {
-        ToAddresses: [payload.recipientEmail ],
-      },
-      Message: {
-        Subject: {
-          Data: payload.subject as string,
-          Charset: "UTF-8",
-        },
-        Body: {
-          Html: {
-            Data: payload.htmlBody,
-            Charset: "UTF-8",
-          },
-        },
-      },
-    };
+// export const sendEmail = async (payload: EmailPayloadType) => {
+//   try {
+//     const params = {
+//      Source: "TowMyCar <hello@towmycar.uk>",
+//       Destination: {
+//         ToAddresses: [payload.recipientEmail ],
+//       },
+//       Message: {
+//         Subject: {
+//           Data: payload.subject as string,
+//           Charset: "UTF-8",
+//         },
+//         Body: {
+//           Html: {
+//             Data: payload.htmlBody,
+//             Charset: "UTF-8",
+//           },
+//         },
+//       },
+//     };
 
-    const command = new SendEmailCommand(params);
-    const response = await sesClient.send(command);
+//     const command = new SendEmailCommand(params);
+//     const response = await sesClient.send(command);
 
-    console.log(
-      `Email sent to ${JSON.stringify(response)} for request ${payload}: ${
-        response.MessageId
-      }`
-    );
-    return response;
-  } catch (error) {
-    console.error(
-      `Failed to send email to ${payload} for request ${payload}:`,
-      error
-    );
-  }
-};
-export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
-  const sentFrom = new Sender("hello@towmycar.uk", "TowMyCar");
-  const recipients = [
-    new Recipient(payload?.recipientEmail, "")
-  ];
-  try {
-  const mailerSend = new MailerSend({
-    apiKey:mailerSenderAPIKEY,
-  });
+//     console.log(
+//       `Email sent to ${JSON.stringify(response)} for request ${payload}: ${
+//         response.MessageId
+//       }`
+//     );
+//     return response;
+//   } catch (error) {
+//     console.error(
+//       `Failed to send email to ${payload} for request ${payload}:`,
+//       error
+//     );
+//   }
+// };
+// export const sendEmailWithMailerSend=async(payload:EmailPayloadType)=>{
+//   const sentFrom = new Sender("hello@towmycar.uk", "TowMyCar");
+//   const recipients = [
+//     new Recipient(payload?.recipientEmail, "")
+//   ];
+//   try {
+//   const mailerSend = new MailerSend({
+//     apiKey:mailerSenderAPIKEY,
+//   });
   
   
   
-  const emailParams = new EmailParams()
-    .setFrom(sentFrom)
-    .setTo(recipients)
-    // .setReplyTo(sentFrom)
-    .setSubject(payload.subject)
-    .setHtml(payload.htmlBody)
+//   const emailParams = new EmailParams()
+//     .setFrom(sentFrom)
+//     .setTo(recipients)
+//     // .setReplyTo(sentFrom)
+//     .setSubject(payload.subject)
+//     .setHtml(payload.htmlBody)
   
- const response =await mailerSend.email.send(emailParams); 
- logger.info(`Send email to ${payload} for request ${payload}`) 
- logger.info(`Email sent to response, ${JSON.stringify(response)}`)
- return true;
-} catch (error) {
-  logger.error(
-    `Failed to send email to ${JSON.stringify(recipients)} for request ${JSON.stringify(payload)}:`,
-    error
-  );
-  return false
-}
-}
+//  const response =await mailerSend.email.send(emailParams); 
+//  logger.info(`Send email to ${payload} for request ${payload}`) 
+//  logger.info(`Email sent to response, ${JSON.stringify(response)}`)
+//  return true;
+// } catch (error) {
+//   logger.error(
+//     `Failed to send email to ${JSON.stringify(recipients)} for request ${JSON.stringify(payload)}:`,
+//     error
+//   );
+//   return false
+// }
+// }
 
 // Update the getEmailContent function
 export function getEmailContent(type: NotificationType, payload: ListnerPayload) {

@@ -21,6 +21,7 @@
     "@sinclair/typebox": "^0.32.30",
     "@towmycar/common": "*",
     "@towmycar/database": "*",
+    "add": "^2.0.6",
     "ajv": "^8.13.0",
     "aws-sdk": "^2.1690.0",
     "axios": "^1.7.2",
@@ -33,7 +34,9 @@
     "mailersend": "^2.3.0",
     "pino": "^9.1.0",
     "pino-http": "^10.1.0",
-    "pino-pretty": "^11.1.0"
+    "pino-pretty": "^11.1.0",
+    "resend": "^4.1.1",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

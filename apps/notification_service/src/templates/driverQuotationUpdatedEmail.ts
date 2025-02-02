@@ -15,7 +15,7 @@ export const driverQuotationUpdatedEmail = (
     <h2>Quotation details:</h2>
     <ul>
     <li><strong>${QUOTATION_NO}:</strong> ${payload.breakdownRequestId}</li>
-      <li><strong>Estimated cost:</strong> £${payload.estimation}</li>
+      <li><strong>Estimated cost:</strong> £ ${payload.estimation}</li>
       <li><strong>Driver comment:</strong> ${payload?.explanation??"-"}</li>
     </ul>
     <p>If this quotation looks good to you, please review and accept it. You can use inbuilt chat to directly contact the driver and further adjust the quotation. </p>

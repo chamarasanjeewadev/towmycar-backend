@@ -16,8 +16,7 @@ import {
 } from "@towmycar/common";
 import {
   getEmailContent,
-  sendEmail,
-  sendEmailWithMailerSend
+  sendEmailWithProvider
 } from "../service/notification.email.service";
 import { NotificationRepository } from "../repository/notification.repository";
 import { logger } from "@towmycar/common";
@@ -372,9 +371,12 @@ async function checkAndProcessEmail({
       htmlBody: emailContent.htmlBody,
     };
 
-    // const result = await sendEmail(emailPayload);
-    const result=mailSender===MailSender.MAILERSENDER?await sendEmailWithMailerSend(emailPayload): await sendEmail(emailPayload);
-    logger.info(`email sent to ${JSON.stringify(emailPayload )}`)
+    // Replace the old email sending logic with the new provider-based approach
+    const result = await sendEmailWithProvider(emailPayload, { 
+      provider: mailSender === MailSender.MAILERSENDER ? 'mailersend' :MailSender.RESEND? 'resend':"ses"
+    });
+    
+    logger.info(`email sent to ${JSON.stringify(emailPayload)}`);
     if(userId){
       await NotificationRepository.saveNotification({
         userId,
@@ -388,7 +390,7 @@ async function checkAndProcessEmail({
         status: result ? NotificationStatus.SENT: NotificationStatus.FAILED,
       });
     }
-     return result; 
+    return result;
 
   } catch (error) {
     console.error(`Failed to process email for user ${userId}:`, error);

@@ -17,9 +17,12 @@
   "dependencies": {
     "@aws-cdk/aws-apigatewayv2-alpha": "^2.0.0-alpha.0",
     "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.0.0-alpha.0",
+    "add": "^2.0.6",
     "aws-cdk-lib": "2.133.0",
+    "aws-sdk": "^2.1550.0",
     "constructs": "^10.0.0",
-    "aws-sdk": "^2.1550.0"
+    "resend": "^4.1.1",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

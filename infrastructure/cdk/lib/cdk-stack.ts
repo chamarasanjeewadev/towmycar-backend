@@ -283,6 +283,8 @@ export class CdkStack extends cdk.Stack {
         VIEW_REQUEST_BASE_URL: process.env.VIEW_REQUEST_BASE_URL || "",
         MAILERSENDER_API_KEY: process.env.MAILERSENDER_API_KEY || "",
         MAILSENDER: process.env.MAILERSENDER || "",
+        RESEND_API_KEY:process.env.RESEND_API_KEY||""
+
       },
     });
   }
