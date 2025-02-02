@@ -16,6 +16,8 @@ import { Driver } from "@towmycar/database";
 import { DriverRepository } from "../repository/driver.repository";
 import { CustomError, ERROR_CODES } from "@towmycar/common";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
+import { contactUsSchema } from "../dto/driver.dto";
+import { ContactUsEmail } from "../service/admin/admin.service";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -416,6 +418,36 @@ async function handleUserCreated(evt: any, res: Response, next: NextFunction) {
     // });
   }
 }
+
+
+router.post(
+  "/contact-admin",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = contactUsSchema.partial().safeParse(req.body.message);
+      if (!result.success) {
+        throw new CustomError(
+          ERROR_CODES.INVALID_INPUT,
+          400,
+          "Invalid profile data: " + result.error.message,
+        );
+      }
+
+      const { firstName, lastName, email, message } = result.data;
+      ContactUsEmail({
+        firstName,
+        lastName,
+        email,
+        message,
+      });
+      res.status(200).json({ message: "Message sent successfully" });
+
+      // TODO send sns notification
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // async function createStripeCustomerIfDriver(userInfo: any, userData: any) {
 //   if (userInfo?.driverId) {
