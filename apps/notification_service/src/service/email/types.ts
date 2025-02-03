@@ -5,5 +5,5 @@ export interface EmailProvider {
 }
 
 export interface EmailOptions {
-  provider: 'ses' | 'mailersend' | 'resend';
+  provider: 'ses' | 'mailersend' | 'brevo';
 }

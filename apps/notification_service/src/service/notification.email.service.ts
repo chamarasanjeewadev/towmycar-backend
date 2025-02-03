@@ -30,7 +30,7 @@ import { adminApprovalRequestEmail } from "../templates/adminApprovalRequestEmai
 import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 import { driverCreatedAdminNotificationEmail } from "../templates/driverCreatedAdminNotificationEmail";
 import { EmailProvider, EmailOptions } from './email/types';
-import { ResendProvider } from './email/providers/resend.provider';
+import { BrevoProvider } from './email/providers/brevo.provider';
 import { SESProvider } from './email/providers/ses.provider';
  import { MailerSendProvider } from './email/providers/mailersend.provider';
 
@@ -41,8 +41,8 @@ class EmailFactory {
         return new SESProvider();
       case 'mailersend':
         return new MailerSendProvider();
-      case 'resend':
-        return new ResendProvider();
+      case 'brevo':
+        return new BrevoProvider();
       default:
         throw new Error(`Unsupported email provider: ${options.provider}`);
     }

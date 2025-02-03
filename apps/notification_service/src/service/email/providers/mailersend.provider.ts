@@ -2,6 +2,7 @@ import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 import { EmailPayloadType } from "@towmycar/common";
 import { BaseEmailProvider } from './base.provider';
 
+
 export class MailerSendProvider extends BaseEmailProvider {
   private mailerSend: MailerSend;
 

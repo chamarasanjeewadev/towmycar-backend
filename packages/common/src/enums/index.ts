@@ -6,10 +6,10 @@ export enum UserGroup {
   DRIVER = "driver",
 }
 
-export enum MailSender{
+export enum MailProvider{
   SES="SES",
   MAILERSENDER="MAILERSENDER",
-  RESEND="RESEND"
+  BREVO="BREVO"
 }
 
 export const notificationIcons = {

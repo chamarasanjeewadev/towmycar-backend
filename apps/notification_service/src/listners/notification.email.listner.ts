@@ -9,7 +9,7 @@ import {
   ListnerPayload,
   UserRejectedPayload,
   AdminApprovalRequestPayload,
-  MailSender,
+  MailProvider,
   NotificationStatus,
   DriverCreatedAdminNotificationPayload,
   ContactUsPayload,
@@ -32,7 +32,7 @@ interface CheckAndProcessEmailParams {
   recipientEmail: string;
 }
 
-const mailSender=process.env.MAILSENDER
+const mailSender=process.env.MAILPROVIDER as MailProvider
 
 export function registerEmailListener(emitter: EventEmitter): void {
   emitter.on(
@@ -370,10 +370,10 @@ async function checkAndProcessEmail({
       subject: emailContent.subject,
       htmlBody: emailContent.htmlBody,
     };
-
+const provider=mailSender === MailProvider.MAILERSENDER ? 'mailersend' :MailProvider.BREVO? 'brevo':"ses"
     // Replace the old email sending logic with the new provider-based approach
     const result = await sendEmailWithProvider(emailPayload, { 
-      provider: mailSender === MailSender.MAILERSENDER ? 'mailersend' :MailSender.RESEND? 'resend':"ses"
+      provider 
     });
     
     logger.info(`email sent to ${JSON.stringify(emailPayload)}`);
