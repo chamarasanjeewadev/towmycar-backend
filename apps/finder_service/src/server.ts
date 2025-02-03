@@ -1,0 +1,38 @@
+import expressApp from "./express-app";
+import { logger } from "@towmycar/common";
+import { pollMessagesFromSQS, handler } from "./utils/pollFinderMessages";
+import dotenv from "dotenv";
+dotenv.config();
+
+const PORT = process.env.APP_PORT || 9002;
+const isProduction = process.env.NODE_ENV === "production";
+
+export { handler };
+
+export const StartServer = async () => {
+  logger.info("Starting the server...");
+  expressApp.listen(PORT, () => {
+    logger.info(`App is listening on port ${PORT}`);
+    logger.info("Initiating SQS message polling...");
+    pollMessagesFromSQS();
+  });
+
+  process.on("uncaughtException", async err => {
+    console.log("Caught exception:", err);
+    logger.error("Uncaught exception:", err);
+    process.exit(1);
+  });
+};
+
+// if (isProduction) {
+//   logger.info("Running in production mode. Lambda handler is available.");
+//   module.exports.handler = handler;
+// } else {
+if (process.env.AWS_LAMBDA_FUNCTION_NAME === undefined) {
+  StartServer().then(() => {
+    logger.info("Server startup complete");
+  });
+}
+// }
+
+// Lambda function to handle SQS events

@@ -1,5 +1,6 @@
 ./db/*
 .env
+.env.*
 notification_service/src/utils/serviceAccount.json
 
 # Node.js dependencies
@@ -21,6 +22,7 @@ yarn-error.log*
 
 # Ignore IDE settings (VS Code, for example)
 .vscode/
+.turbo/
 
 db/*
 packages/database/db/migrations/*

@@ -1,10 +1,16 @@
 import { NodePgDatabase, drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { DB_URL } from "./config";
-import * as schema from '../db-schema';
+import * as schema from "../db-schema";
 
 const pool = new Pool({
   connectionString: DB_URL,
 });
 
-export const DB: NodePgDatabase<typeof schema> = drizzle(pool, { schema });
+export const DB: NodePgDatabase<typeof schema> = drizzle(pool, {
+  // logger: true,
+  schema,
+});
+pool.on("error", err => {
+  console.error("Unexpected error on idle client", err);
+});

@@ -1,23 +1,40 @@
 {
-  "name": "@breakdownrescue/database",
+  "name": "@towmycar/database",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.ts",
+  "types": "types.ts",
+  "files": [
+    "index.ts",
+    "types.ts",
+    "db-schema.ts"
+  ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
+    "db:generate:prod": "dotenv -e .env.prod -- drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:pull:dev": "dotenv -e .env.dev -- drizzle-kit pull",
+    "db:push:dev": "dotenv -e .env.dev -- drizzle-kit push",
+    "db:push:prod": "dotenv -e .env.prod -- drizzle-kit push",
+    "db:pull:prod": "dotenv -e .env.prod -- drizzle-kit pull",
     "db:migrate": "tsx ./migration.ts",
-    "db:studio": "drizzle-kit studio --port 6000"
+    "db:migrate:prod": "dotenv -e .env.prod -- tsx ./migration.ts",
+    "db:studio": "drizzle-kit studio --port 6000",
+    "db:studio:prod": "dotenv -e .env.prod -- drizzle-kit studio --port 6000",
+    "build": "tsc",
+    "prepublishOnly": "yarn build"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.669.0",
     "@types/node": "^22.5.4",
     "@types/pg": "^8.11.8",
+    "aws-sdk": "^2.1687.0",
     "dotenv": "^16.4.5",
-    "drizzle-orm": "^0.33.0",
+    "drizzle-orm": "^0.34.1",
     "pg": "^8.12.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.24.2",
+    "dotenv-cli": "^7.4.4",
+    "drizzle-kit": "^0.25.0",
     "tsx": "^4.19.0"
   }
 }
