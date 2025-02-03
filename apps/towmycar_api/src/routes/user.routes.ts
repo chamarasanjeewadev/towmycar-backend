@@ -16,8 +16,8 @@ import { Driver } from "@towmycar/database";
 import { DriverRepository } from "../repository/driver.repository";
 import { CustomError, ERROR_CODES } from "@towmycar/common";
 import { clerkAuthMiddleware } from "../middleware/clerkAuth";
-import { contactUsSchema } from "../dto/driver.dto";
 import { ContactUsEmail } from "../service/admin/admin.service";
+import { contactUsSchema } from "../dto/driver.dto";
 
 const router = express.Router();
 const repo = repository.UserRepository;
@@ -418,7 +418,6 @@ async function handleUserCreated(evt: any, res: Response, next: NextFunction) {
     // });
   }
 }
-
 
 router.post(
   "/contact-admin",
