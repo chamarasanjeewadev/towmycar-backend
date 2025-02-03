@@ -14,7 +14,7 @@ interface BaseTemplateProps {
 
 export function createBaseTemplate({
   content,
-  logoUrl = `${process.env.VIEW_REQUEST_BASE_URL ?? ""}/towmycar-primary.png`,
+  logoUrl = `${process.env.VIEW_REQUEST_BASE_URL ?? ""}/towmycar-landing.png`,
   subject = "",
   from = "",
   fromEmail = "",

@@ -33,6 +33,7 @@ interface CheckAndProcessEmailParams {
 }
 
 const mailSender=process.env.MAILPROVIDER as MailProvider
+const sourceEmail=process.env.SOURCE_EMAIL;
 
 export function registerEmailListener(emitter: EventEmitter): void {
   emitter.on(
@@ -168,7 +169,7 @@ emitter.on(
       userId: payload?.sendToId,
       breakdownRequestId: null, // payload?.breakdownRequestId,
       emailContent,
-      recipientEmail: "hello.towmycar.uk@gmail.com",
+      recipientEmail: "hellotowmycar.uk@gmail.com",
     });
   },
 );
@@ -204,7 +205,7 @@ emitter.on(
       breakdownRequestId: null, // payload?.breakdownRequestId,
       emailContent,
       userId:null,// TODO fix sendToId for admins
-      recipientEmail: "hello.towmycar.uk@gmail.com",
+      recipientEmail: sourceEmail,
     });
   },
 );
